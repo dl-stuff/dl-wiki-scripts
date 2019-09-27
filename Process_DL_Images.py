@@ -4,28 +4,13 @@ import re
 import copy
 from shutil import copyfile, rmtree
 import argparse
+import datetime 
 
 ALPHA_TYPES = ('A', 'alpha', 'alphaA8')
 YCbCr_TYPES = ('Y', 'Cb', 'Cr')
 EXT = '.png'
 PORTRAIT_SUFFIX = '_portrait'
 WYRMPRINT_ALPHA = 'Wyrmprint_Alpha.png'
-"""
-[[Category:Ability_Icons]]
-[[Category:Skill_Icons]]
-
-[[Category:Character_Portrait_Images]]
-[[Category:Character_Icon_Images]]
-
-[[Category:Banner Images]]
-[[Category:Void Battles Banners]]
-[[Category:Summon_Showcase_Banner_Images]]
-
-[[Category:Dragon_Icons]]
-[[Category:Dragon_Images]]
-
-[[Category:Story_Art]]
-"""
 CATEGORY_REGEX = {
     'Ability_Icons': re.compile(r'^Icon_Ability_\d{7}$'),
     'Skill_Icons': re.compile(r'^Icon_Skill_\d{3}$'),
@@ -37,16 +22,23 @@ CATEGORY_REGEX = {
     'Dragon_Icons': re.compile(r'^2\d{5}_\d{2}$'),
     'Story_Art': re.compile(r'\d{6}_\d{2}_base_portrait$'),
 
+    'Summon_Showcase_Banner_Images': re.compile(r'^Summon_(Switch|Top)_Banner$'),
     # 'Banner_Images': '',
     # 'Void_Battles_Banners': '',
     # 'Summon_Showcase_Banner_Images': '',
 }
 
 
-image_name_pattern = re.compile(r'^(.*?)(_(A|alpha|alphaA8|Y|Cb|Cr))?( #(\d+))?$')
+image_name_pattern_alpha = re.compile(r'^(.*?)(_(A|alpha|alphaA8))?( #(\d+))?$')
+image_name_pattern_YCbCr = re.compile(r'^(.*?)_(Y|Cb|Cr)$')
 def split_image_name(file_name):
-    # format base_name_channel #hash_tag
-    matches = image_name_pattern.match(file_name)
+    # format basename_channel(YCbCr)
+    matches = image_name_pattern_YCbCr.match(file_name)
+    if matches:
+        base_name, _ = matches.groups()
+        return base_name, 'YCbCr', 0
+    # format basename_channel(Alpha) #hash_tag
+    matches = image_name_pattern_alpha.match(file_name)
     if matches:
         base_name, _, channel, _, hash_tag = matches.groups()
         channel = 'base' if channel is None else channel
@@ -65,6 +57,7 @@ def merge_image_name(base_name, channel, hash_tag):
     return image_name
 
 def build_image_dict(current_dir, images={}):
+    # TODO: maybe glob?
     if not os.path.exists(current_dir):
         return None
     for f in os.listdir(current_dir):
@@ -155,11 +148,9 @@ def merge_YCbCr(directory, base_name, unique_alpha=False):
         a = None
     if a is not None:
         r, g, b = Image.merge("YCbCr", (Y, Cb, Cr)).convert('RGB').split()
-        merged = Image.merge("RGBA", (r, g, b, a))
+        return Image.merge("RGBA", (r, g, b, a))
     else:
-        merged = Image.merge("YCbCr", (Y, Cb, Cr)).convert('RGB')
-    return merged
-    
+        return Image.merge("YCbCr", (Y, Cb, Cr)).convert('RGB')    
 
 def merge_all_images(images):
     merged_images = {}
@@ -173,9 +164,9 @@ def merge_all_images(images):
                     if alpha in images[d][i]:
                         a_res = {**a_res, **merge_alpha(d, i, alpha, images[d][i]['base'], images[d][i][alpha])}
                 if len(a_res) > 0:
-                    m['alpha'] = find_best_alpha(a_res)
-            # assume no hashtags on any Y/Cr/Cb/Alpha images
-            if all([c in images[d][i] for c in YCbCr_TYPES]):
+                    # m['alpha'] = find_best_alpha(a_res)
+                    m['alpha'] = sorted(a_res.values(), key=(lambda x: x.size[0]))
+            if 'YCbCr' in images[d][i]:
                 m['YCbCr'] = merge_YCbCr(d, i, unique_alpha=('alpha' in images[d][i]))
             if len(m) > 0:
                 if d not in merged_images:
@@ -184,12 +175,23 @@ def merge_all_images(images):
 
     return merged_images
 
-def match_category(file_name):
+def match_category(file_name, file_size=None):
     for category, pattern in CATEGORY_REGEX.items():
         res = pattern.match(file_name)
         if res:
-            return category
-    return ''
+            if category == 'Summon_Showcase_Banner_Images' and len(res.groups()) > 0:
+                # time in mmm yyyy form
+                name_format = None
+                if res.group(1) == 'Switch':
+                    name_format = 'Banner Summon Showcase {} ({}){}'
+                elif res.group(1) == 'Top':
+                    name_format = '{} ({}) Summon Top Banner{}'
+                return category, name_format
+            return category, None
+    # didn't match specific category, but it is likely to be an icon since it's 160x160
+    if file_size == (160, 160):
+        return 'Misc_Icon', None
+    return '', None
 
 def create_out_sub_dir(directory, in_dir, out_dir, make_categories=False):
     if directory == in_dir:
@@ -202,6 +204,8 @@ def create_out_sub_dir(directory, in_dir, out_dir, make_categories=False):
         for category in CATEGORY_REGEX:
             if not os.path.exists(out_sub_dir + '/' + category):
                 os.makedirs(out_sub_dir + '/' + category)
+        if not os.path.exists(out_sub_dir + '/Misc_Icon'):
+            os.makedirs(out_sub_dir + '/Misc_Icon')
     return out_sub_dir
 
 def save_merged_images(merged_images, in_dir, out_dir):
@@ -213,15 +217,20 @@ def save_merged_images(merged_images, in_dir, out_dir):
         for i in merged_images[d]:
             for t in merged_images[d][i]:
                 if t == 'YCbCr':
+                    img = merged_images[d][i][t]
                     img_name = i + '_portrait'
-                    save_path = '{}/{}/{}.png'.format(out_sub_dir, match_category(img_name), img_name)
-                    merged_images[d][i][t].save(save_path)
-                else:
+                    category, _ = match_category(img_name, img.size)
+                    save_path = '{}/{}/{}{}'.format(out_sub_dir, category, img_name, EXT)
+                    img.save(save_path)
+                elif t == 'alpha':
                     for idx, img in enumerate(merged_images[d][i][t]):
-                        if idx == 0:
-                            save_path = '{}/{}/{}.png'.format(out_sub_dir, match_category(i), i)
-                        else:
-                            save_path = '{}/{}/{} ({}).png'.format(out_sub_dir, match_category(i), i, idx)
+                        category, name_format = match_category(i, img.size)
+                        img_name = i
+                        if name_format is not None:
+                            img_name = name_format.format('#' + str(idx), datetime.datetime.now().strftime('%b %Y'), EXT)
+                        save_path = '{}/{}/{}{}'.format(out_sub_dir, category, img_name, EXT)
+                        if os.path.exists(save_path) and os.path.isfile(save_path):
+                            save_path = '{}/{}/{}#{}{}'.format(out_sub_dir, category, img_name, idx, EXT)
                         img.save(save_path)
 
 def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
@@ -230,32 +239,45 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
         if cur_dir != d:
             cur_dir = d
             out_sub_dir = create_out_sub_dir(d, in_dir, out_dir, make_categories=False)
-        if not os.path.exists(out_sub_dir + '/Not_Merged'):
-            os.makedirs(out_sub_dir + '/Not_Merged')
+        # if not os.path.exists(out_sub_dir + '/Not_Merged'):
+        #     os.makedirs(out_sub_dir + '/Not_Merged')
         for i in Not_Merged[d]:
             for c in Not_Merged[d][i]:
                 for h in Not_Merged[d][i][c]:
-                    img_name = merge_image_name(i, c, h)
-                    copyfile(d + '/' + img_name, out_sub_dir + '/Not_Merged/' + img_name)
+                    category, name_format = match_category(i)
+                    if name_format is not None:
+                        img_name = name_format.format('{}'.format(h), datetime.datetime.now().strftime('%b %Y'), EXT)
+                    else:
+                        category = ''
+                        img_name = merge_image_name(i, c, h)
+                    copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
     parser.add_argument('-i', type=str, help='directory of input images', required=True)
-    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output), WARNING: old contents of this directory will be deleted', default='./output')
+    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
+    parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
+    parser.set_defaults(delete_old=False)
     parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
     args = parser.parse_args()
+    if args.delete_old:
+        if os.path.exists(args.o):
+            try:
+                rmtree(args.o)
+                print('Deleted old {}'.format(args.o))
+            except Exception:
+                print('Could not delete old {}'.format(args.o))
+    if not os.path.exists(args.o):
+        os.makedirs(args.o)
 
     WYRMPRINT_ALPHA = args.wpa
     images = build_image_dict(args.i)
     images, Not_Merged = filter_image_dict(images)
     # print_image_dict(images)
-    print('The following images were not merged:')
+    print('The following images were copied to output without merging:')
     print_image_dict(Not_Merged)
 
     merged = merge_all_images(images)
-    if os.path.exists(args.o):
-        rmtree(args.o)
-    os.makedirs(args.o)
     save_merged_images(merged, args.i, args.o)
     copy_Not_Merged_images(Not_Merged, args.i, args.o)
