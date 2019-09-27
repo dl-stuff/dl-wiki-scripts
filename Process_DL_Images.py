@@ -26,7 +26,6 @@ WYRMPRINT_ALPHA = 'Wyrmprint_Alpha.png'
 
 [[Category:Story_Art]]
 """
-CATEGORY_FORMAT = '[[Category:{}]]'
 CATEGORY_REGEX = {
     'Ability_Icons': re.compile(r'^Icon_Ability_\d{7}$'),
     'Skill_Icons': re.compile(r'^Icon_Skill_\d{3}$'),
@@ -241,8 +240,8 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
-    parser.add_argument('-in', type=str, help='directory of input images', required=True)
-    parser.add_argument('-out', type=str, help='directory of output images  (default: ./output), WARNING: old contents of this directory will be deleted', default='./output')
+    parser.add_argument('-i', type=str, help='directory of input images', required=True)
+    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output), WARNING: old contents of this directory will be deleted', default='./output')
     parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
     args = parser.parse_args()
