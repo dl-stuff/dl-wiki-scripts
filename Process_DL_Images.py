@@ -248,9 +248,6 @@ def save_merged_images(merged_images, in_dir, out_dir):
                             save_path = '{}#{}{}'.format(save_path.replace(EXT, ''), idx, EXT)
                         img.save(save_path)
 
-                        if name_format:
-                            print(save_path, 'requires renaming')
-
 def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
     cur_dir, out_sub_dir = None, None
     for d in Not_Merged:
@@ -269,9 +266,6 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
                         category = ''
                         img_name = merge_image_name(i, c, h)
                     copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name + '.png')
-
-                    if name_format:
-                        print(save_path, 'requires renaming')
 
 
 if __name__ == '__main__':
