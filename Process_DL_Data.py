@@ -7,7 +7,7 @@ import argparse
 
 EXT = '.txt'
 DEFAULT_TEXT_LABEL = ''
-ENTRY_LINE_BREAK = '\n==============================\n'
+ENTRY_LINE_BREAK = '\n=============================\n'
 EDIT_THIS = '<EDIT_THIS>'
 
 ROW_INDEX = '_Id'
@@ -121,11 +121,31 @@ def process_AmuletData(row):
 
     return new_row, 'Wyrmprint', new_row['Name']
 
+def process_BuildEventItem(row):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Detail'])
+    new_row['Rarity'] = '' # EDIT_THIS
+    new_row['QuestEventId'] = row['_EventId']
+    new_row['SortId'] = row['_Id']
+    new_row['Obtain'] = '\n*' + get_label(row['_Description'])
+    new_row['Usage'] = '' # EDIT_THIS
+    new_row['MoveQuest1'] = row['_MoveQuest1']
+    new_row['MoveQuest2'] = row['_MoveQuest2']
+    new_row['MoveQuest3'] = row['_MoveQuest3']
+    new_row['MoveQuest4'] = row['_MoveQuest4']
+    new_row['MoveQuest5'] = row['_MoveQuest5']
+    new_row['PouchRarity'] = row['_PouchRarity']
+
+    return new_row, 'Material', new_row['Name']
+
 DATA_FILE_PROCESSING = {
     'AbilityLimitedGroup': process_AbilityLimitedGroup,
     'AbilityData': process_AbilityData,
     'AmuletData': process_AmuletData, # AKA Wyrmprint
-    'BuildEventItem': None,
+    'BuildEventItem': process_BuildEventItem,
     'CharaData': None,
     'ExAbilityData': None,
     'CollectEventItem': None,
@@ -154,6 +174,8 @@ DATA_FILE_PROCESSING = {
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     row_str += delim.join(['{}={}'.format(k.strip('_'), row[k]) for k in row])
+    if delim[0] == '\n':
+        row_str += '\n'
     row_str += '}}'
     return row_str
 
@@ -170,7 +192,7 @@ def csv_as_wikitext(in_dir, out_dir, data_name):
             if display_name is not None:
                 out_file.write(display_name)
                 out_file.write(ENTRY_LINE_BREAK)
-                out_file.write(build_wikitext_row(template_name, row, delim='|\n'))
+                out_file.write(build_wikitext_row(template_name, row, delim='\n|'))
                 out_file.write(ENTRY_LINE_BREAK)
             else:
                 out_file.write(build_wikitext_row(template_name, row))
@@ -199,7 +221,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', type=str, help='directory of input text files', required=True)
     parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output)', default='./output')
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
-    parser.set_defaults(delete_old=False)
 
     args = parser.parse_args()
     if args.delete_old:
@@ -221,4 +242,5 @@ if __name__ == '__main__':
     # find_fmt_params(in_dir, out_dir)
     for data_name in DATA_FILE_PROCESSING:
         if DATA_FILE_PROCESSING[data_name] is not None:
+            print('Saved {}{}'.format(data_name, EXT))
             csv_as_wikitext(in_dir, out_dir, data_name)

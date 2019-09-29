@@ -277,7 +277,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', type=str, help='directory of input images', required=True)
     parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
-    parser.set_defaults(delete_old=False)
     parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
     args = parser.parse_args()
