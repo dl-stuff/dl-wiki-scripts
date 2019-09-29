@@ -1,0 +1,1 @@
+# dragalia-wiki-scripts
