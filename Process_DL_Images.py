@@ -4,7 +4,6 @@ import re
 import copy
 from shutil import copyfile, rmtree
 import argparse
-import datetime 
 
 ALPHA_TYPES = ('A', 'alpha', 'alphaA8')
 YCbCr_TYPES = ('Y', 'Cb', 'Cr')
