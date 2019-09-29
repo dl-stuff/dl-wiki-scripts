@@ -13,21 +13,24 @@ ENTRY_LINE_BREAK = '\n=============================\n'
 EDIT_THIS = '<EDIT_THIS>'
 
 ROW_INDEX = '_Id'
+EMBLEM_P = 'EMBLEM_NAME_'
 
-TEXT_LABEL_NAME = 'TextLabel'
+TEXT_LABEL = 'TextLabel'
 TEXT_LABELS = None
-ABILITY_SHIFT_GROUP_NAME = 'AbilityShiftGroup'
+ABILITY_SHIFT_GROUP = 'AbilityShiftGroup'
 ABILITY_SHIFT_GROUPS = None
+SKILL_DATA_NAME = 'SkillData'
+SKILL_DATA_NAMES = None
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-ELEMENTS = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
-AMULET_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
+ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
+CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
 
-def csv_as_index(path, index=None, tabs=False):
+def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, newline='') as csvfile:
         if tabs:
             reader = csv.DictReader(csvfile, dialect='excel-tab')
@@ -41,6 +44,7 @@ def csv_as_index(path, index=None, tabs=False):
         if len(first_row) == 2:
             # load 2 column files as dict[string] = string
             value_key = next(key_iter) # get second key
+        if value_key:
             return {row[index]: row[value_key] for row in reader if row[index] != '0'}
         else:
             # load >2 column files as a dict[string] = OrderedDict
@@ -51,9 +55,11 @@ def get_label(key):
 
 # All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
 # Make sure the keys are added to the OrderedDict in the desired output order
-# It's alright to modify row instead of makeing new dict, but only do so when you want to print all the keys already present in row
 def process_AbilityLimitedGroup(row):
-    row['_AbilityLimitedText'] = get_label(row['_AbilityLimitedText']).format(ability_limit0=row['_MaxLimitedValue'])
+    new_row = OrderedDict()
+    for k, v in row.items():
+        new_row[k.strip('_')] = v
+    new_row['AbilityLimitedText'] = get_label(row['_AbilityLimitedText']).format(ability_limit0=row['_MaxLimitedValue'])
     return row, None, None
 
 def process_AbilityData(row):
@@ -80,7 +86,7 @@ def process_AbilityData(row):
     if '{element_owner}' in detail_label and ')' in new_row['Name']:
         element = new_row['Name'][1:new_row['Name'].index(')')]
     else:
-        element = ELEMENTS[int(row['_ElementalType'])]
+        element = ELEMENT_TYPE[int(row['_ElementalType'])]
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
@@ -105,7 +111,7 @@ def process_AmuletData(row):
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
     new_row['Rarity'] = row['_Rarity']
-    new_row['AmuletType'] = AMULET_TYPE[int(row['_AmuletType'])]
+    new_row['AmuletType'] = CLASS_TYPE[int(row['_AmuletType'])]
     new_row['MinHp'] = row['_MinHp']
     new_row['MaxHp'] = row['_MaxHp']
     new_row['MinAtk'] = row['_MinAtk']
@@ -126,6 +132,111 @@ def process_AmuletData(row):
     new_row['SellDewPoint'] = row['_SellDewPoint']
 
     return new_row, 'Wyrmprint', new_row['Name']
+
+def process_BuildEventItem(row):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Detail'])
+    new_row['Rarity'] = '' # EDIT_THIS
+    new_row['QuestEventId'] = row['_EventId']
+    new_row['SortId'] = row['_Id']
+    new_row['Obtain'] = '\n*' + get_label(row['_Description'])
+    new_row['Usage'] = '' # EDIT_THIS
+    new_row['MoveQuest1'] = row['_MoveQuest1']
+    new_row['MoveQuest2'] = row['_MoveQuest2']
+    new_row['MoveQuest3'] = row['_MoveQuest3']
+    new_row['MoveQuest4'] = row['_MoveQuest4']
+    new_row['MoveQuest5'] = row['_MoveQuest5']
+    new_row['PouchRarity'] = row['_PouchRarity']
+
+    return new_row, 'Material', new_row['Name']
+
+def process_CharaData(row):
+    new_row = OrderedDict()
+
+    new_row['IdLong'] = row['_Id']
+    new_row['Id'] = row['_BaseId']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['FullName'] = '{{PAGENAME}}'
+    new_row['NameJP'] = '' # EDIT_THIS
+    new_row['Title'] = get_label(EMBLEM_P + row['_EmblemId'])
+    new_row['TitleJP'] = '' # EDIT_THIS
+    new_row['Obtain'] = '' # EDIT_THIS
+    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['Availability'] = '' # EDIT_THIS
+    new_row['WeaponType'] = WEAPON_TYPE[int(row['_WeaponType'])]
+    new_row['Rarity'] = row['_Rarity']
+    new_row['Gender'] = '' # EDIT_THIS
+    new_row['Race'] = '' # EDIT_THIS
+    new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
+    new_row['CharaType'] = CLASS_TYPE[int(row['_CharaType'])]
+    new_row['VariationId'] = row['_VariationId']
+    new_row['MinHp3'] = row['_MinHp3']
+    new_row['MinHp4'] = row['_MinHp4']
+    new_row['MinHp5'] = row['_MinHp5']
+    new_row['MaxHp'] = row['_MaxHp']
+    new_row['PlusHp0'] = row['_PlusHp0']
+    new_row['PlusHp1'] = row['_PlusHp1']
+    new_row['PlusHp2'] = row['_PlusHp2']
+    new_row['PlusHp3'] = row['_PlusHp3']
+    new_row['PlusHp4'] = row['_PlusHp4']
+    new_row['McFullBonusHp5'] = row['_McFullBonusHp5']
+    new_row['MinAtk3'] = row['_MinAtk3']
+    new_row['MinAtk4'] = row['_MinAtk4']
+    new_row['MinAtk5'] = row['_MinAtk5']
+    new_row['MaxAtk'] = row['_MaxAtk']
+    new_row['PlusAtk0'] = row['_PlusAtk0']
+    new_row['PlusAtk1'] = row['_PlusAtk1']
+    new_row['PlusAtk2'] = row['_PlusAtk2']
+    new_row['PlusAtk3'] = row['_PlusAtk3']
+    new_row['PlusAtk4'] = row['_PlusAtk4']
+    new_row['McFullBonusAtk5'] = row['_McFullBonusAtk5']
+    new_row['MinDef'] = row['_MinDef']
+    new_row['DefCoef'] = row['_DefCoef']
+    new_row['Skill1Name'] = get_label(SKILL_DATA_NAMES[row['_Skill1']]) if row['_Skill1'] in SKILL_DATA_NAMES else ''
+    new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']]) if row['_Skill2'] in SKILL_DATA_NAMES else ''
+    new_row['Abilities11'] = row['_Abilities11']
+    new_row['Abilities12'] = row['_Abilities12']
+    new_row['Abilities13'] = '0'
+    new_row['Abilities14'] = '0'
+    new_row['Abilities21'] = row['_Abilities21']
+    new_row['Abilities22'] = row['_Abilities22']
+    new_row['Abilities23'] = '0'
+    new_row['Abilities24'] = '0'
+    new_row['Abilities31'] = row['_Abilities31']
+    new_row['Abilities32'] = row['_Abilities32']
+    new_row['Abilities33'] = '0'
+    new_row['Abilities34'] = '0'
+    new_row['ExAbilityData1'] = row['_ExAbilityData1']
+    new_row['ExAbilityData2'] = row['_ExAbilityData2']
+    new_row['ExAbilityData3'] = row['_ExAbilityData3']
+    new_row['ExAbilityData4'] = row['_ExAbilityData4']
+    new_row['ExAbilityData5'] = row['_ExAbilityData5']
+    new_row['ManaCircleName'] = row['_ManaCircleName']
+    new_row['JapaneseCV'] = get_label(row['_CvInfo'])
+    new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
+    new_row['Description'] = get_label(row['_ProfileText'])
+    new_row['IsPlayable'] = row['_IsPlayable']
+    new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
+
+    return new_row, 'Adventurer', new_row['Name'] + ' - ' + get_label(row['_SecondName'])
+
+def process_ExAbilityData(row):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['GenericName'] = '' # EDIT_THIS
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Details'] = get_label(row['_Details']).format(
+        value1=row['_AbilityType1UpValue0']
+    )
+    new_row['AbilityIconName'] = row['_AbilityIconName']
+    new_row['Category'] = row['_Category']
+    new_row['PartyPowerWeight'] = row['_PartyPowerWeight']
+
+    return new_row, 'CoAbility', new_row['Name']
 
 def process_SkillData(row):
     new_row = OrderedDict()
@@ -233,9 +344,9 @@ DATA_FILE_PROCESSING = {
     'AbilityLimitedGroup': process_AbilityLimitedGroup,
     'AbilityData': process_AbilityData,
     'AmuletData': process_AmuletData, # AKA Wyrmprint
-    'BuildEventItem': None,
-    'CharaData': None,
-    'ExAbilityData': None,
+    'BuildEventItem': process_BuildEventItem,
+    'CharaData': process_CharaData, # AKA Adventurer
+    'ExAbilityData': process_ExAbilityData, # AKA Co-Ability
     'CollectEventItem': None,
     'MissionDailyData': None,
     'DragonData': None,
@@ -261,8 +372,10 @@ DATA_FILE_PROCESSING = {
 
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
-    row_str += delim.join(['{}={}'.format(k.strip('_'), row[k]) for k in row])
-    row_str += '\n}}'
+    row_str += delim.join(['{}={}'.format(k, row[k]) for k in row])
+    if delim[0] == '\n':
+        row_str += '\n'
+    row_str += '}}'
     return row_str
 
 def csv_as_wikitext(in_dir, out_dir, data_name):
@@ -307,7 +420,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', type=str, help='directory of input text files', required=True)
     parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output)', default='./output')
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
-    parser.set_defaults(delete_old=False)
 
     args = parser.parse_args()
     if args.delete_old:
@@ -323,10 +435,12 @@ if __name__ == '__main__':
     in_dir = args.i if args.i[-1] == '/' else args.i+'/'
     out_dir = args.o if args.o[-1] == '/' else args.o+'/'
 
-    TEXT_LABELS = csv_as_index(in_dir+TEXT_LABEL_NAME+EXT, tabs=True)
-    ABILITY_SHIFT_GROUPS = csv_as_index(in_dir+ABILITY_SHIFT_GROUP_NAME+EXT)
+    TEXT_LABELS = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
+    ABILITY_SHIFT_GROUPS = csv_as_index(in_dir+ABILITY_SHIFT_GROUP+EXT)
+    SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
 
     # find_fmt_params(in_dir, out_dir)
     for data_name in DATA_FILE_PROCESSING:
         if DATA_FILE_PROCESSING[data_name] is not None:
+            print('Saved {}{}'.format(data_name, EXT))
             csv_as_wikitext(in_dir, out_dir, data_name)
