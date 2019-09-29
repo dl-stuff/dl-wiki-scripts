@@ -28,7 +28,7 @@ CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
-WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
+EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, newline='') as csvfile:
@@ -242,13 +242,13 @@ def process_SkillData(row):
     new_row = OrderedDict()
 
     new_row['SkillId']= row['_Id']
-    new_row['Name']= get_label(row['_Name']).replace("\\n", " ")
+    new_row['Name']= get_label(row['_Name'])
     new_row['SkillLv1IconName']= row['_SkillLv1IconName']
     new_row['SkillLv2IconName']= row['_SkillLv2IconName']
     new_row['SkillLv3IconName']= row['_SkillLv3IconName']
-    new_row['Description1']= get_label(row['_Description1']).replace("\\n", " ")
-    new_row['Description2']= get_label(row['_Description2']).replace("\\n", " ")
-    new_row['Description3']= get_label(row['_Description3']).replace("\\n", " ")
+    new_row['Description1']= get_label(row['_Description1'])
+    new_row['Description2']= get_label(row['_Description2'])
+    new_row['Description3']= get_label(row['_Description3'])
     new_row['HideLevel3']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
@@ -260,21 +260,76 @@ def process_SkillData(row):
 
     return new_row, 'Skill', new_row['Name']
 
+def process_QuestRewardData(row):
+    QUEST_FIRST_CLEAR_COUNT = 5
+    QUEST_COMPLETE_COUNT = 3
+    reward_template = '\n{{{{DropReward|droptype=First|itemtype={}|item={}|exact={}}}}}'
+    new_row = OrderedDict()
 
-def process_WeaponData(rowi, skill_data):
+    new_row['Id'] = row['_Id']
+    new_row['FirstClearRewards'] = ''
+    for i in range(1,QUEST_FIRST_CLEAR_COUNT+1):
+        first_clear_type = row['_FirstClearSetEntityType{}'.format(i)]
+        if (first_clear_type == '23'):
+            new_row['FirstClearRewards'] += reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
+        elif (first_clear_type == '8'):
+            new_row['FirstClearRewards'] += reward_template.format(
+                'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
+        elif (first_clear_type == '20'):
+            new_row['FirstClearRewards'] += reward_template.format(
+                'Material', get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
+    for i in range(1,QUEST_COMPLETE_COUNT+1):
+        complete_type = row['_MissionCompleteType{}'.format(i)]
+        complete_value = row['_MissionCompleteValues{}'.format(i)]
+        clear_reward_type = row['_MissionsClearSetEntityType{}'.format(i)]
+
+        if complete_type == '1':
+            if complete_value == '0':
+                new_row['MissionCompleteType{}'.format(i)] = 'Don\'t allow any of your team to fall in battle'
+            else:
+                new_row['MissionCompleteType{}'.format(i)] = 'Allow no more than {} of your team to fall in battle'.format(complete_value)
+        elif complete_type == '15':
+            new_row['MissionCompleteType{}'.format(i)] = 'Don\'t use any continues'
+        elif complete_type == '18':
+            new_row['MissionCompleteType{}'.format(i)] = 'Finish in {} seconds or less'.format(complete_value)
+
+        if clear_reward_type == '23': 
+            new_row['MissionsClearSetEntityType{}'.format(i)] = 'Wyrmite'
+        elif clear_reward_type == '8':
+            new_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
+                    '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
+        elif clear_reward_type == '20':
+            new_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
+                    '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
+
+        new_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
+    first_clear1_type = row['_FirstClearSetEntityType1']
+    if first_clear1_type == '23':
+        new_row['MissionCompleteEntityType'] = 'Wyrmite'
+        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+    elif first_clear1_type == '8':
+        new_row['MissionCompleteEntityType'] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionClearSetEntityType']))
+        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+    elif first_clear1_type == '20':
+        new_row['MissionCompleteEntityType'] = get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_MissionClearSetEntityType']))
+        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+
+    return new_row, '', ''
+
+def process_WeaponData(row):
     new_row = OrderedDict()
 
     new_row['Id'] = row['_Id']
     new_row['BaseId'] = row['_BaseId']
     new_row['FormId'] = row['_FormId']
-    new_row['WeaponName'] = row['_Name'].replace("\\n", " ")
+    new_row['WeaponName'] = get_label(row['_Name'])
     new_row['WeaponNameJP'] = '' # EDIT_THIS
     new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
     new_row['Rarity'] = row['_Rarity']
-    # Case when weapons have no elemental type
+    # Case when weapon has no elemental type
     try:
-        new_row['ElementalType'] = ELEMENTS[int(row['_ElementalType'])]
-    except:
+        new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
+    except IndexError:
         new_row['ElementalType'] = ''
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
@@ -284,35 +339,23 @@ def process_WeaponData(rowi, skill_data):
     new_row['MinAtk'] = row['_MinAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
     new_row['VariationId'] = 1
-    new_row['SkillName'] = row['_']
+    # Case when weapon has no skill
+    try:
+        new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill']])
+    except KeyError:
+        new_row['SkillName'] = ''
     new_row['Abilities11'] = row['_Abilities11']
     new_row['Abilities21'] = row['_Abilities21']
     new_row['IsPlayable'] = 1
-    new_row['FlavorText'] = row['_Text'].replace("\\n", " ")
+    new_row['FlavorText'] = get_label(row['_Text'])
     new_row['SellCoin'] = row['_SellCoin']
     new_row['SellDewPoint'] = row['_SellDewPoint']
 
-    # WeaponCraftTreeData
-    new_row['CraftNodeId'] = row['_CraftNodeId']
-    new_row['ParentCraftNodeId'] = row['ParentCraftNodeId']
-    new_row['CraftGroupId'] = row['CraftGroupId']
-
-    # WeaponCraftData
-    new_row['FortCraftLevel'] = row['_FortCraftLevel']
-    new_row['AssembleCoin'] = row['_AssembleCoin']
-    new_row['DisassembleCoin'] = row['_DisassembleCoin']
-    new_row['MainWeaponId'] = row['_MainWeaponId']
-    new_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
-
-    for i in range(0,WEAPON_CRAFT_DATA_MATERIAL_COUNT):
-        curr_id = i + 1
-        new_row['CraftMaterialType{}'.format(curr_id)] = row['_CrafEntityType{}'.format(curr_id)]
-        new_row['CraftMaterial{}'.format(curr_id)] = get_label("{}{}".format(MATERIAL_NAME_LABEL, row['_CraftEnitityId{}'.format(curr_id)]))
-        new_row['CraftMaterialQuantity{}'.format(curr_id)] = row['_CraftEntityQuantity{}'.format(curr_id)]
-
-    return new_row, 'Weapon', new_row['Name']
+    return new_row, 'Weapon', new_row['WeaponName']
 
 def process_WeaponCraftData(row):
+    WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
+
     new_row = OrderedDict()
     
     new_row['Id'] = row['_Id']
@@ -322,23 +365,22 @@ def process_WeaponCraftData(row):
     new_row['MainWeaponId'] = row['_MainWeaponId']
     new_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
 
-    for i in range(0,WEAPON_CRAFT_DATA_MATERIAL_COUNT):
-        curr_id = i + 1
-        new_row['CraftMaterialType{}'.format(curr_id)] = row['_CrafEntityType{}'.format(curr_id)]
-        new_row['CraftMaterial{}'.format(curr_id)] = get_label("{}{}".format(MATERIAL_NAME_LABEL, row['_CraftEnitityId{}'.format(curr_id)]))
-        new_row['CraftMaterialQuantity{}'.format(curr_id)] = row['_CraftEntityQuantity{}'.format(curr_id)]
+    for i in range(1,WEAPON_CRAFT_DATA_MATERIAL_COUNT+1):
+        new_row['CraftMaterialType{}'.format(i)] = row['_CraftEntityType{}'.format(i)]
+        new_row['CraftMaterial{}'.format(i)] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_CraftEntityId{}'.format(i)]))
+        new_row['CraftMaterialQuantity{}'.format(i)] = row['_CraftEntityQuantity{}'.format(i)]
 
-    return new_row
+    return new_row, '', ''
 
 def process_WeaponCraftTree(row):
     new_row = OrderedDict()
 
     new_row['Id'] = row['_Id']
     new_row['CraftNodeId'] = row['_CraftNodeId']
-    new_row['ParentCraftNodeId'] = row['ParentCraftNodeId']
-    new_row['CraftGroupId'] = row['CraftGroupId']
+    new_row['ParentCraftNodeId'] = row['_ParentCraftNodeId']
+    new_row['CraftGroupId'] = row['_CraftGroupId']
 
-    return new_row 
+    return new_row, '', '' 
 
 DATA_FILE_PROCESSING = {
     'AbilityLimitedGroup': process_AbilityLimitedGroup,
@@ -362,12 +404,12 @@ DATA_FILE_PROCESSING = {
     'QuestEvent': None,
     'QuestEventGroup': None,
     'QuestFailedType': None,
-    'QuestRewardData': None,
+    'QuestRewardData': process_QuestRewardData,
     'RaidEventItem': None,
     'SkillData': process_SkillData,
-    #'WeaponData': process_WeaponData,
-    #'WeaponCraftData': process_WeaponCraftData,
-    #'WeaponCraftTree': process_WeaponCraftTree,
+    'WeaponData': process_WeaponData,
+    'WeaponCraftData': process_WeaponCraftData,
+    'WeaponCraftTree': process_WeaponCraftTree,
 }
 
 def build_wikitext_row(template_name, row, delim='|'):
