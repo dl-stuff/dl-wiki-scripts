@@ -219,12 +219,18 @@ def create_out_sub_dir(directory, in_dir, out_dir, make_categories=False):
             os.makedirs(out_sub_dir + '/Misc_Icon')
     return out_sub_dir
 
+def delete_empty_subdirectories(directory):
+    if directory:
+        for f in os.listdir(directory):
+            try:
+                os.rmdir(directory + '/' + f)
+            except:
+                pass
+
 def save_merged_images(merged_images, in_dir, out_dir):
-    cur_dir, out_sub_dir = None, None
     for d in merged_images:
-        if cur_dir != d:
-            cur_dir = d
-            out_sub_dir = create_out_sub_dir(d, in_dir, out_dir, make_categories=True)
+        # delete empty catagory folders in the previous directory
+        out_sub_dir = create_out_sub_dir(d, in_dir, out_dir, make_categories=True)
         for i in merged_images[d]:
             for t in merged_images[d][i]:
                 if t == 'YCbCr':
@@ -247,13 +253,12 @@ def save_merged_images(merged_images, in_dir, out_dir):
                         if os.path.exists(save_path) and os.path.isfile(save_path):
                             save_path = '{}#{}{}'.format(save_path.replace(EXT, ''), idx, EXT)
                         img.save(save_path)
+        delete_empty_subdirectories(out_sub_dir)
+
 
 def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
-    cur_dir, out_sub_dir = None, None
     for d in Not_Merged:
-        if cur_dir != d:
-            cur_dir = d
-            out_sub_dir = create_out_sub_dir(d, in_dir, out_dir, make_categories=False)
+        out_sub_dir = create_out_sub_dir(d, in_dir, out_dir, make_categories=True)
         # if not os.path.exists(out_sub_dir + '/Not_Merged'):
         #     os.makedirs(out_sub_dir + '/Not_Merged')
         for i in Not_Merged[d]:
@@ -266,7 +271,7 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
                         category = ''
                         img_name = merge_image_name(i, c, h)
                     copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name + '.png')
-
+        delete_empty_subdirectories(out_sub_dir)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
