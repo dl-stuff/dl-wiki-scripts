@@ -5,9 +5,11 @@ from shutil import copyfile, rmtree
 from collections import OrderedDict
 import argparse
 
+import pdb
+
 EXT = '.txt'
 DEFAULT_TEXT_LABEL = ''
-ENTRY_LINE_BREAK = '\n==============================\n'
+ENTRY_LINE_BREAK = '\n=============================\n'
 EDIT_THIS = '<EDIT_THIS>'
 
 ROW_INDEX = '_Id'
@@ -20,6 +22,10 @@ ABILITY_SHIFT_GROUPS = None
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 ELEMENTS = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
 AMULET_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
+WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
+
+MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
+WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
 
 def csv_as_index(path, index=None, tabs=False):
     with open(path, newline='') as csvfile:
@@ -121,6 +127,108 @@ def process_AmuletData(row):
 
     return new_row, 'Wyrmprint', new_row['Name']
 
+def process_SkillData(row):
+    new_row = OrderedDict()
+
+    new_row['SkillId']= row['_Id']
+    new_row['Name']= get_label(row['_Name']).replace("\\n", " ")
+    new_row['SkillLv1IconName']= row['_SkillLv1IconName']
+    new_row['SkillLv2IconName']= row['_SkillLv2IconName']
+    new_row['SkillLv3IconName']= row['_SkillLv3IconName']
+    new_row['Description1']= get_label(row['_Description1']).replace("\\n", " ")
+    new_row['Description2']= get_label(row['_Description2']).replace("\\n", " ")
+    new_row['Description3']= get_label(row['_Description3']).replace("\\n", " ")
+    new_row['HideLevel3']= '' # EDIT_THIS
+    new_row['Sp']= row['_Sp']
+    new_row['SpLv2']= row['_SpLv2']
+    new_row['SpRegen']= '' # EDIT_THIS
+    new_row['IsAffectedByTension']= row['_IsAffectedByTension']
+    new_row['ZoominTime']= row['_ZoominTime']
+    new_row['Zoom2Time']= row['_Zoom2Time']
+    new_row['ZoomWaitTime']= row['_ZoomWaitTime']
+
+    return new_row, 'Skill', new_row['Name']
+
+
+def process_WeaponData(rowi, skill_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['BaseId'] = row['_BaseId']
+    new_row['FormId'] = row['_FormId']
+    new_row['WeaponName'] = row['_Name'].replace("\\n", " ")
+    new_row['WeaponNameJP'] = '' # EDIT_THIS
+    new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
+    new_row['Rarity'] = row['_Rarity']
+    # Case when weapons have no elemental type
+    try:
+        new_row['ElementalType'] = ELEMENTS[int(row['_ElementalType'])]
+    except:
+        new_row['ElementalType'] = ''
+    new_row['Obtain'] = '' # EDIT_THIS
+    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['Availability'] = '' # EDIT_THIS
+    new_row['MinHp'] = row['_MinHp']
+    new_row['MaxHp'] = row['_MaxHp']
+    new_row['MinAtk'] = row['_MinAtk']
+    new_row['MaxAtk'] = row['_MaxAtk']
+    new_row['VariationId'] = 1
+    new_row['SkillName'] = row['_']
+    new_row['Abilities11'] = row['_Abilities11']
+    new_row['Abilities21'] = row['_Abilities21']
+    new_row['IsPlayable'] = 1
+    new_row['FlavorText'] = row['_Text'].replace("\\n", " ")
+    new_row['SellCoin'] = row['_SellCoin']
+    new_row['SellDewPoint'] = row['_SellDewPoint']
+
+    # WeaponCraftTreeData
+    new_row['CraftNodeId'] = row['_CraftNodeId']
+    new_row['ParentCraftNodeId'] = row['ParentCraftNodeId']
+    new_row['CraftGroupId'] = row['CraftGroupId']
+
+    # WeaponCraftData
+    new_row['FortCraftLevel'] = row['_FortCraftLevel']
+    new_row['AssembleCoin'] = row['_AssembleCoin']
+    new_row['DisassembleCoin'] = row['_DisassembleCoin']
+    new_row['MainWeaponId'] = row['_MainWeaponId']
+    new_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
+
+    for i in range(0,WEAPON_CRAFT_DATA_MATERIAL_COUNT):
+        curr_id = i + 1
+        new_row['CraftMaterialType{}'.format(curr_id)] = row['_CrafEntityType{}'.format(curr_id)]
+        new_row['CraftMaterial{}'.format(curr_id)] = get_label("{}{}".format(MATERIAL_NAME_LABEL, row['_CraftEnitityId{}'.format(curr_id)]))
+        new_row['CraftMaterialQuantity{}'.format(curr_id)] = row['_CraftEntityQuantity{}'.format(curr_id)]
+
+    return new_row, 'Weapon', new_row['Name']
+
+def process_WeaponCraftData(row):
+    new_row = OrderedDict()
+    
+    new_row['Id'] = row['_Id']
+    new_row['FortCraftLevel'] = row['_FortCraftLevel']
+    new_row['AssembleCoin'] = row['_AssembleCoin']
+    new_row['DisassembleCoin'] = row['_DisassembleCoin']
+    new_row['MainWeaponId'] = row['_MainWeaponId']
+    new_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
+
+    for i in range(0,WEAPON_CRAFT_DATA_MATERIAL_COUNT):
+        curr_id = i + 1
+        new_row['CraftMaterialType{}'.format(curr_id)] = row['_CrafEntityType{}'.format(curr_id)]
+        new_row['CraftMaterial{}'.format(curr_id)] = get_label("{}{}".format(MATERIAL_NAME_LABEL, row['_CraftEnitityId{}'.format(curr_id)]))
+        new_row['CraftMaterialQuantity{}'.format(curr_id)] = row['_CraftEntityQuantity{}'.format(curr_id)]
+
+    return new_row
+
+def process_WeaponCraftTree(row):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['CraftNodeId'] = row['_CraftNodeId']
+    new_row['ParentCraftNodeId'] = row['ParentCraftNodeId']
+    new_row['CraftGroupId'] = row['CraftGroupId']
+
+    return new_row 
+
 DATA_FILE_PROCESSING = {
     'AbilityLimitedGroup': process_AbilityLimitedGroup,
     'AbilityData': process_AbilityData,
@@ -145,16 +253,16 @@ DATA_FILE_PROCESSING = {
     'QuestFailedType': None,
     'QuestRewardData': None,
     'RaidEventItem': None,
-    'SkillData': None,
-    'WeaponData': None,
-    'WeaponCraftData': None,
-    'WeaponCraftTree': None,
+    'SkillData': process_SkillData,
+    #'WeaponData': process_WeaponData,
+    #'WeaponCraftData': process_WeaponCraftData,
+    #'WeaponCraftTree': process_WeaponCraftTree,
 }
 
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     row_str += delim.join(['{}={}'.format(k.strip('_'), row[k]) for k in row])
-    row_str += '}}'
+    row_str += '\n}}'
     return row_str
 
 def csv_as_wikitext(in_dir, out_dir, data_name):
@@ -170,7 +278,7 @@ def csv_as_wikitext(in_dir, out_dir, data_name):
             if display_name is not None:
                 out_file.write(display_name)
                 out_file.write(ENTRY_LINE_BREAK)
-                out_file.write(build_wikitext_row(template_name, row, delim='|\n'))
+                out_file.write(build_wikitext_row(template_name, row, delim='\n|'))
                 out_file.write(ENTRY_LINE_BREAK)
             else:
                 out_file.write(build_wikitext_row(template_name, row))
