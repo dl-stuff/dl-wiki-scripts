@@ -30,6 +30,26 @@ WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
 
+class DataParser:
+    def __init__(self, _template, _process_info):
+        self.template = _template
+        self.process_info = _process_info
+        self.row_data = []
+
+    def process(self):
+        for file_name,func in self.process_info:
+            with open(in_dir+file_name+EXT, 'r') as in_file:
+                reader = csv.DictReader(in_file)
+                for row in reader:
+                    if row[ROW_INDEX] == '0':
+                        continue
+                    func(row, self.row_data)
+
+    def emit(self, output_path):
+        with open(output_path, 'w') as out_file:
+            out_file.write(''.join([row_as_wikitext(x[1], self.template, x[0]) for x in self.row_data]))
+
+
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, newline='') as csvfile:
         if tabs:
@@ -316,7 +336,7 @@ def process_QuestRewardData(row):
 
     return new_row, '', ''
 
-def process_WeaponData(row):
+def process_WeaponData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row['_Id']
@@ -351,36 +371,44 @@ def process_WeaponData(row):
     new_row['SellCoin'] = row['_SellCoin']
     new_row['SellDewPoint'] = row['_SellDewPoint']
 
-    return new_row, 'Weapon', new_row['WeaponName']
+    existing_data.append((new_row['WeaponName'], new_row))
 
-def process_WeaponCraftData(row):
+def process_WeaponCraftData(row, existing_data):
     WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
 
-    new_row = OrderedDict()
+    found = False
+    for index,existing_row in enumerate(existing_data):
+        if existing_row[1]['Id'] == row['_Id']:
+            found = True
+            break
+    assert(found)
     
-    new_row['Id'] = row['_Id']
-    new_row['FortCraftLevel'] = row['_FortCraftLevel']
-    new_row['AssembleCoin'] = row['_AssembleCoin']
-    new_row['DisassembleCoin'] = row['_DisassembleCoin']
-    new_row['MainWeaponId'] = row['_MainWeaponId']
-    new_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
+    curr_row = existing_row[1]
+    curr_row['FortCraftLevel'] = row['_FortCraftLevel']
+    curr_row['AssembleCoin'] = row['_AssembleCoin']
+    curr_row['DisassembleCoin'] = row['_DisassembleCoin']
+    curr_row['MainWeaponId'] = row['_MainWeaponId']
+    curr_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
 
     for i in range(1,WEAPON_CRAFT_DATA_MATERIAL_COUNT+1):
-        new_row['CraftMaterialType{}'.format(i)] = row['_CraftEntityType{}'.format(i)]
-        new_row['CraftMaterial{}'.format(i)] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_CraftEntityId{}'.format(i)]))
-        new_row['CraftMaterialQuantity{}'.format(i)] = row['_CraftEntityQuantity{}'.format(i)]
+        curr_row['CraftMaterialType{}'.format(i)] = row['_CraftEntityType{}'.format(i)]
+        curr_row['CraftMaterial{}'.format(i)] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_CraftEntityId{}'.format(i)]))
+        curr_row['CraftMaterialQuantity{}'.format(i)] = row['_CraftEntityQuantity{}'.format(i)]
+    existing_data[index] = (existing_row[0], curr_row)
 
-    return new_row, '', ''
-
-def process_WeaponCraftTree(row):
-    new_row = OrderedDict()
-
-    new_row['Id'] = row['_Id']
-    new_row['CraftNodeId'] = row['_CraftNodeId']
-    new_row['ParentCraftNodeId'] = row['_ParentCraftNodeId']
-    new_row['CraftGroupId'] = row['_CraftGroupId']
-
-    return new_row, '', '' 
+def process_WeaponCraftTree(row, existing_data):
+    found = False
+    for index,existing_row in enumerate(existing_data):
+        if existing_row[1]['Id'] == row['_CraftWeaponId']:
+            found = True
+            break
+    assert(found)
+    
+    curr_row = existing_row[1]
+    curr_row['CraftNodeId'] = row['_CraftNodeId']
+    curr_row['ParentCraftNodeId'] = row['_ParentCraftNodeId']
+    curr_row['CraftGroupId'] = row['_CraftGroupId']
+    existing_data[index] = (existing_row[0], curr_row)
 
 DATA_FILE_PROCESSING = {
     'AbilityLimitedGroup': process_AbilityLimitedGroup,
@@ -407,9 +435,13 @@ DATA_FILE_PROCESSING = {
     'QuestRewardData': process_QuestRewardData,
     'RaidEventItem': None,
     'SkillData': process_SkillData,
-    'WeaponData': process_WeaponData,
-    'WeaponCraftData': process_WeaponCraftData,
-    'WeaponCraftTree': process_WeaponCraftTree,
+}
+
+DATA_PARSER_PROCESSING = {
+    'WeaponData': ('Weapon', 
+        [('WeaponData', process_WeaponData), 
+            ('WeaponCraftTree', process_WeaponCraftTree),
+            ('WeaponCraftData', process_WeaponCraftData)]) 
 }
 
 def build_wikitext_row(template_name, row, delim='|'):
@@ -419,6 +451,18 @@ def build_wikitext_row(template_name, row, delim='|'):
         row_str += '\n'
     row_str += '}}'
     return row_str
+
+def row_as_wikitext(row, template_name, display_name = None):
+    text = ""
+    if display_name:
+        text += display_name
+        text += ENTRY_LINE_BREAK
+        text += build_wikitext_row(template_name, row, delim='\n|')
+        text += ENTRY_LINE_BREAK
+    else:
+        text += build_wikitext_row(template_name, row)
+        text += '\n'
+    return text
 
 def csv_as_wikitext(in_dir, out_dir, data_name):
     with open(in_dir+data_name+EXT, 'r') as in_file, open(out_dir+data_name+EXT, 'w') as out_file:
@@ -486,3 +530,10 @@ if __name__ == '__main__':
         if DATA_FILE_PROCESSING[data_name] is not None:
             print('Saved {}{}'.format(data_name, EXT))
             csv_as_wikitext(in_dir, out_dir, data_name)
+
+    for data_name,process_info in DATA_PARSER_PROCESSING.items():
+        parser = DataParser(process_info[0], process_info[1])
+        parser.process()
+        parser.emit(out_dir+data_name+EXT)
+        print('Saved {}{}'.format(data_name, EXT))
+
