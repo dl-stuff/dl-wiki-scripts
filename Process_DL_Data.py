@@ -48,8 +48,8 @@ class DataParser:
                     func(row, self.row_data)
                 except TypeError:
                     func(row, self.row_data, self.extra_data)
-                except Exception as e:
-                    print('Error processing {}: {}'.format(file_name, str(e)))
+                # except Exception as e:
+                    # print('Error processing {}: {}'.format(file_name, str(e)))
 
     def process(self):
         try: # process_info is an iteratable of (file_name, process_function)
@@ -369,22 +369,40 @@ def process_SkillData(row):
 
     return new_row, 'Skill', new_row['Name']
 
-def process_QuestData(row):
+def process_QuestData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row['_Id']
+    new_row['_Gid'] = row['_Gid']
+    process_QuestTypeData(new_row, row)
     new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
     new_row['SectionName'] = get_label(row['_SectionName'])
     new_row['QuestViewName'] = get_label(row['_QuestViewName'])
-    new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
+    # Case when quest has no elemental type
+    try:
+        new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
+    except IndexError:
+        new_row['Elemental'] = ''
+    # process_QuestMight
+    if row['_DifficultyLimit'] == '0':
+        new_row['SuggestedMight'] = row['_Difficulty']
+    else:
+        new_row['MighRequirement'] = row['_DifficultyLimit']
+
+    # process_QuestSkip
+    if row['_SkipTicketCount'] == '1':
+        new_row['SkipTicket'] = 'Yes'
+    elif row['_SkipTicketCount'] == '-1':
+        new_row['SkipTicket'] = ''
+
     new_row['NormalStaminaCost'] = row['_PayStaminaSingle']
     new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
     new_row['GetherwingCost'] = row['_PayStaminaMulti']
     new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
-    new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTersmType']))
+    new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTermsType']))
 
     row_failed_terms_type = row['_FailedTermsType']
-    row_failed_terms_type = "0" if row_failed_terms_type == "6"
+    row_failed_terms_type = "0" if row_failed_terms_type == "6" else row_failed_terms_type
     new_row['FailedTermsType'] = get_label('QUEST_FAILURE_CONDITION_{}'.format(row_failed_terms_type))
 
     new_row['ContinueLimit'] = row['_ContinueLimit']
@@ -395,25 +413,62 @@ def process_QuestData(row):
     new_row['ShowEnemies'] = 1
     new_row['AutoPlayType'] = row['_AutoPlayType']
 
-    return new_row, '', ''
+    existing_data.append((new_row['QuestViewName'], new_row))
 
-def process_QuestRewardData(row):
+def process_QuestTypeData(new_row, row):
+    quest_type_dict = {
+        '1'   : 'Campaign',
+        '201' : 'Event',
+        '202' : 'Event',
+        '203' : 'Event',
+        '210' : 'Event',
+        '211' : 'Event',
+        '300' : 'Event',
+        '204' : 'Raid',
+        '208' : 'Facility',
+    }
+
+    group_type_dict = {
+        '1' : 'Campaign',
+        '2' : 'Event',
+    }
+
+    for quest_type_id_check,quest_type in quest_type_dict.items():
+        if row['_Id'].startswith(quest_type_id_check):
+            new_row['QuestType'] = quest_type
+            break
+    new_row['QuestGroupName'] = get_label(row['_QuestViewName']).partition(':')
+    if not new_row['QuestGroupName'][1]:
+        new_row['QuestGroupName'] = ''
+    else:
+        new_row['QuestGroupName'] = new_row['QuestGroupName'][0]
+    new_row['GroupType'] = group_type_dict[row['_GroupType']]
+
+
+def process_QuestRewardData(row, existing_data):
     QUEST_FIRST_CLEAR_COUNT = 5
     QUEST_COMPLETE_COUNT = 3
     reward_template = '\n{{{{DropReward|droptype=First|itemtype={}|item={}|exact={}}}}}'
-    new_row = OrderedDict()
 
-    new_row['Id'] = row[ROW_INDEX]
-    new_row['FirstClearRewards'] = ''
+    found = False
+    for index,existing_row in enumerate(existing_data):
+        if existing_row[1]['Id'] == row[ROW_INDEX]:
+            found = True
+            break
+    assert(found)
+
+    curr_row = existing_row[1]
+
+    curr_row['FirstClearRewards'] = ''
     for i in range(1,QUEST_FIRST_CLEAR_COUNT+1):
         first_clear_type = row['_FirstClearSetEntityType{}'.format(i)]
         if (first_clear_type == '23'):
-            new_row['FirstClearRewards'] += reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
+            curr_row['FirstClearRewards'] += reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
         elif (first_clear_type == '8'):
-            new_row['FirstClearRewards'] += reward_template.format(
+            curr_row['FirstClearRewards'] += reward_template.format(
                 'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
         elif (first_clear_type == '20'):
-            new_row['FirstClearRewards'] += reward_template.format(
+            curr_row['FirstClearRewards'] += reward_template.format(
                 'Material', get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
     for i in range(1,QUEST_COMPLETE_COUNT+1):
         complete_type = row['_MissionCompleteType{}'.format(i)]
@@ -422,36 +477,57 @@ def process_QuestRewardData(row):
 
         if complete_type == '1':
             if complete_value == '0':
-                new_row['MissionCompleteType{}'.format(i)] = 'Don\'t allow any of your team to fall in battle'
+                curr_row['MissionCompleteType{}'.format(i)] = 'Don\'t allow any of your team to fall in battle'
             else:
-                new_row['MissionCompleteType{}'.format(i)] = 'Allow no more than {} of your team to fall in battle'.format(complete_value)
+                curr_row['MissionCompleteType{}'.format(i)] = 'Allow no more than {} of your team to fall in battle'.format(complete_value)
         elif complete_type == '15':
-            new_row['MissionCompleteType{}'.format(i)] = 'Don\'t use any continues'
+            curr_row['MissionCompleteType{}'.format(i)] = 'Don\'t use any continues'
         elif complete_type == '18':
-            new_row['MissionCompleteType{}'.format(i)] = 'Finish in {} seconds or less'.format(complete_value)
+            curr_row['MissionCompleteType{}'.format(i)] = 'Finish in {} seconds or less'.format(complete_value)
 
         if clear_reward_type == '23':
-            new_row['MissionsClearSetEntityType{}'.format(i)] = 'Wyrmite'
+            curr_row['MissionsClearSetEntityType{}'.format(i)] = 'Wyrmite'
         elif clear_reward_type == '8':
-            new_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
+            curr_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
                     '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
         elif clear_reward_type == '20':
-            new_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
+            curr_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
                     '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
 
-        new_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
+        curr_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
     first_clear1_type = row['_FirstClearSetEntityType1']
     if first_clear1_type == '23':
-        new_row['MissionCompleteEntityType'] = 'Wyrmite'
-        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+        curr_row['MissionCompleteEntityType'] = 'Wyrmite'
+        curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
     elif first_clear1_type == '8':
-        new_row['MissionCompleteEntityType'] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionClearSetEntityType']))
-        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+        curr_row['MissionCompleteEntityType'] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionClearSetEntityType']))
+        curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
     elif first_clear1_type == '20':
-        new_row['MissionCompleteEntityType'] = get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_MissionClearSetEntityType']))
-        new_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+        curr_row['MissionCompleteEntityType'] = get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_MissionClearSetEntityType']))
+        curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
 
-    return new_row, '', ''
+    existing_data[index] = (existing_row[0], curr_row)
+
+def process_QuestBonusData(row, existing_data):
+
+    found = False
+    # pdb.set_trace()
+    for index,existing_row in enumerate(existing_data):
+        if existing_row[1]['_Gid'] == row['_Id']:
+            found = True
+            break
+    if not found:
+        return
+
+    curr_row = existing_row[1]
+    if row['_QuestBonusType'] == '1':
+        curr_row['DailyDropQuantity'] = row['_QuestBonusCount']
+        curr_row['DailyDropReward'] = ''
+    elif row['_QuestBonusType'] == '2':
+        curr_row['WeeklyDropQuantity'] = row['_QuestBonusCount']
+        curr_row['WeeklyDropReward'] = ''
+
+    existing_data[index] = (existing_row[0], curr_row)
 
 def process_WeaponData(row, existing_data):
     new_row = OrderedDict()
@@ -540,7 +616,7 @@ DATA_FILE_PROCESSING = {
     'QuestEvent': None,
     'QuestEventGroup': None,
     'QuestFailedType': None,
-    'QuestRewardData': process_QuestRewardData,
+    # 'QuestRewardData': process_QuestRewardData,
     'RaidEventItem': None,
     'SkillData': process_SkillData,
 }
@@ -563,10 +639,16 @@ DATA_PARSER_PROCESSING = {
         [('FortPlantDetail', process_FortPlantDetail),
          ('FortPlantData', process_FortPlantData)]),
 
+    'QuestData': ('QuestDisplay',
+        [('QuestData', process_QuestData),
+            ('QuestRewardData', process_QuestRewardData),
+            ('QuestEvent', process_QuestBonusData),
+            ]),
+
     'WeaponData': ('Weapon',
         [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
-            ('WeaponCraftData', process_WeaponCraftData)])
+            ('WeaponCraftData', process_WeaponCraftData)]),
 }
 
 def build_wikitext_row(template_name, row, delim='|'):
