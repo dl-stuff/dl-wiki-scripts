@@ -369,6 +369,34 @@ def process_SkillData(row):
 
     return new_row, 'Skill', new_row['Name']
 
+def process_QuestData(row):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
+    new_row['SectionName'] = get_label(row['_SectionName'])
+    new_row['QuestViewName'] = get_label(row['_QuestViewName'])
+    new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
+    new_row['NormalStaminaCost'] = row['_PayStaminaSingle']
+    new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
+    new_row['GetherwingCost'] = row['_PayStaminaMulti']
+    new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
+    new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTersmType']))
+
+    row_failed_terms_type = row['_FailedTermsType']
+    row_failed_terms_type = "0" if row_failed_terms_type == "6"
+    new_row['FailedTermsType'] = get_label('QUEST_FAILURE_CONDITION_{}'.format(row_failed_terms_type))
+
+    new_row['ContinueLimit'] = row['_ContinueLimit']
+    new_row['ThumbnailImage'] = row['_ThumbnailImage']
+    new_row['DropRewards'] = ''
+    new_row['WeaponRewards'] = ''
+    new_row['WyrmprintRewards'] = ''
+    new_row['ShowEnemies'] = 1
+    new_row['AutoPlayType'] = row['_AutoPlayType']
+
+    return new_row, '', ''
+
 def process_QuestRewardData(row):
     QUEST_FIRST_CLEAR_COUNT = 5
     QUEST_COMPLETE_COUNT = 3
@@ -402,7 +430,7 @@ def process_QuestRewardData(row):
         elif complete_type == '18':
             new_row['MissionCompleteType{}'.format(i)] = 'Finish in {} seconds or less'.format(complete_value)
 
-        if clear_reward_type == '23': 
+        if clear_reward_type == '23':
             new_row['MissionsClearSetEntityType{}'.format(i)] = 'Wyrmite'
         elif clear_reward_type == '8':
             new_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
@@ -471,7 +499,7 @@ def process_WeaponCraftData(row, existing_data):
             found = True
             break
     assert(found)
-    
+
     curr_row = existing_row[1]
     curr_row['FortCraftLevel'] = row['_FortCraftLevel']
     curr_row['AssembleCoin'] = row['_AssembleCoin']
@@ -492,7 +520,7 @@ def process_WeaponCraftTree(row, existing_data):
             found = True
             break
     assert(found)
-    
+
     curr_row = existing_row[1]
     curr_row['CraftNodeId'] = row['_CraftNodeId']
     curr_row['ParentCraftNodeId'] = row['_ParentCraftNodeId']
@@ -519,12 +547,12 @@ DATA_FILE_PROCESSING = {
 
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', process_AbilityLimitedGroup),
-    'AbilityData': ('Ability', 
+    'AbilityData': ('Ability',
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', process_AmuletData),
     'BuildEventItem': ('Material', process_Material),
-    'CharaData': ('Adventurer', 
+    'CharaData': ('Adventurer',
         [('CharaData', process_CharaData),
          ('SkillData', process_SkillDataNames)]),
     'CollectEventItem': ('Material', process_Material),
@@ -535,8 +563,8 @@ DATA_PARSER_PROCESSING = {
         [('FortPlantDetail', process_FortPlantDetail),
          ('FortPlantData', process_FortPlantData)]),
 
-    'WeaponData': ('Weapon', 
-        [('WeaponData', process_WeaponData), 
+    'WeaponData': ('Weapon',
+        [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
             ('WeaponCraftData', process_WeaponCraftData)])
 }
