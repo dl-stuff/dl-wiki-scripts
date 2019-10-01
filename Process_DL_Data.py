@@ -381,7 +381,7 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     new_row['UpgradeTable'] = ''
     existing_data.append((new_row['Name'], new_row))
 
-def process_SkillData(row):
+def process_SkillData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['SkillId']= row[ROW_INDEX]
@@ -401,7 +401,7 @@ def process_SkillData(row):
     new_row['Zoom2Time']= row['_Zoom2Time']
     new_row['ZoomWaitTime']= row['_ZoomWaitTime']
 
-    return new_row, 'Skill', new_row['Name']
+    existing_data.append((new_row['Name'], new_row))
 
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
@@ -649,7 +649,6 @@ DATA_FILE_PROCESSING = {
     'QuestFailedType': None,
     # 'QuestRewardData': process_QuestRewardData,
     'RaidEventItem': None,
-    'SkillData': process_SkillData,
 }
 
 DATA_PARSER_PROCESSING = {
@@ -719,6 +718,7 @@ DATA_PARSER_PROCESSING = {
         [('CharaData', process_CharaData),
          ('SkillData', process_SkillDataNames)]),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
+    'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
     'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
     'EmblemData': ('Epithet', row_as_wikitable, process_EmblemData),
