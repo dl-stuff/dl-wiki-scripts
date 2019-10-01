@@ -714,7 +714,7 @@ DATA_PARSER_PROCESSING = {
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
-    'CharaData': ('Adventurer', row_as_wikitext, 
+    'CharaData': ('Adventurer', row_as_wikitext,
         [('CharaData', process_CharaData),
          ('SkillData', process_SkillDataNames)]),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
@@ -727,8 +727,8 @@ DATA_PARSER_PROCESSING = {
          ('FortPlantData', process_FortPlantData)]),
     'MaterialData': ('Material', row_as_wikitext, process_Material),
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
-    'WeaponData': ('Weapon', row_as_wikitext, 
-        [('WeaponData', process_WeaponData), 
+    'WeaponData': ('Weapon', row_as_wikitext,
+        [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
             ('WeaponCraftData', process_WeaponCraftData)])
 }
