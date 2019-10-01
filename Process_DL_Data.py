@@ -1,3 +1,180 @@
+import csv
+import os
+import string
+from shutil import copyfile, rmtree
+from collections import OrderedDict
+import argparse
+
+import pdb
+
+EXT = '.txt'
+DEFAULT_TEXT_LABEL = ''
+ENTRY_LINE_BREAK = '\n=============================\n'
+EDIT_THIS = '<EDIT_THIS>'
+
+ROW_INDEX = '_Id'
+EMBLEM_P = 'EMBLEM_NAME_'
+
+TEXT_LABEL = 'TextLabel'
+TEXT_LABELS = None
+ABILITY_SHIFT_GROUP = 'AbilityShiftGroup'
+ABILITY_SHIFT_GROUPS = None
+SKILL_DATA_NAME = 'SkillData'
+SKILL_DATA_NAMES = None
+
+ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
+CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
+WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
+
+MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
+EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
+
+class DataParser:
+    def __init__(self, _data_name, _template, _formatter, _process_info):
+        self.data_name = _data_name
+        self.template = _template
+        self.formatter = _formatter
+        self.process_info = _process_info
+        self.row_data = []
+        self.extra_data = {}
+
+    def process_csv(self, file_name, func):
+        with open(in_dir+file_name+EXT, 'r') as in_file:
+            reader = csv.DictReader(in_file)
+            for row in reader:
+                if row[ROW_INDEX] == '0':
+                    continue
+                try:
+                    func(row, self.row_data)
+                except TypeError:
+                    func(row, self.row_data, self.extra_data)
+                # except Exception as e:
+                    # print('Error processing {}: {}'.format(file_name, str(e)))
+
+    def process(self):
+        try: # process_info is an iteratable of (file_name, process_function)
+            for file_name, func in self.process_info:
+                self.process_csv(file_name, func)
+        except TypeError: # process_info is the process_function
+            self.process_csv(self.data_name, self.process_info)
+
+    def emit(self, out_dir):
+        with open(out_dir+self.data_name+EXT, 'w') as out_file:
+            for display_name, row in self.row_data:
+                out_file.write(self.formatter(row, self.template, display_name))
+
+def csv_as_index(path, index=None, value_key=None, tabs=False):
+    with open(path, newline='') as csvfile:
+        if tabs:
+            reader = csv.DictReader(csvfile, dialect='excel-tab')
+        else:
+            reader = csv.DictReader(csvfile)
+        first_row = next(reader)
+        key_iter = iter(first_row.keys())
+        csvfile.seek(0)
+        if not index:
+            index = next(key_iter) # get first key as index
+        if len(first_row) == 2:
+            # load 2 column files as dict[string] = string
+            value_key = next(key_iter) # get second key
+        if value_key:
+            return {row[index]: row[value_key] for row in reader if row[index] != '0'}
+        else:
+            # load >2 column files as a dict[string] = OrderedDict
+            return {row[index]: row for row in reader if row[index] != '0'}
+
+def get_label(key):
+    return TEXT_LABELS[key].replace('\\n', ' ') if key in TEXT_LABELS else DEFAULT_TEXT_LABEL
+
+# All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
+# Make sure the keys are added to the OrderedDict in the desired output order
+def process_AbilityLimitedGroup(row, existing_data):
+    new_row = OrderedDict()
+    for k, v in row.items():
+        new_row[k.strip('_')] = v
+    new_row['AbilityLimitedText'] = get_label(row['_AbilityLimitedText']).format(ability_limit0=row['_MaxLimitedValue'])
+    existing_data.append((None, new_row))
+
+def process_AbilityShiftGroup(row, existing_data, ability_shift_groups):
+    ability_shift_groups[row[ROW_INDEX]] = row
+
+def process_AbilityData(row, existing_data, ability_shift_groups):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['PartyPowerWeight'] = row['_PartyPowerWeight']
+    new_row['GenericName'] = '' # EDIT_THIS
+
+    shift_value = 0
+    try:
+        shift_group = ability_shift_groups[row['_ShiftGroupId']]
+        for i in range(1, int(shift_group['_AmuletEffectMaxLevel']) + 1):
+            if shift_group['_Level{}'.format(i)] == row[ROW_INDEX]:
+                shift_value = i
+                break
+    except KeyError:
+        shift_value = int(row['_ShiftGroupId'])
+
+    # TODO: figure out what actually goes to {ability_val0}
+    ability_value = EDIT_THIS if row['_AbilityType1UpValue'] == '0' else row['_AbilityType1UpValue']
+    new_row['Name'] = get_label(row['_Name']).format(
+        ability_shift0  =   ROMAN_NUMERALS[shift_value], # heck
+        ability_val0    =   ability_value)
+
+    # _ElementalType seems unreliable, use (element) in _Name for now
+    detail_label = get_label(row['_Details'])
+    if '{element_owner}' in detail_label and ')' in new_row['Name']:
+        element = new_row['Name'][1:new_row['Name'].index(')')]
+    else:
+        element = ELEMENT_TYPE[int(row['_ElementalType'])]
+    new_row['Details'] = detail_label.format(
+        ability_cond0   =   row['_ConditionValue'],
+        ability_val0    =   ability_value,
+        element_owner   =   element)
+
+    new_row['AbilityIconName'] = row['_AbilityIconName']
+    new_row['AbilityGroup'] = row['_ViewAbilityGroupId1']
+    new_row['AbilityLimitedGroupId1'] = row['_AbilityLimitedGroupId1']
+    new_row['AbilityLimitedGroupId2'] = row['_AbilityLimitedGroupId2']
+    new_row['AbilityLimitedGroupId3'] = row['_AbilityLimitedGroupId3']
+    existing_data.append((new_row['Name'], new_row))
+
+def process_AmuletData(row, existing_data):
+    ABILITY_COUNT = 3
+    FLAVOR_COUNT = 5
+    new_row = OrderedDict()
+
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['BaseId'] = row['_BaseId']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['NameJP'] = '' # EDIT_THIS
+    new_row['FeaturedCharacters'] = '' # EDIT_THIS
+    new_row['Obtain'] = '' # EDIT_THIS
+    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['Availability'] = '' # EDIT_THIS
+    new_row['Rarity'] = row['_Rarity']
+    new_row['AmuletType'] = CLASS_TYPE[int(row['_AmuletType'])]
+    new_row['MinHp'] = row['_MinHp']
+    new_row['MaxHp'] = row['_MaxHp']
+    new_row['MinAtk'] = row['_MinAtk']
+    new_row['MaxAtk'] = row['_MaxAtk']
+    new_row['VariationId'] = row['_VariationId']
+    for i in range(1, ABILITY_COUNT+1):
+        for j in range(1, ABILITY_COUNT+1):
+            ab_k = 'Abilities{}{}'.format(i, j)
+            new_row[ab_k] = row['_' + ab_k]
+        new_row['Ability{}Event'.format(i)] = 0
+    new_row['ArtistCV'] = '' # EDIT_THIS
+    for i in range(1, FLAVOR_COUNT+1):
+        new_row['FlavorText{}'.format(i)] = get_label(row['_Text{}'.format(i)])
+    new_row['IsPlayable'] = row['_IsPlayable']
+    new_row['SellCoin'] = row['_SellCoin']
+    new_row['SellDewPoint'] = row['_SellDewPoint']
+
+    existing_data.append((new_row['Name'], new_row))
+
+def process_MaterialData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
@@ -516,6 +693,12 @@ def build_wikitext_row(template_name, row, delim='|'):
         row_str += '\n'
     row_str += '}}'
     return row_str
+
+def row_as_wikitable(row, template_name, delim='| '):
+    text = '|-\n' + delim
+    text += delim.join(row)
+    text += '\n'
+    return text
 
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
