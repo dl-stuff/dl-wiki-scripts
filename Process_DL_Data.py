@@ -393,6 +393,33 @@ def process_SkillData(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
+def process_MissionData(row, existing_data):
+    entity_type_dict = {
+        "2" : [get_label("USE_ITEM_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
+        "4" : ["Rupies", row['_EntityQuantity']],
+        "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
+        "10": ["Epithet: {}".format(get_label("EMBLEM_NAME_" + row['_EntityId'])),
+                    "Rank="],
+        "11": [get_label("STAMP_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
+        "14": ["Eldwater", row['_EntityQuantity']],
+        "16": ["Skip Ticket", row['_EntityQuantity']],
+        "17": [get_label("SUMMON_TICKET_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
+        "18": ["Mana", row['_EntityQuantity']],
+        "23": ["Wyrmite", row['_EntityQuantity']],
+    }
+
+    new_row = [get_label(row['_Text'])]
+    try:
+        new_row.extend(entity_type_dict[row['_EntityType']])
+    except KeyError:
+        return
+
+    existing_data.append((new_row[0], new_row))
+
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
 
@@ -649,6 +676,7 @@ def build_wikitext_row(template_name, row, delim='|'):
         row_str += '\n'
     row_str += '}}'
     return row_str
+
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
     if display_name:
@@ -663,6 +691,9 @@ def row_as_wikitext(row, template_name, display_name = None):
 
 def row_as_wikitable(row, template_name=None, display_name=None, delim=' || '):
     return '|-\n| {}\n'.format(delim.join([v for v in row.values()]))
+
+def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
+    return '{{' + template_name + '|' + delim.join(row) + '}}\n'
 
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
@@ -684,6 +715,9 @@ DATA_PARSER_PROCESSING = {
          ('FortPlantData', process_FortPlantData)]),
     'MaterialData': ('Material', row_as_wikitext, process_Material),
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
+    'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
+    'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
+    'MissionNormalData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'QuestData': ('QuestDisplay', row_as_wikitext,
         [('QuestData', process_QuestData),
             ('QuestRewardData', process_QuestRewardData),
