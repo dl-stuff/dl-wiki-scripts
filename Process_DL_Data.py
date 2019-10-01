@@ -49,8 +49,8 @@ class DataParser:
                     func(row, self.row_data)
                 except TypeError:
                     func(row, self.row_data, self.extra_data)
-                # except Exception as e:
-                    # print('Error processing {}: {}'.format(file_name, str(e)))
+                except Exception as e:
+                    print('Error processing {}: {}'.format(file_name, str(e)))
 
     def process(self):
         try: # process_info is an iteratable of (file_name, process_function)
