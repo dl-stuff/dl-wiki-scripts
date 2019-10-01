@@ -406,8 +406,7 @@ def process_SkillData(row, existing_data):
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
 
-    new_row['Id'] = row['_Id']
-    new_row['_Gid'] = row['_Gid']
+    new_row['Id'] = row[ROW_INDEX]
     process_QuestTypeData(new_row, row)
     new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
     new_row['SectionName'] = get_label(row['_SectionName'])
@@ -421,7 +420,7 @@ def process_QuestData(row, existing_data):
     if row['_DifficultyLimit'] == '0':
         new_row['SuggestedMight'] = row['_Difficulty']
     else:
-        new_row['MighRequirement'] = row['_DifficultyLimit']
+        new_row['MightRequirement'] = row['_DifficultyLimit']
 
     # process_QuestSkip
     if row['_SkipTicketCount'] == '1':
@@ -437,7 +436,9 @@ def process_QuestData(row, existing_data):
 
     row_failed_terms_type = row['_FailedTermsType']
     row_failed_terms_type = "0" if row_failed_terms_type == "6" else row_failed_terms_type
-    new_row['FailedTermsType'] = get_label('QUEST_FAILURE_CONDITION_{}'.format(row_failed_terms_type))
+    new_row['FailedTermsType'] = get_label('QUEST_FAILURE_CONDITON_{}'.format(row_failed_terms_type))
+    if row['_FailedTermsTimeElapsed'] != '0':
+        new_row['TimeLimit'] = row['_FailedTermsTimeElapsed']
 
     new_row['ContinueLimit'] = row['_ContinueLimit']
     new_row['ThumbnailImage'] = row['_ThumbnailImage']
@@ -651,40 +652,6 @@ DATA_FILE_PROCESSING = {
     'RaidEventItem': None,
 }
 
-DATA_PARSER_PROCESSING = {
-    'AbilityLimitedGroup': ('AbilityLimitedGroup', process_AbilityLimitedGroup),
-    'AbilityData': ('Ability',
-        [('AbilityShiftGroup', process_AbilityShiftGroup),
-         ('AbilityData', process_AbilityData)]),
-    'AmuletData': ('Wyrmprint', process_AmuletData),
-    'CharaData': ('Adventurer',
-        [('CharaData', process_CharaData),
-         ('SkillData', process_SkillDataNames)]),
-    'DragonData': ('Dragon', process_Dragon),
-    'EmblemData': ('Emblem', process_Emblem),
-    # 'MissionDailyData': (
-    'MaterialData': ('Material', process_Material),
-    'BuildEventItem': ('Material', process_Material),
-    'CollectEventItem': ('Material', process_Material),
-    'RaidEventItem': ('Material', process_Material),
-    'ExAbilityData': ('CoAbility', process_ExAbilityData),
-
-    'FortPlantData': ('Facility',
-        [('FortPlantDetail', process_FortPlantDetail),
-         ('FortPlantData', process_FortPlantData)]),
-
-    'QuestData': ('QuestDisplay',
-        [('QuestData', process_QuestData),
-            ('QuestRewardData', process_QuestRewardData),
-            ('QuestEvent', process_QuestBonusData),
-            ]),
-
-    'WeaponData': ('Weapon',
-        [('WeaponData', process_WeaponData),
-            ('WeaponCraftTree', process_WeaponCraftTree),
-            ('WeaponCraftData', process_WeaponCraftData)]),
-}
-
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     row_str += delim.join(['{}={}'.format(k, row[k]) for k in row])
@@ -727,6 +694,10 @@ DATA_PARSER_PROCESSING = {
          ('FortPlantData', process_FortPlantData)]),
     'MaterialData': ('Material', row_as_wikitext, process_Material),
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
+    'QuestData': ('QuestDisplay', row_as_wikitext,
+        [('QuestData', process_QuestData),
+            ('QuestRewardData', process_QuestRewardData),
+        ]),
     'WeaponData': ('Weapon', row_as_wikitext,
         [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
