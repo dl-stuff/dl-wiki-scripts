@@ -290,7 +290,7 @@ def process_Dragon(row, existing_data):
     new_row['SkillName'] = row['_Skill1']
     for i in (1, 2):
         for j in (1, 2):
-            ab_k = 'Abilities{}{}'.format(i, i)
+            ab_k = 'Abilities{}{}'.format(i, j)
             new_row[ab_k] = row['_' + ab_k]
     new_row['ProfileText'] = get_label(row['_Profile'])
     new_row['FavoriteType'] = row['_FavoriteType']
@@ -341,8 +341,7 @@ def process_FortPlantDetail(row, existing_data, fort_plant_detail):
         fort_plant_detail[row['_AssetGroup']] = [row]
 
 def process_FortPlantData(row, existing_data, fort_plant_detail):
-    # new_row = OrderedDict()
-    new_row = row.copy()
+    new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
