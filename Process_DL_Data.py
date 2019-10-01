@@ -60,8 +60,12 @@ class DataParser:
 
     def emit(self, out_dir):
         with open(out_dir+self.data_name+EXT, 'w') as out_file:
-            for display_name, row in self.row_data:
-                out_file.write(row_as_wikitext(row, self.template, display_name))
+            if isinstance(self.row_data[0], list):
+                for row in self.row_data:
+                    out_file.write(row_as_wikitable(row, self.template))
+            elif isinstance(self.row_data[0], tuple):
+                for display_name, row in self.row_data:
+                    out_file.write(row_as_wikitext(row, self.template, display_name))
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, newline='') as csvfile:
@@ -336,6 +340,16 @@ def process_Dragon(row, existing_data):
     new_row['AttackModifiers'] = '{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|?}}'
     existing_data.append((new_row['Name'], new_row))
 
+def process_Emblem(row, existing_data):
+    new_row = []
+
+    new_row.append('{} |'.format(get_label(row['_Title'])))
+    new_row.append('data-sort-value ="{}" '.format(row['_Rarity']))
+    new_row.append('[[File:Icon_Profile_0{}_Frame.png|28px|center]] |'.format(row['_Rarity']))
+    new_row.append(get_label(row['_Gettext']))
+
+    existing_data.append(new_row)
+
 def process_ExAbilityData(row, existing_data):
     new_row = OrderedDict()
 
@@ -595,7 +609,6 @@ def process_QuestRewardData(row, existing_data):
 def process_QuestBonusData(row, existing_data):
 
     found = False
-    # pdb.set_trace()
     for index,existing_row in enumerate(existing_data):
         if existing_row[1]['_Gid'] == row['_Id']:
             found = True
@@ -711,14 +724,16 @@ DATA_PARSER_PROCESSING = {
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', process_AmuletData),
-    'MaterialData': ('Material', process_MaterialData),
-    'BuildEventItem': ('Material', process_BuildMaterialData),
-    'CollectEventItem': ('Material', process_BuildMaterialData),
-    'RaidEventItem': ('Material', process_RaidMaterialData),
     'CharaData': ('Adventurer',
         [('CharaData', process_CharaData),
          ('SkillData', process_SkillDataNames)]),
     'DragonData': ('Dragon', process_Dragon),
+    'EmblemData': ('Emblem', process_Emblem),
+    # 'MissionDailyData': (
+    'MaterialData': ('Material', process_MaterialData),
+    'BuildEventItem': ('Material', process_BuildMaterialData),
+    'CollectEventItem': ('Material', process_BuildMaterialData),
+    'RaidEventItem': ('Material', process_RaidMaterialData),
     'ExAbilityData': ('CoAbility', process_ExAbilityData),
 
     'FortPlantData': ('Facility',
@@ -744,6 +759,12 @@ def build_wikitext_row(template_name, row, delim='|'):
         row_str += '\n'
     row_str += '}}'
     return row_str
+
+def row_as_wikitable(row, template_name, delim='| '):
+    text = '|-\n' + delim
+    text += delim.join(row)
+    text += '\n'
+    return text
 
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
