@@ -307,16 +307,6 @@ def process_Dragon(row, existing_data):
     new_row['AttackModifiers'] = '{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|?}}'
     existing_data.append((new_row['Name'], new_row))
 
-def process_Emblem(row, existing_data):
-    new_row = []
-
-    new_row.append('{} |'.format(get_label(row['_Title'])))
-    new_row.append('data-sort-value ="{}" '.format(row['_Rarity']))
-    new_row.append('[[File:Icon_Profile_0{}_Frame.png|28px|center]] |'.format(row['_Rarity']))
-    new_row.append(get_label(row['_Gettext']))
-
-    existing_data.append(new_row)
-
 def process_ExAbilityData(row, existing_data):
     new_row = OrderedDict()
 
