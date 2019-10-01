@@ -173,7 +173,29 @@ def process_AmuletData(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
-def process_Material(row, existing_data):
+def process_MaterialData(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Detail'])
+    new_row['Rarity'] = row['_MaterialRarity']
+    new_row['QuestEventId'] = row['_QuestEventId']
+    new_row['Category'] = row['_Category']
+    new_row['SortId'] = row['_SortId']
+    new_row['Obtain'] = '\n*' + get_label(row['_Description'])
+    new_row['Usage'] = '' # EDIT_THIS
+    new_row['MoveQuest1'] = row['_MoveQuest1']
+    new_row['MoveQuest2'] = row['_MoveQuest2']
+    new_row['MoveQuest3'] = row['_MoveQuest3']
+    new_row['MoveQuest4'] = row['_MoveQuest4']
+    new_row['MoveQuest5'] = row['_MoveQuest5']
+    new_row['PouchRarity'] = row['_PouchRarity']
+    new_row['Exp'] = row['_Exp']
+
+    existing_data.append((new_row['Name'], new_row))
+
+def process_BuildMaterialData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
@@ -190,6 +212,26 @@ def process_Material(row, existing_data):
     new_row['MoveQuest4'] = row['_MoveQuest4']
     new_row['MoveQuest5'] = row['_MoveQuest5']
     new_row['PouchRarity'] = row['_PouchRarity']
+
+    existing_data.append((new_row['Name'], new_row))
+
+def process_RaidMaterialData(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Detail'])
+    new_row['Rarity'] = ''
+    new_row['QuestEventId'] = row['_RaidEventId'];
+    new_row['SortId'] = row['_Id'];
+    new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
+    new_row['Usage'] = ''
+    new_row['MoveQuest1'] = row['_MoveQuest1'];
+    new_row['MoveQuest2'] = row['_MoveQuest2'];
+    new_row['MoveQuest3'] = row['_MoveQuest3'];
+    new_row['MoveQuest4'] = row['_MoveQuest4'];
+    new_row['MoveQuest5'] = row['_MoveQuest5'];
+    new_row['PouchRarity'] = row['_PouchRarity'];
 
     existing_data.append((new_row['Name'], new_row))
 
@@ -369,14 +411,14 @@ def process_SkillData(row):
 
     return new_row, 'Skill', new_row['Name']
 
-def process_RaidMaterialData(row, existing_data):
+def process_BuildMaterialData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row['_Id']
     new_row['Name'] = get_label(row['_Name'])
     new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] = ''
-    new_row['QuestEventId'] = row['_RaidEventId'];
+    new_row['Rarity'] =  ''
+    new_row['QuestEventId'] = row['_EventId'];
     new_row['SortId'] = row['_Id'];
     new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
     new_row['Usage'] = ''
@@ -388,6 +430,28 @@ def process_RaidMaterialData(row, existing_data):
     new_row['PouchRarity'] = row['_PouchRarity'];
 
     existing_data.append((new_row['Name'], new_row))
+
+def process_CollectMaterialData(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Detail'])
+    new_row['Rarity'] = ''
+    new_row['QuestEventId'] = row['_EventId'];
+    new_row['SortId'] = row['_Id'];
+    new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
+    new_row['Usage'] = ''
+    new_row['MoveQuest1'] = row['_MoveQuest1'];
+    new_row['MoveQuest2'] = row['_MoveQuest2'];
+    new_row['MoveQuest3'] = row['_MoveQuest3'];
+    new_row['MoveQuest4'] = row['_MoveQuest4'];
+    new_row['MoveQuest5'] = row['_MoveQuest5'];
+    new_row['PouchRarity'] = row['_PouchRarity'];
+
+    existing_data.append((new_row['Name'], new_row))
+
+
 
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
@@ -647,21 +711,19 @@ DATA_PARSER_PROCESSING = {
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', process_AmuletData),
-    'BuildEventItem': ('Material', process_Material),
+    'MaterialData': ('Material', process_MaterialData),
+    'BuildEventItem': ('Material', process_BuildMaterialData),
+    'CollectEventItem': ('Material', process_BuildMaterialData),
+    'RaidEventItem': ('Material', process_RaidMaterialData),
     'CharaData': ('Adventurer',
         [('CharaData', process_CharaData),
          ('SkillData', process_SkillDataNames)]),
-    'CollectEventItem': ('Material', process_Material),
     'DragonData': ('Dragon', process_Dragon),
     'ExAbilityData': ('CoAbility', process_ExAbilityData),
 
     'FortPlantData': ('Facility',
         [('FortPlantDetail', process_FortPlantDetail),
          ('FortPlantData', process_FortPlantData)]),
-
-    'RaidEventItem': ('Material',
-        [('RaidEventItem', process_RaidMaterialData),
-        ]),
 
     'QuestData': ('QuestDisplay',
         [('QuestData', process_QuestData),
