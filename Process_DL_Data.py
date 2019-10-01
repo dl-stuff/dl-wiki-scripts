@@ -31,9 +31,10 @@ MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
 
 class DataParser:
-    def __init__(self, _data_name, _template, _process_info):
+    def __init__(self, _data_name, _template, _formatter, _process_info):
         self.data_name = _data_name
         self.template = _template
+        self.formatter = _formatter
         self.process_info = _process_info
         self.row_data = []
         self.extra_data = {}
@@ -60,12 +61,8 @@ class DataParser:
 
     def emit(self, out_dir):
         with open(out_dir+self.data_name+EXT, 'w') as out_file:
-            if isinstance(self.row_data[0], list):
-                for row in self.row_data:
-                    out_file.write(row_as_wikitable(row, self.template))
-            elif isinstance(self.row_data[0], tuple):
-                for display_name, row in self.row_data:
-                    out_file.write(row_as_wikitext(row, self.template, display_name))
+            for display_name, row in self.row_data:
+                out_file.write(self.formatter(row, self.template, display_name))
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, newline='') as csvfile:
@@ -183,30 +180,14 @@ def process_MaterialData(row, existing_data):
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
     new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] = row['_MaterialRarity']
-    new_row['QuestEventId'] = row['_QuestEventId']
-    new_row['Category'] = row['_Category']
-    new_row['SortId'] = row['_SortId']
-    new_row['Obtain'] = '\n*' + get_label(row['_Description'])
-    new_row['Usage'] = '' # EDIT_THIS
-    new_row['MoveQuest1'] = row['_MoveQuest1']
-    new_row['MoveQuest2'] = row['_MoveQuest2']
-    new_row['MoveQuest3'] = row['_MoveQuest3']
-    new_row['MoveQuest4'] = row['_MoveQuest4']
-    new_row['MoveQuest5'] = row['_MoveQuest5']
-    new_row['PouchRarity'] = row['_PouchRarity']
-    new_row['Exp'] = row['_Exp']
-
-    existing_data.append((new_row['Name'], new_row))
-
-def process_BuildMaterialData(row, existing_data):
-    new_row = OrderedDict()
-
-    new_row['Id'] = row[ROW_INDEX]
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['Description'] = get_label(row['_Detail'])
     new_row['Rarity'] = '' # EDIT_THIS
-    new_row['QuestEventId'] = row['_EventId']
+    if '_EventId' in row:
+        new_row['QuestEventId'] = row['_EventId']
+    elif '_RaidEventId' in row:
+        new_row['QuestEventId'] = row['_RaidEventId']
+    elif '_QuestEventId' in row:
+        new_row['QuestEventId'] = row['_QuestEventId']
+        new_row['Category'] = row['_Category']
     new_row['SortId'] = row[ROW_INDEX]
     new_row['Obtain'] = '\n*' + get_label(row['_Description'])
     new_row['Usage'] = '' # EDIT_THIS
@@ -217,25 +198,11 @@ def process_BuildMaterialData(row, existing_data):
     new_row['MoveQuest5'] = row['_MoveQuest5']
     new_row['PouchRarity'] = row['_PouchRarity']
 
-    existing_data.append((new_row['Name'], new_row))
-
-def process_RaidMaterialData(row, existing_data):
-    new_row = OrderedDict()
-
-    new_row['Id'] = row['_Id']
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] = ''
-    new_row['QuestEventId'] = row['_RaidEventId'];
-    new_row['SortId'] = row['_Id'];
-    new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
-    new_row['Usage'] = ''
-    new_row['MoveQuest1'] = row['_MoveQuest1'];
-    new_row['MoveQuest2'] = row['_MoveQuest2'];
-    new_row['MoveQuest3'] = row['_MoveQuest3'];
-    new_row['MoveQuest4'] = row['_MoveQuest4'];
-    new_row['MoveQuest5'] = row['_MoveQuest5'];
-    new_row['PouchRarity'] = row['_PouchRarity'];
+    try:
+        new_row['Exp'] = row['_Exp']
+        # new_row['Plus'] = row['_Plus'] # augments
+    except KeyError:
+        pass
 
     existing_data.append((new_row['Name'], new_row))
 
@@ -366,15 +333,26 @@ def process_ExAbilityData(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
+def process_EmblemData(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Title'] = get_label(row['_Title'])
+    # new_row['Ruby'] = get_label(row['_Ruby']) need this if we ever parse jp monos
+    new_row['Sort'] = 'data-sort-value ="{}"'.format(row['_Rarity'])
+    new_row['Icon'] = '[[File:Icon_Profile_0{}_Frame.png|28px|center]]'.format(row['_Rarity'])
+    new_row['Text'] = get_label(row['_Gettext'])
+
+    existing_data.append((new_row['Title'], new_row))
+
 def process_FortPlantDetail(row, existing_data, fort_plant_detail):
-    # _Id,_AssetGroup,_Level,_NextAssetGroup,_PrefabName,_ImageUiName,_LevelType,_NeedLevel,_Time,_Cost,_RmCost,_MaterialsId1,_MaterialsNum1,_MaterialsId2,_MaterialsNum2,_MaterialsId3,_MaterialsNum3,_MaterialsId4,_MaterialsNum4,_MaterialsId5,_MaterialsNum5,_EffectId,_EffArgs1,_EffArgs2,_EffArgs3,_CostMaxTime,_CostMax,_MaterialMaxTime,_MaterialMax,_Odds,_StaminaMaxTime,_StaminaMax,_EventEffectType,_EventEffectArgs
     try:
         fort_plant_detail[row['_AssetGroup']].append(row)
     except KeyError:
         fort_plant_detail[row['_AssetGroup']] = [row]
 
 def process_FortPlantData(row, existing_data, fort_plant_detail):
-    new_row = OrderedDict()
+    # new_row = OrderedDict()
+    new_row = row.copy()
 
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
@@ -424,48 +402,6 @@ def process_SkillData(row):
     new_row['ZoomWaitTime']= row['_ZoomWaitTime']
 
     return new_row, 'Skill', new_row['Name']
-
-def process_BuildMaterialData(row, existing_data):
-    new_row = OrderedDict()
-
-    new_row['Id'] = row['_Id']
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] =  ''
-    new_row['QuestEventId'] = row['_EventId'];
-    new_row['SortId'] = row['_Id'];
-    new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
-    new_row['Usage'] = ''
-    new_row['MoveQuest1'] = row['_MoveQuest1'];
-    new_row['MoveQuest2'] = row['_MoveQuest2'];
-    new_row['MoveQuest3'] = row['_MoveQuest3'];
-    new_row['MoveQuest4'] = row['_MoveQuest4'];
-    new_row['MoveQuest5'] = row['_MoveQuest5'];
-    new_row['PouchRarity'] = row['_PouchRarity'];
-
-    existing_data.append((new_row['Name'], new_row))
-
-def process_CollectMaterialData(row, existing_data):
-    new_row = OrderedDict()
-
-    new_row['Id'] = row['_Id']
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] = ''
-    new_row['QuestEventId'] = row['_EventId'];
-    new_row['SortId'] = row['_Id'];
-    new_row['Obtain'] = '\n*{}'.format(get_label(row['_Description']))
-    new_row['Usage'] = ''
-    new_row['MoveQuest1'] = row['_MoveQuest1'];
-    new_row['MoveQuest2'] = row['_MoveQuest2'];
-    new_row['MoveQuest3'] = row['_MoveQuest3'];
-    new_row['MoveQuest4'] = row['_MoveQuest4'];
-    new_row['MoveQuest5'] = row['_MoveQuest5'];
-    new_row['PouchRarity'] = row['_PouchRarity'];
-
-    existing_data.append((new_row['Name'], new_row))
-
-
 
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
@@ -702,10 +638,8 @@ def process_WeaponCraftTree(row, existing_data):
 
 DATA_FILE_PROCESSING = {
     'MissionDailyData': None,
-    'EmblemData': None, # is table instead of cargo it seems
     'EnemyData': None,
-    'EventData': None,
-    'MaterialData': None,
+    'EventData': None, # part of quest data
     'MissionNormalData': None,
     'MissionPeriodData': None,
     'QuestClearType': None,
@@ -730,10 +664,10 @@ DATA_PARSER_PROCESSING = {
     'DragonData': ('Dragon', process_Dragon),
     'EmblemData': ('Emblem', process_Emblem),
     # 'MissionDailyData': (
-    'MaterialData': ('Material', process_MaterialData),
-    'BuildEventItem': ('Material', process_BuildMaterialData),
-    'CollectEventItem': ('Material', process_BuildMaterialData),
-    'RaidEventItem': ('Material', process_RaidMaterialData),
+    'MaterialData': ('Material', process_Material),
+    'BuildEventItem': ('Material', process_Material),
+    'CollectEventItem': ('Material', process_Material),
+    'RaidEventItem': ('Material', process_Material),
     'ExAbilityData': ('CoAbility', process_ExAbilityData),
 
     'FortPlantData': ('Facility',
@@ -777,6 +711,34 @@ def row_as_wikitext(row, template_name, display_name = None):
         text += build_wikitext_row(template_name, row)
         text += '\n'
     return text
+
+def row_as_wikitable(row, template_name=None, display_name=None, delim=' || '):
+    return '|-\n| {}\n'.format(delim.join([v for v in row.values()]))
+
+DATA_PARSER_PROCESSING = {
+    'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
+    'AbilityData': ('Ability', row_as_wikitext,
+        [('AbilityShiftGroup', process_AbilityShiftGroup),
+         ('AbilityData', process_AbilityData)]),
+    'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
+    'BuildEventItem': ('Material', row_as_wikitext, process_Material),
+    'CharaData': ('Adventurer', row_as_wikitext, 
+        [('CharaData', process_CharaData),
+         ('SkillData', process_SkillDataNames)]),
+    'CollectEventItem': ('Material', row_as_wikitext, process_Material),
+    'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
+    'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
+    'EmblemData': ('Epithet', row_as_wikitable, process_EmblemData),
+    'FortPlantData': ('Facility', row_as_wikitext,
+        [('FortPlantDetail', process_FortPlantDetail),
+         ('FortPlantData', process_FortPlantData)]),
+    'MaterialData': ('Material', row_as_wikitext, process_Material),
+    'RaidEventItem': ('Material', row_as_wikitext, process_Material),
+    'WeaponData': ('Weapon', row_as_wikitext, 
+        [('WeaponData', process_WeaponData), 
+            ('WeaponCraftTree', process_WeaponCraftTree),
+            ('WeaponCraftData', process_WeaponCraftData)])
+}
 
 def csv_as_wikitext(in_dir, out_dir, data_name):
     with open(in_dir+data_name+EXT, 'r') as in_file, open(out_dir+data_name+EXT, 'w') as out_file:
@@ -846,8 +808,9 @@ if __name__ == '__main__':
             print('Saved {}{}'.format(data_name, EXT))
             csv_as_wikitext(in_dir, out_dir, data_name)
 
-    for data_name,process_info in DATA_PARSER_PROCESSING.items():
-        parser = DataParser(data_name, process_info[0], process_info[1])
+    for data_name, process_params in DATA_PARSER_PROCESSING.items():
+        template, formatter, process_info = process_params
+        parser = DataParser(data_name, template, formatter, process_info)
         parser.process()
         parser.emit(out_dir)
         print('Saved {}{}'.format(data_name, EXT))
