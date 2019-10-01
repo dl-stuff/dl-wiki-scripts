@@ -174,7 +174,7 @@ def process_AmuletData(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
-def process_MaterialData(row, existing_data):
+def process_Material(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
@@ -693,13 +693,6 @@ def build_wikitext_row(template_name, row, delim='|'):
         row_str += '\n'
     row_str += '}}'
     return row_str
-
-def row_as_wikitable(row, template_name, delim='| '):
-    text = '|-\n' + delim
-    text += delim.join(row)
-    text += '\n'
-    return text
-
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
     if display_name:
