@@ -265,11 +265,11 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
                 for h in Not_Merged[d][i][c]:
                     category, name_format = match_category(i)
                     if name_format is not None:
-                        img_name = name_format.format(h)
+                        img_name = name_format.format(h) + EXT
                     else:
                         category = ''
                         img_name = merge_image_name(i, c, h)
-                    copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name + '.png')
+                    copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name)
         delete_empty_subdirectories(out_sub_dir)
 
 if __name__ == '__main__':
