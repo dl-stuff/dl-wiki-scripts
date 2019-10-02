@@ -212,7 +212,10 @@ def process_Material(row, existing_data):
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
     new_row['Description'] = get_label(row['_Detail'])
-    new_row['Rarity'] = '' # EDIT_THIS
+    try:
+        new_row['Rarity'] = row['_MaterialRarity']
+    except KeyError:
+        new_row['Rarity'] = '' # EDIT_THIS
     if '_EventId' in row:
         new_row['QuestEventId'] = row['_EventId']
         new_row['SortId'] = row[ROW_INDEX]
@@ -222,8 +225,6 @@ def process_Material(row, existing_data):
     elif '_QuestEventId' in row:
         new_row['QuestEventId'] = row['_QuestEventId']
         new_row['Category'] = row['_Category']
-        new_row['SortId'] = row[ROW_INDEX]
-    else:
         new_row['SortId'] = row['_SortId']
     new_row['Obtain'] = '\n*' + get_label(row['_Description'])
     new_row['Usage'] = '' # EDIT_THIS
@@ -344,7 +345,7 @@ def process_Dragon(row, existing_data):
     new_row['IsTurnToDamageDir'] = row['_IsTurnToDamageDir']
     new_row['MoveType'] = row['_MoveType']
     new_row['IsLongRange'] = row['_IsLongLange']
-    new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
+    new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
     existing_data.append((new_row['Name'], new_row))
 
 def process_ExAbilityData(row, existing_data):
