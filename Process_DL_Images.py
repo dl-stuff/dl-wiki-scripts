@@ -274,7 +274,7 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
-    parser.add_argument('-i', type=str, help='directory of input images', required=True)
+    parser.add_argument('-i', type=str, help='directory of input images', required=True, default=os.getcwd())
     parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
     parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')

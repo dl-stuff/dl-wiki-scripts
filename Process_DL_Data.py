@@ -4,6 +4,7 @@ import string
 from shutil import copyfile, rmtree
 from collections import OrderedDict
 import argparse
+import re
 
 import pdb
 
@@ -13,10 +14,13 @@ ENTRY_LINE_BREAK = '\n=============================\n'
 EDIT_THIS = '<EDIT_THIS>'
 
 ROW_INDEX = '_Id'
-EMBLEM_P = 'EMBLEM_NAME_'
+EMBLEM_N = 'EMBLEM_NAME_'
+EMBLEM_P = 'EMBLEM_PHONETIC_'
 
 TEXT_LABEL = 'TextLabel'
 TEXT_LABELS = None
+TEXT_LABEL_JP = 'TextLabelJP'
+TEXT_LABELS_JP = None
 ABILITY_SHIFT_GROUP = 'AbilityShiftGroup'
 ABILITY_SHIFT_GROUPS = None
 SKILL_DATA_NAME = 'SkillData'
@@ -40,7 +44,7 @@ class DataParser:
         self.extra_data = {}
 
     def process_csv(self, file_name, func):
-        with open(in_dir+file_name+EXT, 'r') as in_file:
+        with open(in_dir+file_name+EXT, 'r', encoding='utf-8') as in_file:
             reader = csv.DictReader(in_file)
             for row in reader:
                 if row[ROW_INDEX] == '0':
@@ -49,8 +53,8 @@ class DataParser:
                     func(row, self.row_data)
                 except TypeError:
                     func(row, self.row_data, self.extra_data)
-                except Exception as e:
-                    print('Error processing {}: {}'.format(file_name, str(e)))
+                # except Exception as e:
+                #     print('Error processing {}: {}'.format(file_name, str(e)))
 
     def process(self):
         try: # process_info is an iteratable of (file_name, process_function)
@@ -60,12 +64,12 @@ class DataParser:
             self.process_csv(self.data_name, self.process_info)
 
     def emit(self, out_dir):
-        with open(out_dir+self.data_name+EXT, 'w') as out_file:
+        with open(out_dir+self.data_name+EXT, 'w', encoding='utf-8') as out_file:
             for display_name, row in self.row_data:
                 out_file.write(self.formatter(row, self.template, display_name))
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
-    with open(path, newline='') as csvfile:
+    with open(path, 'r', newline='', encoding='utf-8') as csvfile:
         if tabs:
             reader = csv.DictReader(csvfile, dialect='excel-tab')
         else:
@@ -84,8 +88,12 @@ def csv_as_index(path, index=None, value_key=None, tabs=False):
             # load >2 column files as a dict[string] = OrderedDict
             return {row[index]: row for row in reader if row[index] != '0'}
 
-def get_label(key):
-    return TEXT_LABELS[key].replace('\\n', ' ') if key in TEXT_LABELS else DEFAULT_TEXT_LABEL
+def get_label(key, lang='en'):
+    txt_label = TEXT_LABELS_JP if lang == 'jp' else TEXT_LABELS
+    return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
+
+def get_jp_epithet(emblem_id):
+    return '{{' + 'Ruby|{}|{}'.format(get_label(EMBLEM_N + emblem_id, lang='jp'), get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
 
 # All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
 # Make sure the keys are added to the OrderedDict in the desired output order
@@ -148,7 +156,7 @@ def process_AmuletData(row, existing_data):
     new_row['Id'] = row[ROW_INDEX]
     new_row['BaseId'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
-    new_row['NameJP'] = '' # EDIT_THIS
+    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
     new_row['FeaturedCharacters'] = '' # EDIT_THIS
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
@@ -213,9 +221,9 @@ def process_CharaData(row, existing_data):
     new_row['Id'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
     new_row['FullName'] = get_label(row['_SecondName'])
-    new_row['NameJP'] = '' # EDIT_THIS
-    new_row['Title'] = get_label(EMBLEM_P + row['_EmblemId'])
-    new_row['TitleJP'] = '' # EDIT_THIS
+    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+    new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
+    new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
@@ -239,8 +247,12 @@ def process_CharaData(row, existing_data):
         new_row[mfb_k] = row['_' + mfb_k]
     new_row['MinDef'] = row['_MinDef']
     new_row['DefCoef'] = row['_DefCoef']
-    new_row['Skill1Name'] = row['_Skill1'] # will be updated later
-    new_row['Skill2Name'] = row['_Skill2'] # will be updated later
+    try:
+        new_row['Skill1Name'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+        new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
+    except KeyError:
+        pass
+
     for i in range(1, 4):
         for j in range(1, 5):
             ab_k = 'Abilities{}{}'.format(i, j)
@@ -272,9 +284,9 @@ def process_Dragon(row, existing_data):
     new_row['BaseId'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
     new_row['FullName'] = get_label(row['_SecondName'])
-    new_row['NameJP'] = '' # EDIT_THIS
-    new_row['Title'] = get_label(EMBLEM_P + row['_EmblemId'])
-    new_row['TitleJP'] = '' # EDIT_THIS
+    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+    new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
+    new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
@@ -287,7 +299,7 @@ def process_Dragon(row, existing_data):
     new_row['MaxHp'] = row['_MaxHp']
     new_row['MinAtk'] = row['_MinAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
-    new_row['SkillName'] = row['_Skill1']
+    new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
     for i in (1, 2):
         for j in (1, 2):
             ab_k = 'Abilities{}{}'.format(i, j)
@@ -323,14 +335,17 @@ def process_ExAbilityData(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
+event_emblem_pattern = re.compile(r'^A reward from the ([A-Z].*?) event.$')
 def process_EmblemData(row, existing_data):
     new_row = OrderedDict()
 
     new_row['Title'] = get_label(row['_Title'])
-    # new_row['Ruby'] = get_label(row['_Ruby']) need this if we ever parse jp monos
-    new_row['Sort'] = 'data-sort-value ="{}"'.format(row['_Rarity'])
-    new_row['Icon'] = '[[File:Icon_Profile_0{}_Frame.png|28px|center]]'.format(row['_Rarity'])
+    new_row['TitleJP'] = get_jp_epithet(row['_Id'])
+    new_row['Icon'] = 'data-sort-value ="{0}" | [[File:Icon_Profile_0{0}_Frame.png|28px|center]]'.format(row['_Rarity'])
     new_row['Text'] = get_label(row['_Gettext'])
+    res = event_emblem_pattern.match(new_row['Text'])
+    if res:
+        new_row['Text'] = 'A reward from the [[{}]] event.'.format(res.group(1))
 
     existing_data.append((new_row['Title'], new_row))
 
@@ -399,7 +414,7 @@ def process_MissionData(row, existing_data):
         "4" : ["Rupies", row['_EntityQuantity']],
         "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
-        "10": ["Epithet: {}".format(get_label("EMBLEM_NAME_" + row['_EntityId'])),
+        "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])),
                     "Rank="],
         "11": [get_label("STAMP_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
@@ -586,7 +601,7 @@ def process_WeaponData(row, existing_data):
     new_row['BaseId'] = row['_BaseId']
     new_row['FormId'] = row['_FormId']
     new_row['WeaponName'] = get_label(row['_Name'])
-    new_row['WeaponNameJP'] = '' # EDIT_THIS
+    new_row['WeaponNameJP'] = get_label(row['_Name'], lang='jp')
     new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
     new_row['Rarity'] = row['_Rarity']
     # Case when weapon has no elemental type
@@ -653,21 +668,6 @@ def process_WeaponCraftTree(row, existing_data):
     curr_row['CraftGroupId'] = row['_CraftGroupId']
     existing_data[index] = (existing_row[0], curr_row)
 
-DATA_FILE_PROCESSING = {
-    'MissionDailyData': None,
-    'EnemyData': None,
-    'EventData': None, # part of quest data
-    'MissionNormalData': None,
-    'MissionPeriodData': None,
-    'QuestClearType': None,
-    'QuestData': None,
-    'QuestEvent': None,
-    'QuestEventGroup': None,
-    'QuestFailedType': None,
-    # 'QuestRewardData': process_QuestRewardData,
-    'RaidEventItem': None,
-}
-
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     row_str += delim.join(['{}={}'.format(k, row[k]) for k in row])
@@ -701,9 +701,7 @@ DATA_PARSER_PROCESSING = {
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
-    'CharaData': ('Adventurer', row_as_wikitext,
-        [('CharaData', process_CharaData),
-         ('SkillData', process_SkillDataNames)]),
+    'CharaData': ('Adventurer', row_as_wikitext, process_CharaData),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
@@ -727,29 +725,10 @@ DATA_PARSER_PROCESSING = {
             ('WeaponCraftData', process_WeaponCraftData)])
 }
 
-def csv_as_wikitext(in_dir, out_dir, data_name):
-    with open(in_dir+data_name+EXT, 'r') as in_file, open(out_dir+data_name+EXT, 'w') as out_file:
-        reader = csv.DictReader(in_file)
-        for row in reader:
-            if row[ROW_INDEX] == '0':
-                continue
-            template_name, display_name = None, None
-            if DATA_FILE_PROCESSING[data_name] is not None:
-                row, template_name, display_name = DATA_FILE_PROCESSING[data_name](row)
-            template_name = data_name if template_name is None else template_name
-            if display_name is not None:
-                out_file.write(display_name)
-                out_file.write(ENTRY_LINE_BREAK)
-                out_file.write(build_wikitext_row(template_name, row, delim='\n|'))
-                out_file.write(ENTRY_LINE_BREAK)
-            else:
-                out_file.write(build_wikitext_row(template_name, row))
-                out_file.write('\n')
-
 def find_fmt_params(in_dir, out_dir):
     with open('fmt_params.csv', 'w') as out_file:
         out_file.write('file,column,fmt_param,context\n')
-        for data_name in DATA_FILE_PROCESSING:
+        for data_name in DATA_PARSER_PROCESSING:
             seen = {}
             with open(in_dir+data_name+EXT, 'r') as in_file:
                 reader = csv.DictReader(in_file)
@@ -766,8 +745,8 @@ def find_fmt_params(in_dir, out_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
-    parser.add_argument('-i', type=str, help='directory of input text files', required=True)
-    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output)', default='./output')
+    parser.add_argument('-i', type=str, help='directory of input text files', required=True, default=os.getcwd())
+    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./data-output)', default='./data-output')
     # parser.add_argument('-data', type=list)
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
 
@@ -786,14 +765,13 @@ if __name__ == '__main__':
     out_dir = args.o if args.o[-1] == '/' else args.o+'/'
 
     TEXT_LABELS = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
-    ABILITY_SHIFT_GROUPS = csv_as_index(in_dir+ABILITY_SHIFT_GROUP+EXT)
+    try:
+        TEXT_LABELS_JP = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
+    except:
+        pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
 
     # find_fmt_params(in_dir, out_dir)
-    for data_name in DATA_FILE_PROCESSING:
-        if DATA_FILE_PROCESSING[data_name] is not None:
-            print('Saved {}{}'.format(data_name, EXT))
-            csv_as_wikitext(in_dir, out_dir, data_name)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
         template, formatter, process_info = process_params
