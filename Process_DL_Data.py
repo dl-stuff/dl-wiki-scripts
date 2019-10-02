@@ -45,7 +45,7 @@ class DataParser:
         self.extra_data = {}
 
     def process_csv(self, file_name, func):
-        with open(in_dir+file_name+EXT, 'r', encoding='utf-8') as in_file:
+        with open(in_dir+file_name+EXT, 'r', newline='', encoding='utf-8') as in_file:
             reader = csv.DictReader(in_file)
             for row in reader:
                 if row[ROW_INDEX] == '0':
@@ -65,7 +65,7 @@ class DataParser:
             self.process_csv(self.data_name, self.process_info)
 
     def emit(self, out_dir):
-        with open(out_dir+self.data_name+EXT, 'w', encoding='utf-8') as out_file:
+        with open(out_dir+self.data_name+EXT, 'w', newline='', encoding='utf-8') as out_file:
             for display_name, row in self.row_data:
                 out_file.write(self.formatter(row, self.template, display_name))
 
@@ -756,7 +756,7 @@ if __name__ == '__main__':
     try:
         TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
     except:
-        del TEXT_LABEL_DICT['jp']
+        pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
 
     # find_fmt_params(in_dir, out_dir)
