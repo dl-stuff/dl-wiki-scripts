@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import csv
-import os
-import string
-from shutil import copyfile, rmtree
-from collections import OrderedDict
 import argparse
+import csv
+import json
+import os
 import re
+import string
+
+from collections import OrderedDict
+from shutil import copyfile, rmtree
 
 import pdb
 
@@ -26,6 +28,8 @@ TEXT_LABEL_DICT = {}
 
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
+
+ORDERING_DATA = {}
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
@@ -47,7 +51,6 @@ GROUP_TYPE_DICT = {
     '1' : 'Campaign',
     '2' : 'Event',
 }
-
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
@@ -465,19 +468,20 @@ def process_MissionData(row, existing_data):
     existing_data.append((new_row[0], new_row))
 
 def process_QuestData(row, existing_data):
-    new_row = OrderedDict()
+    new_row = {}
     for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
         if row['_Id'].startswith(quest_type_id_check):
             new_row['QuestType'] = quest_type
             break
     new_row['Id'] = row[ROW_INDEX]
+    new_row['_Gid'] = row['_Gid']
     new_row['QuestGroupName'] = get_label(row['_QuestViewName']).partition(':')
     if not new_row['QuestGroupName'][1]:
         new_row['QuestGroupName'] = ''
     else:
         new_row['QuestGroupName'] = new_row['QuestGroupName'][0]
     try:
-        new_row['GroupType'] = QUEST_TYPE_DICT[row['_GroupType']]
+        new_row['GroupType'] = GROUP_TYPE_DICT[row['_GroupType']]
     except KeyError:
         pass
     new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
@@ -523,7 +527,6 @@ def process_QuestData(row, existing_data):
     new_row['AutoPlayType'] = row['_AutoPlayType']
 
     existing_data.append((new_row['QuestViewName'], new_row))
-
 
 def process_QuestRewardData(row, existing_data):
     QUEST_FIRST_CLEAR_COUNT = 5
@@ -572,9 +575,11 @@ def process_QuestRewardData(row, existing_data):
             curr_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
         except KeyError:
             pass
+
     first_clear1_type = row['_FirstClearSetEntityType1']
     try:
-        curr_row['MissionCompleteEntityType'] = first_clear_dict[first_clear1_type](row['_MissionClearSetEntityType'])
+        curr_row['MissionCompleteEntityType'] = clear_reward_dict[
+            first_clear1_type](row['_MissionCompleteEntityType'])
         curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
     except KeyError:
         pass
@@ -703,7 +708,11 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
-    row_str += delim.join(['{}={}'.format(k, row[k]) for k in row])
+    if template_name in ORDERING_DATA:
+        key_source = ORDERING_DATA[template_name]
+    else:
+        key_source = row.keys()
+    row_str += delim.join(['{}={}'.format(k, row[k]) for k in key_source if k in row])
     if delim[0] == '\n':
         row_str += '\n'
     row_str += '}}'
@@ -751,6 +760,7 @@ DATA_PARSER_PROCESSING = {
     'QuestData': ('QuestDisplay', row_as_wikitext,
         [('QuestData', process_QuestData),
             ('QuestRewardData', process_QuestRewardData),
+            ('QuestEvent', process_QuestBonusData),
         ]),
     'WeaponData': ('Weapon', row_as_wikitext,
         [('WeaponData', process_WeaponData),
@@ -764,6 +774,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
     parser.add_argument('-i', type=str, help='directory of input text files', default='./')
     parser.add_argument('-o', type=str, help='directory of output text files  (default: ./data-output)', default='./data-output')
+    parser.add_argument('-j', type=str, help='path to json file with ordering', default='')
     # parser.add_argument('-data', type=list)
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
 
@@ -775,6 +786,9 @@ if __name__ == '__main__':
                 print('Deleted old {}'.format(args.o))
             except Exception:
                 print('Could not delete old {}'.format(args.o))
+    if args.j:
+        with open(args.j, 'r') as json_ordering_fp:
+            ORDERING_DATA = json.load(json_ordering_fp)
     if not os.path.exists(args.o):
         os.makedirs(args.o)
 
