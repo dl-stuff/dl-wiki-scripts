@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import csv
 import os
 import string
@@ -18,11 +21,9 @@ EMBLEM_N = 'EMBLEM_NAME_'
 EMBLEM_P = 'EMBLEM_PHONETIC_'
 
 TEXT_LABEL = 'TextLabel'
-TEXT_LABELS = None
 TEXT_LABEL_JP = 'TextLabelJP'
-TEXT_LABELS_JP = None
-ABILITY_SHIFT_GROUP = 'AbilityShiftGroup'
-ABILITY_SHIFT_GROUPS = None
+TEXT_LABEL_DICT = {}
+
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
 
@@ -89,11 +90,16 @@ def csv_as_index(path, index=None, value_key=None, tabs=False):
             return {row[index]: row for row in reader if row[index] != '0'}
 
 def get_label(key, lang='en'):
-    txt_label = TEXT_LABELS_JP if lang == 'jp' else TEXT_LABELS
+    try:
+        txt_label = TEXT_LABEL_DICT[lang]
+    except Exception:
+        txt_label = TEXT_LABEL_DICT['en']
     return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
 
 def get_jp_epithet(emblem_id):
-    return '{{' + 'Ruby|{}|{}'.format(get_label(EMBLEM_N + emblem_id, lang='jp'), get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
+    if 'jp' in TEXT_LABEL_DICT:
+        return '{{' + 'Ruby|{}|{}'.format(get_label(EMBLEM_N + emblem_id, lang='jp'), get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
+    return ''
 
 # All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
 # Make sure the keys are added to the OrderedDict in the desired output order
@@ -725,27 +731,9 @@ DATA_PARSER_PROCESSING = {
             ('WeaponCraftData', process_WeaponCraftData)])
 }
 
-def find_fmt_params(in_dir, out_dir):
-    with open('fmt_params.csv', 'w') as out_file:
-        out_file.write('file,column,fmt_param,context\n')
-        for data_name in DATA_PARSER_PROCESSING:
-            seen = {}
-            with open(in_dir+data_name+EXT, 'r') as in_file:
-                reader = csv.DictReader(in_file)
-                for row in reader:
-                    for k, v in row.items():
-                        if k not in seen:
-                            seen[k] = []
-                        if v in TEXT_LABELS:
-                            fmt_params = {s[1]: None for s in string.Formatter().parse(TEXT_LABELS[v]) if s[1] is not None}
-                            for p in fmt_params:
-                                if p not in seen[k]:
-                                    out_file.write(','.join((data_name, k, p)) + '\n')
-                                    seen[k].append(p)
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
-    parser.add_argument('-i', type=str, help='directory of input text files', required=True, default=os.getcwd())
+    parser.add_argument('-i', type=str, help='directory of input text files', default='./')
     parser.add_argument('-o', type=str, help='directory of output text files  (default: ./data-output)', default='./data-output')
     # parser.add_argument('-data', type=list)
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
@@ -764,11 +752,11 @@ if __name__ == '__main__':
     in_dir = args.i if args.i[-1] == '/' else args.i+'/'
     out_dir = args.o if args.o[-1] == '/' else args.o+'/'
 
-    TEXT_LABELS = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
+    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
     try:
-        TEXT_LABELS_JP = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
+        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
     except:
-        pass
+        del TEXT_LABEL_DICT['jp']
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
 
     # find_fmt_params(in_dir, out_dir)
