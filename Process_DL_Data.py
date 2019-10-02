@@ -474,7 +474,7 @@ def process_QuestData(row, existing_data):
             new_row['QuestType'] = quest_type
             break
     new_row['Id'] = row[ROW_INDEX]
-    new_row['_Gid'] = row['_Gid']
+    # new_row['_Gid'] = row['_Gid']
     new_row['QuestGroupName'] = get_label(row['_QuestViewName']).partition(':')
     if not new_row['QuestGroupName'][1]:
         new_row['QuestGroupName'] = ''
@@ -490,10 +490,10 @@ def process_QuestData(row, existing_data):
     # Case when quest has no elemental type
     try:
         new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
-        new_row['ElementalId'] = int(row['_Elemental'])
+        # new_row['ElementalId'] = int(row['_Elemental'])
     except IndexError:
         new_row['Elemental'] = ''
-        new_row['ElementalId'] = 0
+        # new_row['ElementalId'] = 0
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
         new_row['SuggestedMight'] = row['_Difficulty']
@@ -589,7 +589,10 @@ def process_QuestRewardData(row, existing_data):
 def process_QuestBonusData(row, existing_data):
 
     found = False
-    for index,existing_row in enumerate(existing_data):
+    for index, existing_row in enumerate(existing_data):
+        if '_Gid' not in existing_row[1]:
+            found = False
+            break
         if existing_row[1]['_Gid'] == row['_Id']:
             found = True
             break
