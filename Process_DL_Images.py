@@ -268,43 +268,40 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
                 for h in Not_Merged[d][i][c]:
                     category, name_format = match_category(i)
                     if name_format is not None:
-                        img_name = name_format.format(h)
+                        img_name = name_format.format(h) + EXT
                     else:
                         category = ''
                         img_name = merge_image_name(i, c, h)
-                    copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name + '.png')
+                    copyfile(d + '/' + merge_image_name(i, c, h), out_sub_dir + '/' + category + '/' + img_name)
         delete_empty_subdirectories(out_sub_dir)
 
 if __name__ == '__main__':
-    try:
-        parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
-        parser.add_argument('-i', type=str, help='directory of input images', default='./')
-        parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
-        parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
-        parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
-        args = parser.parse_args()
-        if args.delete_old:
-            if os.path.exists(args.o):
-                try:
-                    rmtree(args.o)
-                    print('Deleted old {}\n'.format(args.o))
-                except Exception:
-                    print('Could not delete old {}\n'.format(args.o))
-        if not os.path.exists(args.o):
-            os.makedirs(args.o)
+    parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
+    parser.add_argument('-i', type=str, help='directory of input images', default='./')
+    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
+    parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
+    parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
-        WYRMPRINT_ALPHA = args.wpa
-        images = build_image_dict(args.i)
-        images, Not_Merged = filter_image_dict(images)
-        # print_image_dict(images, False)
+    args = parser.parse_args()
+    if args.delete_old:
+        if os.path.exists(args.o):
+            try:
+                rmtree(args.o)
+                print('Deleted old {}\n'.format(args.o))
+            except Exception:
+                print('Could not delete old {}\n'.format(args.o))
+    if not os.path.exists(args.o):
+        os.makedirs(args.o)
 
-        merged = merge_all_images(images)
-        save_merged_images(merged, args.i, args.o)
-        copy_Not_Merged_images(Not_Merged, args.i, args.o)
+    WYRMPRINT_ALPHA = args.wpa
+    images = build_image_dict(args.i)
+    images, Not_Merged = filter_image_dict(images)
+    # print_image_dict(images, False)
 
-        print('\nThe following images were copied to {} without merging:'.format(args.o))
-        print_image_dict(Not_Merged)
-    except Exception as e:
-        print(e)
-        input('test')
+    merged = merge_all_images(images)
+    save_merged_images(merged, args.i, args.o)
+    copy_Not_Merged_images(Not_Merged, args.i, args.o)
+
+    print('\nThe following images were copied to {} without merging:'.format(args.o))
+    print_image_dict(Not_Merged)
