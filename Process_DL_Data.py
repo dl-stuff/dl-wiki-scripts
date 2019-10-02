@@ -29,8 +29,25 @@ SKILL_DATA_NAMES = None
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
-CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
+CLASS_TYPE = [None, 'AttQack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
+QUEST_TYPE_DICT = {
+    '1'   : 'Campaign',
+    '201' : 'Event',
+    '202' : 'Event',
+    '203' : 'Event',
+    '210' : 'Event',
+    '211' : 'Event',
+    '300' : 'Event',
+    '204' : 'Raid',
+    '208' : 'Facility',
+}
+
+GROUP_TYPE_DICT = {
+    '1' : 'Campaign',
+    '2' : 'Event',
+}
+
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
@@ -92,7 +109,7 @@ def csv_as_index(path, index=None, value_key=None, tabs=False):
 def get_label(key, lang='en'):
     try:
         txt_label = TEXT_LABEL_DICT[lang]
-    except Exception:
+    except KeyError:
         txt_label = TEXT_LABEL_DICT['en']
     return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
 
@@ -178,6 +195,7 @@ def process_AmuletData(row, existing_data):
         for j in range(1, ABILITY_COUNT+1):
             ab_k = 'Abilities{}{}'.format(i, j)
             new_row[ab_k] = row['_' + ab_k]
+    for i in range(1, ABILITY_COUNT+1):
         new_row['Ability{}Event'.format(i)] = 0
     new_row['ArtistCV'] = '' # EDIT_THIS
     for i in range(1, FLAVOR_COUNT+1):
@@ -197,12 +215,16 @@ def process_Material(row, existing_data):
     new_row['Rarity'] = '' # EDIT_THIS
     if '_EventId' in row:
         new_row['QuestEventId'] = row['_EventId']
+        new_row['SortId'] = row[ROW_INDEX]
     elif '_RaidEventId' in row:
         new_row['QuestEventId'] = row['_RaidEventId']
+        new_row['SortId'] = row[ROW_INDEX]
     elif '_QuestEventId' in row:
         new_row['QuestEventId'] = row['_QuestEventId']
         new_row['Category'] = row['_Category']
-    new_row['SortId'] = row[ROW_INDEX]
+        new_row['SortId'] = row[ROW_INDEX]
+    else:
+        new_row['SortId'] = row['_SortId']
     new_row['Obtain'] = '\n*' + get_label(row['_Description'])
     new_row['Usage'] = '' # EDIT_THIS
     new_row['MoveQuest1'] = row['_MoveQuest1']
@@ -322,7 +344,7 @@ def process_Dragon(row, existing_data):
     new_row['IsTurnToDamageDir'] = row['_IsTurnToDamageDir']
     new_row['MoveType'] = row['_MoveType']
     new_row['IsLongRange'] = row['_IsLongLange']
-    new_row['AttackModifiers'] = '{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|?}}'
+    new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|?}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
     existing_data.append((new_row['Name'], new_row))
 
 def process_ExAbilityData(row, existing_data):
@@ -436,23 +458,36 @@ def process_MissionData(row, existing_data):
     try:
         new_row.extend(entity_type_dict[row['_EntityType']])
     except KeyError:
-        return
+        pass
 
     existing_data.append((new_row[0], new_row))
 
 def process_QuestData(row, existing_data):
     new_row = OrderedDict()
-
+    for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
+        if row['_Id'].startswith(quest_type_id_check):
+            new_row['QuestType'] = quest_type
+            break
     new_row['Id'] = row[ROW_INDEX]
-    process_QuestTypeData(new_row, row)
+    new_row['QuestGroupName'] = get_label(row['_QuestViewName']).partition(':')
+    if not new_row['QuestGroupName'][1]:
+        new_row['QuestGroupName'] = ''
+    else:
+        new_row['QuestGroupName'] = new_row['QuestGroupName'][0]
+    try:
+        new_row['GroupType'] = QUEST_TYPE_DICT[row['_GroupType']]
+    except KeyError:
+        pass
     new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
     new_row['SectionName'] = get_label(row['_SectionName'])
     new_row['QuestViewName'] = get_label(row['_QuestViewName'])
     # Case when quest has no elemental type
     try:
         new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
+        new_row['ElementalId'] = int(row['_Elemental'])
     except IndexError:
         new_row['Elemental'] = ''
+        new_row['ElementalId'] = 0
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
         new_row['SuggestedMight'] = row['_Difficulty']
@@ -487,35 +522,6 @@ def process_QuestData(row, existing_data):
 
     existing_data.append((new_row['QuestViewName'], new_row))
 
-def process_QuestTypeData(new_row, row):
-    quest_type_dict = {
-        '1'   : 'Campaign',
-        '201' : 'Event',
-        '202' : 'Event',
-        '203' : 'Event',
-        '210' : 'Event',
-        '211' : 'Event',
-        '300' : 'Event',
-        '204' : 'Raid',
-        '208' : 'Facility',
-    }
-
-    group_type_dict = {
-        '1' : 'Campaign',
-        '2' : 'Event',
-    }
-
-    for quest_type_id_check,quest_type in quest_type_dict.items():
-        if row['_Id'].startswith(quest_type_id_check):
-            new_row['QuestType'] = quest_type
-            break
-    new_row['QuestGroupName'] = get_label(row['_QuestViewName']).partition(':')
-    if not new_row['QuestGroupName'][1]:
-        new_row['QuestGroupName'] = ''
-    else:
-        new_row['QuestGroupName'] = new_row['QuestGroupName'][0]
-    new_row['GroupType'] = group_type_dict[row['_GroupType']]
-
 
 def process_QuestRewardData(row, existing_data):
     QUEST_FIRST_CLEAR_COUNT = 5
@@ -530,53 +536,46 @@ def process_QuestRewardData(row, existing_data):
     assert(found)
 
     curr_row = existing_row[1]
+    first_clear_dict = {
+        '8': reward_template.format(
+            'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1']),
+        '20': reward_template.format(
+            'Material', get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1']),
+        '23': reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
+    }
+    complete_type_dict = {
+        '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
+        '15': (lambda x: 'Don\'t use any continues'),
+        '18': (lambda x: 'Finish in {} seconds or less'.format(x))
+    }
+    clear_reward_dict = {
+        '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
+        '20': (lambda x: get_label( '{}{}'.format(EVENT_RAID_ITEM_LABEL, x))),
+        '23': (lambda x: 'Wyrmite'),
+    }
 
-    curr_row['FirstClearRewards'] = ''
     for i in range(1,QUEST_FIRST_CLEAR_COUNT+1):
-        first_clear_type = row['_FirstClearSetEntityType{}'.format(i)]
-        if (first_clear_type == '23'):
-            curr_row['FirstClearRewards'] += reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
-        elif (first_clear_type == '8'):
-            curr_row['FirstClearRewards'] += reward_template.format(
-                'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
-        elif (first_clear_type == '20'):
-            curr_row['FirstClearRewards'] += reward_template.format(
-                'Material', get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1'])
+        try:
+            curr_row['FirstClearRewards'] = first_clear_dict[row['_FirstClearSetEntityType{}'.format(i)]]
+        except KeyError:
+            pass
     for i in range(1,QUEST_COMPLETE_COUNT+1):
         complete_type = row['_MissionCompleteType{}'.format(i)]
         complete_value = row['_MissionCompleteValues{}'.format(i)]
         clear_reward_type = row['_MissionsClearSetEntityType{}'.format(i)]
 
-        if complete_type == '1':
-            if complete_value == '0':
-                curr_row['MissionCompleteType{}'.format(i)] = 'Don\'t allow any of your team to fall in battle'
-            else:
-                curr_row['MissionCompleteType{}'.format(i)] = 'Allow no more than {} of your team to fall in battle'.format(complete_value)
-        elif complete_type == '15':
-            curr_row['MissionCompleteType{}'.format(i)] = 'Don\'t use any continues'
-        elif complete_type == '18':
-            curr_row['MissionCompleteType{}'.format(i)] = 'Finish in {} seconds or less'.format(complete_value)
-
-        if clear_reward_type == '23':
-            curr_row['MissionsClearSetEntityType{}'.format(i)] = 'Wyrmite'
-        elif clear_reward_type == '8':
-            curr_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
-                    '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
-        elif clear_reward_type == '20':
-            curr_row['MissionsClearSetEntityType{}'.format(i)] = get_label(
-                    '{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionsClearSetEntityType{}'.format(i)]))
-
-        curr_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
+        try:
+            curr_row['MissionCompleteType{}'.format(i)] = complete_type_dict[complete_type](complete_value)
+            curr_row['MissionsClearSetEntityType{}'.format(i)] = clear_reward_dict[clear_reward_type](row['_MissionsClearSetEntityType{}'.format(i)])
+            curr_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
+        except KeyError:
+            pass
     first_clear1_type = row['_FirstClearSetEntityType1']
-    if first_clear1_type == '23':
-        curr_row['MissionCompleteEntityType'] = 'Wyrmite'
+    try:
+        curr_row['MissionCompleteEntityType'] = first_clear_dict[first_clear1_type](row['_MissionClearSetEntityType'])
         curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
-    elif first_clear1_type == '8':
-        curr_row['MissionCompleteEntityType'] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_MissionClearSetEntityType']))
-        curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
-    elif first_clear1_type == '20':
-        curr_row['MissionCompleteEntityType'] = get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_MissionClearSetEntityType']))
-        curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+    except KeyError:
+        pass
 
     existing_data[index] = (existing_row[0], curr_row)
 
