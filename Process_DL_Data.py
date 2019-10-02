@@ -386,6 +386,7 @@ def process_FortPlantDetail(row, existing_data, fort_plant_detail):
 
 def process_FortPlantData(row, existing_data, fort_plant_detail):
     new_row = OrderedDict()
+    dlm = '{{!}}'
 
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
@@ -674,6 +675,32 @@ def process_WeaponCraftTree(row, existing_data):
     curr_row['CraftGroupId'] = row['_CraftGroupId']
     existing_data[index] = (existing_row[0], curr_row)
 
+def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
+    new_row = OrderedDict()
+    reward_entity_dict = {
+        ('18', '0'): 'Mana',
+        ('4', '0') : 'Rupies',
+        ('14', '0'): 'Eldwater',
+        ('8', '202004004') : 'Twinkling Sand',
+    }
+    reward_fmt = (lambda key, amount: '{{' + reward_entity_dict[key] + '-}}' + ' x {:,}'.format(amount))
+
+    lvl = int(row['_TotalWallLevel'])
+    try:
+        reward_sum[lvl] = reward_sum[lvl - 1].copy()
+    except:
+        reward_sum[1] = {k: 0 for k in reward_entity_dict}
+    reward_key = (row['_RewardEntityType'], row['_RewardEntityId'])
+    reward_amount = int(row['_RewardEntityQuantity'])
+    reward_sum[lvl][reward_key] += reward_amount
+    new_row['Combined'] = row['_TotalWallLevel']
+    new_row['Reward'] = 'data-sort-value="{}" | '.format(reward_key[0]) + reward_fmt(reward_key, reward_amount)
+    new_row['Total Reward'] = ' '.join(
+        [reward_fmt(k, v) for k, v in reward_sum[lvl].items() if v > 0]
+    )
+
+    existing_data.append((lvl, new_row))
+
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     row_str += delim.join(['{}={}'.format(k, row[k]) for k in row])
@@ -728,7 +755,9 @@ DATA_PARSER_PROCESSING = {
     'WeaponData': ('Weapon', row_as_wikitext,
         [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
-            ('WeaponCraftData', process_WeaponCraftData)])
+            ('WeaponCraftData', process_WeaponCraftData)]),
+
+    'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward)
 }
 
 if __name__ == '__main__':
