@@ -27,16 +27,16 @@ CATEGORY_REGEX = {
     'Story_Art': re.compile(r'\d{6}_\d{2}_base_portrait$'),
 
     'Summon_Showcase_Banner_Images': re.compile(r'^Summon_(Switch|Top)_Banner$'),
-    'Void_Battles_Banners': re.compile(r'^EventQuestMenu(List|Top)\d{2}$'),
+    'Event_Banners': re.compile(r'^EventQuestMenu(List|Top)\d{2}$'),
 }
 CATEGORY_NAME_FORMATS = {
     'Summon_Showcase_Banner_Images': {
         'Switch': 'Banner_Summon_Showcase_{}',
         'Top': '{}_Summon_Top_Banner'
     },
-    'Void_Battles_Banners': {
-        'List': 'Banner_{}_Strike',
-        'Top': 'Banner_Top_{}_Strike'
+    'Event_Banners': {
+        'List': 'Banner_{}',
+        'Top': 'Banner_Top_{}'
     }
 }
 CATEGORY_EXTRA = ('Misc_Icon', 'Extra')
