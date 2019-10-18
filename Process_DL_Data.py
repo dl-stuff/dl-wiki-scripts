@@ -401,11 +401,41 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['ShortSummary'] = '' # EDIT_THIS
 
-    # TODO: extract UpgradeTable from details
     images = []
+    upgrades = []
     for detail in fort_plant_detail[row[ROW_INDEX]]:
         if len(images) == 0 or images[-1][1] != detail['_ImageUiName']:
             images.append((detail['_Level'], detail['_ImageUiName']))
+        upgrade_row = OrderedDict()
+        upgrade_row['Level'] = detail['_Level']
+        # EffectId 1 for dojo, 2 for altars
+        if detail['_EffectId'] != '0':
+            # stat fac
+            upgrade_row['Str +%'] = detail['_EffArgs1']
+            upgrade_row['HP +%'] = detail['_EffArgs2']
+        if detail['_EventEffectType'] != '0':
+            # event fac
+            upgrade_row['Damage +%'] = detail['_EventEffectArgs']
+        if detail['_MaterialMaxTime'] != '0':
+            # dragontree
+            upgrade_row['Prod Time'] = detail['_MaterialMaxTime']
+            upgrade_row['Limit'] = detail['_MaterialMax']
+            upgrade_row['Output Lv.'] = detail['_Odds'].replace('FortFruitOdds_', '')
+        if detail['_CostMaxTime'] != '0':
+            # rupee mine
+            upgrade_row['Prod Time'] = detail['_CostMaxTime']
+            upgrade_row['Limit'] = detail['_CostMax']
+        upgrade_row['{{Rupies}}Cost'] = detail['_Cost']
+        mats = []
+        for i in range(1, 6):
+            if detail['_MaterialsId' + str(i)] != '0':
+                material_name = '{{{{Icon|Material|{}|size=19px|text=1}}}}'.format(get_label(MATERIAL_NAME_LABEL + detail['_MaterialsId' + str(i)]))
+                mats.append('{} x {}'.format(material_name, detail['_MaterialsNum' + str(i)]))
+        upgrade_row['Materials Needed'] = ', '.join(mats)
+        upgrade_row['Player Lv. Needed'] = detail['_NeedLevel']
+        upgrade_row['Build Time'] = '{{BuildTime|' + detail['_Time'] + '}}'
+
+        upgrades.append(upgrade_row)
     if len(images) > 1:
         new_row['Images'] = '{{#tag:tabber|\nLv' + \
             '\n{{!}}-{{!}}\n'.join(
@@ -415,6 +445,7 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
         new_row['Images'] = '[[File:{}.png|120px]]'.format(images[0][1])
     else:
         new_row['Images'] = ''
+    # new_row['UpgradeTable'] = '\n{{{!}} class="wikitable" style="width: 100%" \n! ' + ' !! '.join(upgrades[0].keys()) + '\n' + ''.join(map((lambda r: row_as_wikitable(r, delim=dlm)), upgrades)) + '{{!}}-{{!}}}'
     new_row['UpgradeTable'] = ''
     existing_data.append((new_row['Name'], new_row))
 
@@ -733,8 +764,8 @@ def row_as_wikitext(row, template_name, display_name = None):
         text += '\n'
     return text
 
-def row_as_wikitable(row, template_name=None, display_name=None, delim=' || '):
-    return '|-\n| {}\n'.format(delim.join([v for v in row.values()]))
+def row_as_wikitable(row, template_name=None, display_name=None, delim='|'):
+    return '{0}-\n{0} {1}\n'.format(delim, (delim*2).join([v for v in row.values()]))
 
 def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
     return '{{' + template_name + '|' + delim.join(row) + '}}\n'
