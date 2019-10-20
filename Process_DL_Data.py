@@ -52,6 +52,13 @@ GROUP_TYPE_DICT = {
     '2' : 'Event',
 }
 
+FACILITY_EFFECT_TYPE_DICT = {
+    '1': 'Adventurer', # weapon
+    '2': 'Adventurer', # elemental
+    '4': 'Dragon', # dracolith
+    '6': 'Dragon' # fafnir
+}
+
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
 
@@ -394,7 +401,7 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
     new_row['Description'] = get_label(row['_Description'])
-    new_row['Type'] = '' # EDIT_THIS
+    new_row['Type'] = ''
     new_row['Size'] = '{w}x{w}'.format(w=row['_PlantSize'])
     new_row['Available'] = '1'
     new_row['Obtain'] = '' # EDIT_THIS
@@ -414,8 +421,15 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
         # EffectId 1 for dojo, 2 for altars
         if detail['_EffectId'] != '0':
             # stat fac
-            upgrade_row['Str +%'] = detail['_EffArgs1']
-            upgrade_row['HP +%'] = detail['_EffArgs2']
+            try:
+                new_row['Type'] = FACILITY_EFFECT_TYPE_DICT[detail['_EffectId']]
+            except KeyError:
+                print(new_row['Name'])
+            if detail['_EffectId'] == '4':
+                upgrade_row['Bonus Dmg'] = detail['_EffArgs1']
+            else:
+                upgrade_row['Str +%'] = detail['_EffArgs1']
+                upgrade_row['HP +%'] = detail['_EffArgs2']
         if detail['_EventEffectType'] != '0':
             # event fac
             upgrade_row['Damage +%'] = detail['_EventEffectArgs']
@@ -459,30 +473,35 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     else:
         new_row['Images'] = ''
 
-    # if len(upgrades) > 0:
-    if False:
+    if len(upgrades) > 0:
+    # if False:
         remaining = upgrade_totals['Materials'].copy()
+        mat_delim = ' '
         for u in upgrades:
+            if len(remaining) == 1:
+                remaing_mats = []
+                for k in remaining:
+                    try:
+                        remaining[k] -= u['Materials Needed'][k]
+                    except KeyError:
+                        pass
+                    if remaining[k] > 0:
+                        remaing_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, remaining[k]))
+                u['Total Materials Left to Max Level'] = mat_delim.join(remaing_mats) if len(remaing_mats) > 0 else '—'
+            else:
+                del u['Total Materials Left to Max Level']
+
             current_mats = []
             for k, v in u['Materials Needed'].items():
                 current_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, v))
-            remaing_mats = []
-            for k in remaining:
-                try:
-                    remaining[k] -= u['Materials Needed'][k]
-                except KeyError:
-                    pass
-                if remaining[k] > 0:
-                    remaing_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, remaining[k]))
-            u['Materials Needed'] = ' ,'.join(current_mats) if len(current_mats) > 0 else '—'
-            u['Total Materials Left to Max Level'] = ' ,'.join(remaing_mats) if len(remaing_mats) > 0 else '—'
+            u['Materials Needed'] = mat_delim.join(current_mats) if len(current_mats) > 0 else '—'
 
         colspan = list(upgrades[0].keys()).index('{{Rupies}}Cost')
         total_mats = []
         for k, v in upgrade_totals['Materials'].items():
             total_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {}'.format(k, v))
 
-        totals_row = '{{!}}-\n{{!}}colspan="' + str(colspan) + '"{{!}}Total{{!}}{{!}}' + '{:,}'.format(upgrade_totals['Cost']) + '{{!}}{{!}}' + ' ,'.join(total_mats) + '{{!}}{{!}}—{{!}}{{!}}{{BuildTime|' + str(upgrade_totals['Build Time']) + '}}\n'
+        totals_row = '{{!}}-\n{{!}}colspan="' + str(colspan) + '"{{!}}Total{{!}}{{!}}' + '{:,}'.format(upgrade_totals['Cost']) + '{{!}}{{!}}' + mat_delim.join(total_mats) + ('{{!}}{{!}}—' if len(remaining) == 1 else '') + '{{!}}{{!}}{{BuildTime|' + str(upgrade_totals['Build Time']) + '}}\n'
 
         new_row['UpgradeTable'] = '\n{{{!}} class="wikitable" style="width: 100%" \n! ' + ' !! '.join(upgrades[0].keys()) + '\n' + ''.join(map((lambda r: row_as_wikitable(r, delim=dlm)), upgrades)) + totals_row + '{{!}}-{{!}}}'
     else:
