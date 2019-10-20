@@ -403,9 +403,12 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
 
     images = []
     upgrades = []
+    upgrade_totals = {'Cost': 0, 'Build Time': 0, 'Materials': {}}
     for detail in fort_plant_detail[row[ROW_INDEX]]:
         if len(images) == 0 or images[-1][1] != detail['_ImageUiName']:
             images.append((detail['_Level'], detail['_ImageUiName']))
+        if detail['_Level'] == '0':
+            continue
         upgrade_row = OrderedDict()
         upgrade_row['Level'] = detail['_Level']
         # EffectId 1 for dojo, 2 for altars
@@ -425,17 +428,27 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
             # rupee mine
             upgrade_row['Prod Time'] = detail['_CostMaxTime']
             upgrade_row['Limit'] = detail['_CostMax']
-        upgrade_row['{{Rupies}}Cost'] = detail['_Cost']
-        mats = []
+        upgrade_row['{{Rupies}}Cost'] = '{:,}'.format(int(detail['_Cost']))
+        upgrade_totals['Cost'] += int(detail['_Cost'])
+        mats = {}
         for i in range(1, 6):
             if detail['_MaterialsId' + str(i)] != '0':
-                material_name = '{{{{Icon|Material|{}|size=19px|text=1}}}}'.format(get_label(MATERIAL_NAME_LABEL + detail['_MaterialsId' + str(i)]))
-                mats.append('{} x {}'.format(material_name, detail['_MaterialsNum' + str(i)]))
-        upgrade_row['Materials Needed'] = ', '.join(mats)
-        upgrade_row['Player Lv. Needed'] = detail['_NeedLevel']
+                material_name = get_label(MATERIAL_NAME_LABEL + detail['_MaterialsId' + str(i)])
+                # mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {}'.format(material_name, detail['_MaterialsNum' + str(i)]))
+                mats[material_name] = int(detail['_MaterialsNum' + str(i)])
+                try:
+                    upgrade_totals['Materials'][material_name] += mats[material_name]
+                except:
+                    upgrade_totals['Materials'][material_name] = mats[material_name]
+        upgrade_row['Materials Needed'] = mats
+        if int(detail['_NeedLevel']) > 1:
+            upgrade_row['Player Lv. Needed'] = detail['_NeedLevel']
+        upgrade_row['Total Materials Left to Max Level'] = None
         upgrade_row['Build Time'] = '{{BuildTime|' + detail['_Time'] + '}}'
+        upgrade_totals['Build Time'] += int(detail['_Time'])
 
         upgrades.append(upgrade_row)
+    
     if len(images) > 1:
         new_row['Images'] = '{{#tag:tabber|\nLv' + \
             '\n{{!}}-{{!}}\n'.join(
@@ -445,8 +458,35 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
         new_row['Images'] = '[[File:{}.png|120px]]'.format(images[0][1])
     else:
         new_row['Images'] = ''
-    # new_row['UpgradeTable'] = '\n{{{!}} class="wikitable" style="width: 100%" \n! ' + ' !! '.join(upgrades[0].keys()) + '\n' + ''.join(map((lambda r: row_as_wikitable(r, delim=dlm)), upgrades)) + '{{!}}-{{!}}}'
-    new_row['UpgradeTable'] = ''
+
+    # if len(upgrades) > 0:
+    if False:
+        remaining = upgrade_totals['Materials'].copy()
+        for u in upgrades:
+            current_mats = []
+            for k, v in u['Materials Needed'].items():
+                current_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, v))
+            remaing_mats = []
+            for k in remaining:
+                try:
+                    remaining[k] -= u['Materials Needed'][k]
+                except KeyError:
+                    pass
+                if remaining[k] > 0:
+                    remaing_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, remaining[k]))
+            u['Materials Needed'] = ' ,'.join(current_mats) if len(current_mats) > 0 else '—'
+            u['Total Materials Left to Max Level'] = ' ,'.join(remaing_mats) if len(remaing_mats) > 0 else '—'
+
+        colspan = list(upgrades[0].keys()).index('{{Rupies}}Cost')
+        total_mats = []
+        for k, v in upgrade_totals['Materials'].items():
+            total_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {}'.format(k, v))
+
+        totals_row = '{{!}}-\n{{!}}colspan="' + str(colspan) + '"{{!}}Total{{!}}{{!}}' + '{:,}'.format(upgrade_totals['Cost']) + '{{!}}{{!}}' + ' ,'.join(total_mats) + '{{!}}{{!}}—{{!}}{{!}}{{BuildTime|' + str(upgrade_totals['Build Time']) + '}}\n'
+
+        new_row['UpgradeTable'] = '\n{{{!}} class="wikitable" style="width: 100%" \n! ' + ' !! '.join(upgrades[0].keys()) + '\n' + ''.join(map((lambda r: row_as_wikitable(r, delim=dlm)), upgrades)) + totals_row + '{{!}}-{{!}}}'
+    else:
+        new_row['UpgradeTable'] = ''
     existing_data.append((new_row['Name'], new_row))
 
 def process_SkillData(row, existing_data):
