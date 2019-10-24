@@ -33,7 +33,7 @@ ORDERING_DATA = {}
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
-CLASS_TYPE = [None, 'AttQack', 'Defense', 'Support', 'Healing']
+CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
 QUEST_TYPE_DICT = {
     '1'   : 'Campaign',
