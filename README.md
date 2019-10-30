@@ -1,10 +1,10 @@
 # dragalia-wiki-scripts
 
-# Requirements
+## Requirements
 * Python 3
 * Pillow (https://pypi.org/project/Pillow/)
 
-# Example usage
+## Example usage
 ```
 Process_DL_Images.py -i <input_folder> -o <output_folder>
 ```
