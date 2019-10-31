@@ -866,7 +866,7 @@ DATA_PARSER_PROCESSING = {
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
     parser.add_argument('-i', type=str, help='directory of input text files', default='./')
-    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./data-output)', default='./data-output')
+    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output-data)', default='./output-data')
     parser.add_argument('-j', type=str, help='path to json file with ordering', default='')
     # parser.add_argument('-data', type=list)
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')

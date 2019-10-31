@@ -24,7 +24,7 @@ CATEGORY_REGEX = {
     'Wyrmprint_Images': re.compile(r'^4\d{5}_\d{2}_portrait$'),
     'Wyrmprint Icons': re.compile(r'^4\d{5}_\d{2}$'),
     'Facility_Images': re.compile(r'^TW\d{2}_\d{6}_IMG_\d{2}_\d{2}$'),
-    'Story_Art': re.compile(r'\d{6}_\d{2}_base_portrait$'),
+    'Story_Art': re.compile(r'\d+_\d{2}_base_portrait$'),
 
     'Summon_Showcase_Banner_Images': re.compile(r'^Summon_(Switch|Top)_Banner$'),
     'Event_Banners': re.compile(r'^EventQuestMenu(List|Top)\d{2}$'),
@@ -279,7 +279,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
     parser.add_argument('-i', type=str, help='directory of input images', default='./')
-    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output)', default='./output')
+    parser.add_argument('-o', type=str, help='directory of output images  (default: ./output-img)', default='./output-img')
     parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
     parser.add_argument('-wpa', type=str, help='path to Wyrmprint_Alpha.png.', default='Wyrmprint_Alpha.png')
 
