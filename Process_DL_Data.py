@@ -727,7 +727,7 @@ def process_WeaponData(row, existing_data):
     new_row['VariationId'] = 1
     # Case when weapon has no skill
     try:
-        new_row['SkillID'] = row['_Skill']
+        new_row['Skill'] = row['_Skill']
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill']])
     except KeyError:
         new_row['SkillID'] = ''
