@@ -813,7 +813,7 @@ def build_wikitext_row(template_name, row, delim='|'):
 
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
-    if display_name:
+    if display_name is not None:
         text += display_name
         text += ENTRY_LINE_BREAK
         text += build_wikitext_row(template_name, row, delim='\n|')
