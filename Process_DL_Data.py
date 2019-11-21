@@ -582,7 +582,7 @@ def process_QuestData(row, existing_data):
         new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
         # new_row['ElementalId'] = int(row['_Elemental'])
     except IndexError:
-        new_row['Elemental'] = ''
+        new_row['Elemental'] = 'None'
         # new_row['ElementalId'] = 0
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
@@ -713,7 +713,7 @@ def process_WeaponData(row, existing_data):
     try:
         new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
     except IndexError:
-        new_row['ElementalType'] = ''
+        new_row['ElementalType'] = 'None'
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
