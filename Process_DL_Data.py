@@ -534,12 +534,18 @@ def process_MissionData(row, existing_data):
     entity_type_dict = {
         "2" : [get_label("USE_ITEM_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
+        "3" : ["Override={{{{Icon|Weapon|{}|size=24px|text=1}}}}".format(get_label("WEAPON_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
         "4" : ["Rupies", row['_EntityQuantity']],
+        "7" : ["Override={{{{Icon|Dragon|{}|size=24px|text=1}}}}".format(get_label("DRAGON_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
         "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])),
                     "Rank="],
-        "11": [get_label("STAMP_NAME_" + row['_EntityId']),
+        "11": ["Override=[[File:{0}.png|32px|link=Stickers]] Sticker: {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
+        "12" : ["Override={{{{Icon|Wyrmprint|{}|size=24px|text=1}}}}".format(get_label("AMULET_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
         "14": ["Eldwater", row['_EntityQuantity']],
         "16": ["Skip Ticket", row['_EntityQuantity']],
@@ -547,6 +553,8 @@ def process_MissionData(row, existing_data):
                 row['_EntityQuantity']],
         "18": ["Mana", row['_EntityQuantity']],
         "23": ["Wyrmite", row['_EntityQuantity']],
+        "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
     }
 
     new_row = [get_label(row['_Text'])]
