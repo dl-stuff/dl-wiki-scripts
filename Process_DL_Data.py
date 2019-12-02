@@ -566,6 +566,11 @@ def process_MissionData(row, existing_data):
     existing_data.append((new_row[0], new_row))
 
 def process_QuestData(row, existing_data):
+    pay_entity_type_dict = {
+        "20" : 'OtherworldFragmentCost',
+        "26" : 'AstralPieceCost',
+    }
+
     new_row = {}
     for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
         if row['_Id'].startswith(quest_type_id_check):
@@ -608,6 +613,10 @@ def process_QuestData(row, existing_data):
     new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
     new_row['GetherwingCost'] = row['_PayStaminaMulti']
     new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
+
+    if row['_PayEntityType'] in pay_entity_type_dict:
+        new_row[pay_entity_type_dict[row['_PayEntityType']]] = row['_PayEntityQuantity']
+
     new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTermsType']))
 
     row_failed_terms_type = row['_FailedTermsType']
