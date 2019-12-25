@@ -259,7 +259,7 @@ def process_CharaData(row, existing_data):
     new_row['IdLong'] = row[ROW_INDEX]
     new_row['Id'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
-    new_row['FullName'] = get_label(row['_SecondName'])
+    new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
     new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
@@ -820,6 +820,10 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
     existing_data.append((lvl, new_row))
 
+def process_GenericTemplate(row, existing_data):
+    new_row = OrderedDict({k[1:]: v for k, v in row.items()})
+    existing_data.append((None, new_row))
+
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     if template_name in ORDERING_DATA:
@@ -880,8 +884,9 @@ DATA_PARSER_PROCESSING = {
         [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
             ('WeaponCraftData', process_WeaponCraftData)]),
-
-    'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward)
+    'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
+    'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
+    'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate)
 }
 
 if __name__ == '__main__':
