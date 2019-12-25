@@ -279,7 +279,9 @@ def process_CharaData(row, existing_data):
             new_row[min_k] = row['_' + min_k]
         max_k = 'Max{}'.format(stat)
         new_row[max_k] = row['_' + max_k]
-        for i in range(0, 5):
+        add_k = 'AddMax{}1'.format(stat)
+        new_row[add_k] = row['_' + add_k]
+        for i in range(0, 6):
             plus_k = 'Plus{}{}'.format(stat, i)
             new_row[plus_k] = row['_' + plus_k]
         mfb_k = 'McFullBonus{}5'.format(stat)
@@ -305,6 +307,8 @@ def process_CharaData(row, existing_data):
     new_row['Description'] = get_label(row['_ProfileText'])
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
+
+    new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
 
     existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
 
@@ -513,12 +517,12 @@ def process_SkillData(row, existing_data):
 
     new_row['SkillId']= row[ROW_INDEX]
     new_row['Name']= get_label(row['_Name'])
-    new_row['SkillLv1IconName']= row['_SkillLv1IconName']
-    new_row['SkillLv2IconName']= row['_SkillLv2IconName']
-    new_row['SkillLv3IconName']= row['_SkillLv3IconName']
-    new_row['Description1']= get_label(row['_Description1'])
-    new_row['Description2']= get_label(row['_Description2'])
-    new_row['Description3']= get_label(row['_Description3'])
+    for i in range(1, 5):
+        si_k = 'SkillLv{}IconName'.format(i)
+        new_row[si_k]= row['_'+si_k]
+    for i in range(1, 5):
+        des_k = 'Description{}'.format(i)
+        new_row[des_k]= get_label(row['_'+des_k])
     new_row['HideLevel3']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
