@@ -310,6 +310,12 @@ def process_CharaData(row, existing_data):
 
     new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
 
+    old_hp = int(new_row['MaxHp']) + sum([int(new_row['PlusHp{}'.format(i)]) for i in range(0, 5)]) + int(new_row['McFullBonusHp5'])
+    new_hp = int(new_row['AddMaxHp1']) + sum([int(new_row['PlusHp{}'.format(i)]) for i in range(0, 6)]) + int(new_row['McFullBonusHp5'])
+    old_atk = int(new_row['MaxAtk']) + sum([int(new_row['PlusAtk{}'.format(i)]) for i in range(0, 5)]) + int(new_row['McFullBonusAtk5'])
+    new_atk = int(new_row['AddMaxAtk1']) + sum([int(new_row['PlusAtk{}'.format(i)]) for i in range(0, 6)]) + int(new_row['McFullBonusAtk5'])
+    print(','.join([str(x) for x in ['"{}"'.format(new_row['FullName']), old_hp, new_hp, new_hp/old_hp, old_atk, new_atk, new_atk/old_atk]]))
+
     existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
@@ -886,7 +892,9 @@ DATA_PARSER_PROCESSING = {
             ('WeaponCraftData', process_WeaponCraftData)]),
     'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
     'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
-    'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate)
+    'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
+    'MC': ('MC', row_as_wikitext, process_GenericTemplate),
+    'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
 }
 
 if __name__ == '__main__':
