@@ -919,9 +919,9 @@ if __name__ == '__main__':
     in_dir = args.i if args.i[-1] == '/' else args.i+'/'
     out_dir = args.o if args.o[-1] == '/' else args.o+'/'
 
-    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True, index='_Id', value_key='_Text')
+    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
     try:
-        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True, index='_Id', value_key='_Text')
+        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
     except:
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
