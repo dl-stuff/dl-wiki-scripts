@@ -292,7 +292,8 @@ def process_CharaData(row, existing_data):
         new_row['Skill1Name'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
         new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
     except KeyError:
-        pass
+        new_row['Skill1Name'] = ''
+        new_row['Skill2Name'] = ''
 
     for i in range(1, 4):
         for j in range(1, 5):
@@ -309,13 +310,6 @@ def process_CharaData(row, existing_data):
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
 
     new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
-
-    old_hp = int(new_row['MaxHp']) + sum([int(new_row['PlusHp{}'.format(i)]) for i in range(0, 5)]) + int(new_row['McFullBonusHp5'])
-    new_hp = int(new_row['AddMaxHp1']) + sum([int(new_row['PlusHp{}'.format(i)]) for i in range(0, 6)]) + int(new_row['McFullBonusHp5'])
-    old_atk = int(new_row['MaxAtk']) + sum([int(new_row['PlusAtk{}'.format(i)]) for i in range(0, 5)]) + int(new_row['McFullBonusAtk5'])
-    new_atk = int(new_row['AddMaxAtk1']) + sum([int(new_row['PlusAtk{}'.format(i)]) for i in range(0, 6)]) + int(new_row['McFullBonusAtk5'])
-    print(','.join([str(x) for x in ['"{}"'.format(new_row['FullName']), old_hp, new_hp, new_hp/old_hp, old_atk, new_atk, new_atk/old_atk]]))
-
     existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
@@ -348,7 +342,10 @@ def process_Dragon(row, existing_data):
     new_row['MaxHp'] = row['_MaxHp']
     new_row['MinAtk'] = row['_MinAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
-    new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+    try:
+        new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+    except KeyError:
+        new_row['SkillName'] = ''
     for i in (1, 2):
         for j in (1, 2):
             ab_k = 'Abilities{}{}'.format(i, j)
@@ -922,13 +919,12 @@ if __name__ == '__main__':
     in_dir = args.i if args.i[-1] == '/' else args.i+'/'
     out_dir = args.o if args.o[-1] == '/' else args.o+'/'
 
-    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
+    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True, index='_Id', value_key='_Text')
     try:
-        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
+        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True, index='_Id', value_key='_Text')
     except:
         pass
-    SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
-
+    SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
     # find_fmt_params(in_dir, out_dir)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
