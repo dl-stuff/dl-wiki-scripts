@@ -550,7 +550,7 @@ def process_MissionData(row, existing_data):
                 row['_EntityQuantity']],
         "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])),
                     "Rank="],
-        "11": ["Override=[[File:{0}.png|32px|link=Stickers]] Sticker: {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
+        "11": ["Override=[[File:{0}.png|32px|link=Stickers]] {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
         "12" : ["Override={{{{Icon|Wyrmprint|{}|size=24px|text=1}}}}".format(get_label("AMULET_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
@@ -562,6 +562,7 @@ def process_MissionData(row, existing_data):
         "23": ["Wyrmite", row['_EntityQuantity']],
         "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
+        "31": [get_label("LOTTERY_TICKET_NAME_" + row['_EntityId']), row['_EntityQuantity']],
     }
 
     new_row = [get_label(row['_Text'])]
@@ -748,6 +749,7 @@ def process_WeaponData(row, existing_data):
     new_row['VariationId'] = 1
     # Case when weapon has no skill
     try:
+        new_row['Skill'] = row['_Skill']
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill']])
     except KeyError:
         new_row['SkillName'] = ''
