@@ -259,7 +259,7 @@ def process_CharaData(row, existing_data):
     new_row['IdLong'] = row[ROW_INDEX]
     new_row['Id'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
-    new_row['FullName'] = get_label(row['_SecondName'])
+    new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
     new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
@@ -279,7 +279,9 @@ def process_CharaData(row, existing_data):
             new_row[min_k] = row['_' + min_k]
         max_k = 'Max{}'.format(stat)
         new_row[max_k] = row['_' + max_k]
-        for i in range(0, 5):
+        add_k = 'AddMax{}1'.format(stat)
+        new_row[add_k] = row['_' + add_k]
+        for i in range(0, 6):
             plus_k = 'Plus{}{}'.format(stat, i)
             new_row[plus_k] = row['_' + plus_k]
         mfb_k = 'McFullBonus{}5'.format(stat)
@@ -292,7 +294,8 @@ def process_CharaData(row, existing_data):
         new_row['Skill1Name'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
         new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
     except KeyError:
-        pass
+        new_row['Skill1Name'] = ''
+        new_row['Skill2Name'] = ''
 
     for i in range(1, 4):
         for j in range(1, 5):
@@ -308,6 +311,7 @@ def process_CharaData(row, existing_data):
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
 
+    new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
     existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
@@ -342,6 +346,10 @@ def process_Dragon(row, existing_data):
     new_row['MaxAtk'] = row['_MaxAtk']
     new_row['SkillID'] = row['_Skill1']
     new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+    try:
+        new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+    except KeyError:
+        new_row['SkillName'] = ''
     for i in (1, 2):
         for j in (1, 2):
             ab_k = 'Abilities{}{}'.format(i, j)
@@ -516,12 +524,12 @@ def process_SkillData(row, existing_data):
 
     new_row['SkillId']= row[ROW_INDEX]
     new_row['Name']= get_label(row['_Name'])
-    new_row['SkillLv1IconName']= row['_SkillLv1IconName']
-    new_row['SkillLv2IconName']= row['_SkillLv2IconName']
-    new_row['SkillLv3IconName']= row['_SkillLv3IconName']
-    new_row['Description1']= get_label(row['_Description1'])
-    new_row['Description2']= get_label(row['_Description2'])
-    new_row['Description3']= get_label(row['_Description3'])
+    for i in range(1, 5):
+        si_k = 'SkillLv{}IconName'.format(i)
+        new_row[si_k]= row['_'+si_k]
+    for i in range(1, 5):
+        des_k = 'Description{}'.format(i)
+        new_row[des_k]= get_label(row['_'+des_k])
     new_row['HideLevel3']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
@@ -537,12 +545,18 @@ def process_MissionData(row, existing_data):
     entity_type_dict = {
         "2" : [get_label("USE_ITEM_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
+        "3" : ["Override={{{{Icon|Weapon|{}|size=24px|text=1}}}}".format(get_label("WEAPON_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
         "4" : ["Rupies", row['_EntityQuantity']],
+        "7" : ["Override={{{{Icon|Dragon|{}|size=24px|text=1}}}}".format(get_label("DRAGON_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
         "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])),
                     "Rank="],
-        "11": [get_label("STAMP_NAME_" + row['_EntityId']),
+        "11": ["Override=[[File:{0}.png|32px|link=Stickers]] Sticker: {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
+                row['_EntityQuantity']],
+        "12" : ["Override={{{{Icon|Wyrmprint|{}|size=24px|text=1}}}}".format(get_label("AMULET_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
         "14": ["Eldwater", row['_EntityQuantity']],
         "16": ["Skip Ticket", row['_EntityQuantity']],
@@ -550,6 +564,8 @@ def process_MissionData(row, existing_data):
                 row['_EntityQuantity']],
         "18": ["Mana", row['_EntityQuantity']],
         "23": ["Wyrmite", row['_EntityQuantity']],
+        "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
+                row['_EntityQuantity']],
     }
 
     new_row = [get_label(row['_Text'])]
@@ -561,6 +577,11 @@ def process_MissionData(row, existing_data):
     existing_data.append((new_row[0], new_row))
 
 def process_QuestData(row, existing_data):
+    pay_entity_type_dict = {
+        "20" : 'OtherworldFragmentCost',
+        "26" : 'AstralPieceCost',
+    }
+
     new_row = {}
     for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
         if row['_Id'].startswith(quest_type_id_check):
@@ -585,7 +606,7 @@ def process_QuestData(row, existing_data):
         new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
         # new_row['ElementalId'] = int(row['_Elemental'])
     except IndexError:
-        new_row['Elemental'] = ''
+        new_row['Elemental'] = 'None'
         # new_row['ElementalId'] = 0
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
@@ -603,6 +624,10 @@ def process_QuestData(row, existing_data):
     new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
     new_row['GetherwingCost'] = row['_PayStaminaMulti']
     new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
+
+    if row['_PayEntityType'] in pay_entity_type_dict:
+        new_row[pay_entity_type_dict[row['_PayEntityType']]] = row['_PayEntityQuantity']
+
     new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTermsType']))
 
     row_failed_terms_type = row['_FailedTermsType']
@@ -716,7 +741,7 @@ def process_WeaponData(row, existing_data):
     try:
         new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
     except IndexError:
-        new_row['ElementalType'] = ''
+        new_row['ElementalType'] = 'None'
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
@@ -804,6 +829,10 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
     existing_data.append((lvl, new_row))
 
+def process_GenericTemplate(row, existing_data):
+    new_row = OrderedDict({k[1:]: v for k, v in row.items()})
+    existing_data.append((None, new_row))
+
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     if template_name in ORDERING_DATA:
@@ -818,7 +847,7 @@ def build_wikitext_row(template_name, row, delim='|'):
 
 def row_as_wikitext(row, template_name, display_name = None):
     text = ""
-    if display_name:
+    if display_name is not None:
         text += display_name
         text += ENTRY_LINE_BREAK
         text += build_wikitext_row(template_name, row, delim='\n|')
@@ -864,8 +893,11 @@ DATA_PARSER_PROCESSING = {
         [('WeaponData', process_WeaponData),
             ('WeaponCraftTree', process_WeaponCraftTree),
             ('WeaponCraftData', process_WeaponCraftData)]),
-
-    'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward)
+    'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
+    'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
+    'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
+    'MC': ('MC', row_as_wikitext, process_GenericTemplate),
+    'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
 }
 
 if __name__ == '__main__':
@@ -898,8 +930,7 @@ if __name__ == '__main__':
         TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
     except:
         pass
-    SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, value_key='_Name')
-
+    SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
     # find_fmt_params(in_dir, out_dir)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
