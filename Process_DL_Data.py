@@ -288,6 +288,8 @@ def process_CharaData(row, existing_data):
         new_row[mfb_k] = row['_' + mfb_k]
     new_row['MinDef'] = row['_MinDef']
     new_row['DefCoef'] = row['_DefCoef']
+    new_row['Skill1ID'] = row['_Skill1']
+    new_row['Skill2ID'] = row['_Skill2']
     try:
         new_row['Skill1Name'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
         new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
@@ -342,6 +344,8 @@ def process_Dragon(row, existing_data):
     new_row['MaxHp'] = row['_MaxHp']
     new_row['MinAtk'] = row['_MinAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
+    new_row['SkillID'] = row['_Skill1']
+    new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
     try:
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
     except KeyError:
@@ -752,6 +756,7 @@ def process_WeaponData(row, existing_data):
         new_row['Skill'] = row['_Skill']
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill']])
     except KeyError:
+        new_row['SkillID'] = ''
         new_row['SkillName'] = ''
     new_row['Abilities11'] = row['_Abilities11']
     new_row['Abilities21'] = row['_Abilities21']
