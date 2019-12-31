@@ -26,6 +26,8 @@ TEXT_LABEL = 'TextLabel'
 TEXT_LABEL_JP = 'TextLabelJP'
 TEXT_LABEL_DICT = {}
 
+EPITHET_DATA_NAME = 'EmblemData'
+EPITHET_DATA_NAMES = None
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
 
@@ -552,18 +554,20 @@ def process_MissionData(row, existing_data):
                 row['_EntityQuantity']],
         "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
-        "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])),
-                    "Rank="],
+        "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])), "Rank=" + EPITHET_RANKS.get(row['_EntityId'], '')],
         "11": ["Override=[[File:{0}.png|32px|link=Stickers]] {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
         "12" : ["Override={{{{Icon|Wyrmprint|{}|size=24px|text=1}}}}".format(get_label("AMULET_NAME_" + row['_EntityId'])),
                 row['_EntityQuantity']],
         "14": ["Eldwater", row['_EntityQuantity']],
+        "15": [get_label("DRAGON_GIFT_NAME_" + row['_EntityId']), row['_EntityQuantity']],
         "16": ["Skip Ticket", row['_EntityQuantity']],
         "17": [get_label("SUMMON_TICKET_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "18": ["Mana", row['_EntityQuantity']],
+        "20": [get_label("EV_RAID_ITEM_NAME_" + row['_EntityId']), row['_EntityQuantity']],
         "23": ["Wyrmite", row['_EntityQuantity']],
+        "28": ["Hustle Hammer", row['_EntityQuantity']],
         "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "31": [get_label("LOTTERY_TICKET_NAME_" + row['_EntityId']), row['_EntityQuantity']],
@@ -573,6 +577,7 @@ def process_MissionData(row, existing_data):
     try:
         new_row.extend(entity_type_dict[row['_EntityType']])
     except KeyError:
+        new_row.extend(['Entity type {}: {}'.format(row['_EntityType'], row['_EntityId']), row['_EntityQuantity']])
         pass
 
     existing_data.append((new_row[0], new_row))
@@ -932,6 +937,7 @@ if __name__ == '__main__':
     except:
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
+    EPITHET_RANKS = csv_as_index(in_dir+EPITHET_DATA_NAME+EXT, index='_Id', value_key='_Rarity')
     # find_fmt_params(in_dir, out_dir)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
