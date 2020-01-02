@@ -547,9 +547,9 @@ def process_SkillData(row, existing_data):
     new_row['SpLv2']= row['_SpLv2']
     new_row['SpRegen']= '' # EDIT_THIS
     new_row['IsAffectedByTension']= row['_IsAffectedByTension']
-    new_row['ZoominTime']= row['_ZoominTime']
-    new_row['Zoom2Time']= row['_Zoom2Time']
-    new_row['ZoomWaitTime']= row['_ZoomWaitTime']
+    new_row['ZoominTime']= '{:.1f}'.format(float(row['_ZoominTime']))
+    new_row['Zoom2Time']= '{:.1f}'.format(float(row['_Zoom2Time']))
+    new_row['ZoomWaitTime']= '{:.1f}'.format(float(row['_ZoomWaitTime']))
 
     existing_data.append((new_row['Name'], new_row))
 
