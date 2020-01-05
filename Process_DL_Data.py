@@ -28,6 +28,8 @@ TEXT_LABEL_DICT = {}
 
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
+RAID_EVENT_ITEM_DATA_NAME = 'RaidEventItem'
+RAID_ITEM_LABELS = None
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
 
@@ -62,7 +64,6 @@ FACILITY_EFFECT_TYPE_DICT = {
 }
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
-EVENT_RAID_ITEM_LABEL = 'EV_RAID_ITEM_NAME_'
 
 class DataParser:
     def __init__(self, _data_name, _template, _formatter, _process_info):
@@ -124,6 +125,13 @@ def get_label(key, lang='en'):
     except KeyError:
         txt_label = TEXT_LABEL_DICT['en']
     return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
+
+def get_raid_item_label(key):
+    try:
+        label_key = RAID_ITEM_LABELS[key]
+        return get_label(label_key)
+    except KeyError:
+        return key
 
 def get_jp_epithet(emblem_id):
     if 'jp' in TEXT_LABEL_DICT:
@@ -567,7 +575,7 @@ def process_MissionData(row, existing_data):
         "17": [get_label("SUMMON_TICKET_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "18": ["Mana", row['_EntityQuantity']],
-        "20": [get_label("EV_RAID_ITEM_NAME_" + row['_EntityId']), row['_EntityQuantity']],
+        "20": [get_raid_item_label(row['_EntityId']), row['_EntityQuantity']],
         "23": ["Wyrmite", row['_EntityQuantity']],
         "28": ["Hustle Hammer", row['_EntityQuantity']],
         "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
@@ -668,11 +676,12 @@ def process_QuestRewardData(row, existing_data):
 
     curr_row = existing_row[1]
     first_clear_dict = {
-        '8': reward_template.format(
-            'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1']),
-        '20': reward_template.format(
-            'Material', get_label('{}{}'.format(EVENT_RAID_ITEM_LABEL, row['_FirstClearSetEntityId1'])), row['_FirstClearSetEntityQuantity1']),
-        '23': reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity1'])
+        '4': (lambda x: reward_template.format('Resource', 'Rupies', row['_FirstClearSetEntityQuantity' + x])),
+        '8': (lambda x: reward_template.format(
+                'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId' + x])), row['_FirstClearSetEntityQuantity' + x])),
+        '20': (lambda x: reward_template.format(
+                'Material', get_raid_item_label(row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
+        '23': (lambda x: reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity' + x])),
     }
     complete_type_dict = {
         '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
@@ -681,13 +690,14 @@ def process_QuestRewardData(row, existing_data):
     }
     clear_reward_dict = {
         '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
-        '20': (lambda x: get_label( '{}{}'.format(EVENT_RAID_ITEM_LABEL, x))),
+        '20': (lambda x: get_raid_item_label(x)),
         '23': (lambda x: 'Wyrmite'),
     }
 
+    curr_row['FirstClearRewards'] = ''
     for i in range(1,QUEST_FIRST_CLEAR_COUNT+1):
         try:
-            curr_row['FirstClearRewards'] = first_clear_dict[row['_FirstClearSetEntityType{}'.format(i)]]
+            curr_row['FirstClearRewards'] += first_clear_dict[row['_FirstClearSetEntityType{}'.format(i)]](str(i))
         except KeyError:
             pass
     for i in range(1,QUEST_COMPLETE_COUNT+1):
@@ -940,6 +950,7 @@ if __name__ == '__main__':
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
     EPITHET_RANKS = csv_as_index(in_dir+EPITHET_DATA_NAME+EXT, index='_Id', value_key='_Rarity')
+    RAID_ITEM_LABELS = csv_as_index(in_dir+RAID_EVENT_ITEM_DATA_NAME+EXT, index='_Id', value_key='_Name')
     # find_fmt_params(in_dir, out_dir)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
