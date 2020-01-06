@@ -542,7 +542,7 @@ def process_SkillData(row, existing_data):
     for i in range(1, 5):
         des_k = 'Description{}'.format(i)
         new_row[des_k]= get_label(row['_'+des_k])
-    new_row['HideLevel3']= '' # EDIT_THIS
+    new_row['MaxSkillLevel']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
     new_row['SpRegen']= '' # EDIT_THIS
