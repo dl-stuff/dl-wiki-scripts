@@ -641,8 +641,9 @@ def process_QuestData(row, existing_data):
     new_row['GetherwingCost'] = row['_PayStaminaMulti']
     new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
 
-    if row['_PayEntityType'] in pay_entity_type_dict:
-        new_row['OtherCostType'] = pay_entity_type_dict[row['_PayEntityType']]
+    if row['_PayEntityType'] != '0':
+        new_row['OtherCostType'] = pay_entity_type_dict.get(row['_PayEntityType'],
+            '{}: {}'.format(row['_PayEntityType'], row['_PayEntityId']))
         new_row['OtherCostQuantity'] = row['_PayEntityQuantity']
 
     new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTermsType']))
