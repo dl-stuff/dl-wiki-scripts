@@ -317,6 +317,19 @@ def process_CharaData(row, existing_data):
         ex_k = 'ExAbilityData{}'.format(i)
         new_row[ex_k] = row['_' + ex_k]
     new_row['ManaCircleName'] = row['_ManaCircleName']
+
+    # new_row['EffNameCriticalHit'] = row['_EffNameCriticalHit']
+
+    mh_collab = [
+        new_row['Name'] == 'Berserker' and new_row['ElementalType'] == 'Flame',
+        new_row['Name'] == 'Vanessa' and new_row['ElementalType'] == 'Light',
+        new_row['Name'] == 'Sarisse' and new_row['ElementalType'] == 'Water',
+    ]
+    if any(mh_collab):
+        new_row['ChargeType'] = row['_ChargeType']
+        new_row['MaxChargeLevel'] = row['_MaxChargeLevel']
+        new_row['DefaultBurstAttackLevel'] = row['_DefaultBurstAttackLevel']
+    
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
     new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
     new_row['Description'] = get_label(row['_ProfileText'])
@@ -653,6 +666,7 @@ def process_QuestData(row, existing_data):
         new_row['TimeLimit'] = row['_FailedTermsTimeElapsed']
 
     new_row['ContinueLimit'] = row['_ContinueLimit']
+    new_row['RebornLimit'] = row['_RebornLimit']
     new_row['ThumbnailImage'] = row['_ThumbnailImage']
     new_row['DropRewards'] = ''
     new_row['WeaponRewards'] = ''
