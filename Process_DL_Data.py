@@ -867,6 +867,21 @@ def process_GenericTemplate(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     existing_data.append((None, new_row))
 
+def process_ActionCondition(row, existing_data):
+    new_row = OrderedDict()
+    for k, v in row.items():
+        if k == ROW_INDEX:
+            new_row['Id'] = v
+        elif '_Text' in k:
+            label = get_label(v)
+            if label != '':
+                new_row[k[1:]] = v
+                new_row[k[1:]+'Label'] = get_label(v)
+        elif v != '0' and v != '':
+            new_row[k[1:]] = v
+    existing_data.append((None, new_row))
+    
+
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
     if template_name in ORDERING_DATA:
@@ -896,6 +911,9 @@ def row_as_wikitable(row, template_name=None, display_name=None, delim='|'):
 
 def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
     return '{{' + template_name + '|' + delim.join(row) + '}}\n'
+
+def row_as_kv_pairs(row, template_name=None, display_name=None, delim=': '):
+    return '\n\t'.join([k+delim+v for k, v in row.items()]) + '\n'
 
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
@@ -932,6 +950,8 @@ DATA_PARSER_PROCESSING = {
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
     'MC': ('MC', row_as_wikitext, process_GenericTemplate),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
+
+    'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_ActionCondition)
 }
 
 if __name__ == '__main__':
