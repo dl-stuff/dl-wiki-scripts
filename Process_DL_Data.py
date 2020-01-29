@@ -327,7 +327,7 @@ def process_CharaData(row, existing_data):
     ]
     if any(mh_collab):
         new_row['ChargeType'] = row['_ChargeType']
-        new_row['MaxChargeLevel'] = row['_MaxChargeLevel']
+        new_row['MaxChargeLv'] = row['_MaxChargeLv']
         new_row['DefaultBurstAttackLevel'] = row['_DefaultBurstAttackLevel']
     
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
@@ -609,6 +609,7 @@ def process_QuestData(row, existing_data):
     pay_entity_type_dict = {
         "20" : get_raid_item_label(row['_PayEntityId']),
         "26" : 'Astral Piece',
+        "32" : 'Otherworld Fragment' if row['_PayEntityId'] == '2200131' else 'Otherworld Gem'
     }
 
     new_row = {}
@@ -702,7 +703,8 @@ def process_QuestRewardData(row, existing_data):
     complete_type_dict = {
         '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
         '15': (lambda x: 'Don\'t use any continues'),
-        '18': (lambda x: 'Finish in {} seconds or less'.format(x))
+        '18': (lambda x: 'Finish in {} seconds or less'.format(x)),
+        '32': (lambda x: 'Don\'t use any revives')
     }
     clear_reward_dict = {
         '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
