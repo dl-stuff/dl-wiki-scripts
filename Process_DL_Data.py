@@ -875,12 +875,12 @@ def process_GenericTemplate(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     existing_data.append((None, new_row))
 
-def process_ActionCondition(row, existing_data):
+def process_KeyValues(row, existing_data):
     new_row = OrderedDict()
     for k, v in row.items():
         if k == ROW_INDEX:
             new_row['Id'] = v
-        elif '_Text' in k:
+        elif 'Text' in k:
             label = get_label(v)
             if label != '':
                 new_row[k[1:]] = v
@@ -959,7 +959,9 @@ DATA_PARSER_PROCESSING = {
     'MC': ('MC', row_as_wikitext, process_GenericTemplate),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
 
-    'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_ActionCondition)
+    'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_KeyValues),
+    'EnemyActionHitAttribute': ('EnemyActionHitAttribute', row_as_kv_pairs, process_KeyValues),
+    'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
 }
 
 if __name__ == '__main__':
