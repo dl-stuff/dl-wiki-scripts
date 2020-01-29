@@ -764,6 +764,14 @@ def process_QuestBonusData(row, existing_data):
 def process_WeaponData(row, existing_data):
     new_row = OrderedDict()
 
+    availability_dict = {
+      '0': 'Limited', # Can also be core if 2* drop, so check carefully
+      '1': 'Core',
+      '2': 'Void',
+      '3': 'High Dragon',
+      '4': 'Agito',
+    }
+
     new_row['Id'] = row[ROW_INDEX]
     new_row['BaseId'] = row['_BaseId']
     new_row['FormId'] = row['_FormId']
@@ -778,7 +786,7 @@ def process_WeaponData(row, existing_data):
         new_row['ElementalType'] = 'None'
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
-    new_row['Availability'] = '' # EDIT_THIS
+    new_row['Availability'] = availability_dict.get(row['_CraftSeriesId'], '')
     new_row['MinHp'] = row['_MinHp']
     new_row['MaxHp'] = row['_MaxHp']
     new_row['MinAtk'] = row['_MinAtk']
