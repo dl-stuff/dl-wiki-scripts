@@ -145,7 +145,10 @@ def merge_alpha(directory, base_name, alpha_type, base_tags, alpha_tags):
             print('ERR: {}/{}'.format(directory, merge_image_name(base_name, alpha_type, ah)))
         if base_img.size != alph_img.size:
             continue
-        r, g, b, _ = base_img.split()
+        try:
+            r, g, b, _ = base_img.split()
+        except:
+            r, g, b = base_img.split()
         if alpha_type == 'alphaA8':
             _, _, _, a = alph_img.split()
         else:
