@@ -353,7 +353,7 @@ def process_Dragon(row, existing_data):
     new_row['Id'] = row[ROW_INDEX]
     new_row['BaseId'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
-    new_row['FullName'] = get_label(row['_SecondName'])
+    new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
     new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
