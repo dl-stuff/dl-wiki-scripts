@@ -281,7 +281,6 @@ def copy_Not_Merged_images(Not_Merged, in_dir, out_dir):
         delete_empty_subdirectories(out_sub_dir)
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='Merge alpha and YCbCr images.')
     parser.add_argument('-i', type=str, help='directory of input images', default='./')
     parser.add_argument('-o', type=str, help='directory of output images  (default: ./output-img)', default='./output-img')

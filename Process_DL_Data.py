@@ -960,10 +960,14 @@ DATA_PARSER_PROCESSING = {
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
     'MC': ('MC', row_as_wikitext, process_GenericTemplate),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
+}
 
+KV_PROCESSING = {
     'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_KeyValues),
     'EnemyActionHitAttribute': ('EnemyActionHitAttribute', row_as_kv_pairs, process_KeyValues),
     'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
+    'EnemyAbility': ('EnemyAbility', row_as_kv_pairs, process_KeyValues),
+    'AbilityData': ('AbilityData', row_as_kv_pairs, process_KeyValues)
 }
 
 if __name__ == '__main__':
@@ -1008,3 +1012,12 @@ if __name__ == '__main__':
         parser.emit(out_dir)
         print('Saved {}{}'.format(data_name, EXT))
 
+    kv_out = out_dir+'/kv/'
+    if not os.path.exists(kv_out):
+        os.makedirs(kv_out)
+    for data_name, process_params in KV_PROCESSING.items():
+        template, formatter, process_info = process_params
+        parser = DataParser(data_name, template, formatter, process_info)
+        parser.process()
+        parser.emit(kv_out)
+        print('Saved kv/{}{}'.format(data_name, EXT))
