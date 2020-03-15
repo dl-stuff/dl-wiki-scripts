@@ -1,6 +1,7 @@
 import os
 import argparse
 import errno
+import json
 from UnityPy import AssetsManager
 
 def check_target_path(target):
@@ -11,14 +12,54 @@ def check_target_path(target):
             if exc.errno != errno.EEXIST:
                 raise
 
-# 
-# def dump(obj) -> str:
-#     obj.reader.reset()
-#     if getattr(obj.serialized_type, 'nodes', None):
-#         sb = []
-#         TypeTreeHelper(obj.reader).read_type_string(sb, obj.serialized_type.nodes)
-#         return ''.join(sb)
-#     return ''
+def write_mono(f, data):
+    f.write(data.dump())
+
+do_filter = False
+def filter_dict(d):
+    if do_filter:
+        return dict(filter(lambda elem: elem[1] != 0, d.items()))
+    else:
+        return d
+
+def process_json(tree):
+    while True:
+        if isinstance(tree, dict):
+            if 'dict' in tree:
+                tree = tree['dict']
+            elif 'entriesValue' in tree:
+                tree = tree['entriesValue']
+            else:
+                break
+        else:
+            for idx, k in enumerate(tree):
+                if 'dict' in k:
+                    k = k['dict']
+                if 'entriesValue' in k:
+                    k = k['entriesValue']
+                tree[idx] = k
+            for idx, k in enumerate(tree):
+                if isinstance(k, list):
+                    new_list = []
+                    for v in k:
+                        try:
+                            kv = filter_dict(v)
+                            if kv:
+                                new_list.append(kv)
+                        except:
+                            pass
+                    tree[idx] = new_list
+                else:
+                    tree[idx] = filter_dict(k)
+            break
+    return tree
+
+def write_json(f, data):
+    tree = data.read_type_tree()
+    json.dump(process_json(tree), f, indent=2)
+
+write = write_json
+mono_ext = '.json'
 
 def unpack_Texture2D(data, dest):
     print('Texture2D', dest, flush=True)
@@ -32,24 +73,43 @@ def unpack_Texture2D(data, dest):
 def unpack_MonoBehaviour(data, dest):
     print('MonoBehaviour', dest, flush=True)
     dest, _ = os.path.splitext(dest)
-    dest = dest + '.mono'
+    dest = dest + mono_ext
     check_target_path(dest)
 
     with open(dest, 'w', encoding='utf8', newline='') as f:
-        f.write(data.dump())
+        write(f, data)
 
 def unpack_GameObject(data, destination_folder):
-    print('GameObject', destination_folder, flush=True)
+    dest = os.path.join(destination_folder, os.path.splitext(data.name)[0])
+    print('GameObject', dest, flush=True)
+    mono_list = []
     for idx, obj in enumerate(data.components):
         obj_type_str = str(obj.type)
         if obj_type_str in unpack_dict:
             subdata = obj.read()
+            if obj_type_str == 'MonoBehaviour':
+                json_data = subdata.read_type_tree()
+                if json_data:
+                    mono_list.append(json_data)
+            elif obj_type_str == 'GameObject':
+                unpack_dict[obj_type_str](subdata, os.path.join(dest, '{:02}'.format(idx)))
+    if len(mono_list) > 0:
+        dest += mono_ext
+        check_target_path(dest)
+        with open(dest, 'w', encoding='utf8', newline='') as f:
+            json.dump(mono_list, f, indent=2)
 
-            dest, _ = os.path.splitext(data.name)
-            dest = os.path.join(destination_folder, dest, '{:02d}'.format(idx))
+# def unpack_GameObject(data, destination_folder):
+#     print('GameObject', destination_folder, flush=True)
+#     for obj in data.components:
+#         obj_type_str = str(obj.type)
+#         if obj_type_str in unpack_dict:
+#             subdata = obj.read()
 
-            if data.name or obj_type_str == 'GameObject':
-                unpack_dict[obj_type_str](subdata, dest)
+#             dest, _ = os.path.splitext(data.name)
+#             dest = os.path.join(destination_folder, dest)
+#             if data.name or obj_type_str == 'GameObject':
+#                 unpack_dict[obj_type_str](subdata, dest)
 
 unpack_dict = {
     'Texture2D': unpack_Texture2D, 
@@ -98,7 +158,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract asset files.')
     parser.add_argument('-i', type=str, help='input dir', default='./download')
     parser.add_argument('-o', type=str, help='output dir', default='./extract')
+    parser.add_argument('-mode', type=str, help='export format, default json, can also use mono', default='json')
     args = parser.parse_args()
+    if args.mode == 'mono':
+        write = write_mono
+        mono_ext = '.mono'
     if os.path.isdir(args.i):
         unpack_all_assets(args.i, args.o)
     else:
