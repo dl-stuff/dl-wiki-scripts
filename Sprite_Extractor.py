@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import requests
+import urllib.request
 from PIL import Image
 from UnityPy import AssetsManager
 
@@ -26,7 +26,7 @@ def main():
       url = line.strip()
 
     print(url)
-    response = requests.get(url, verify=False).content
+    response = urllib.request.urlopen(url).read()
     am = AssetsManager()
     am.load_file(url, data=response)
 
@@ -77,7 +77,6 @@ def main():
       img.save(os.path.join(sprites_path, sprite.name + '.png'))
 
 
-
 ''' Returns a copy of the image resized as a square. '''
 def resize(image, size=30):
   square = Image.new('RGBA', (size, size), (0, 0, 0, 0))
@@ -87,7 +86,6 @@ def resize(image, size=30):
   offset = ((30 - image.width) // 2, (30 - image.height) // 2)
   square.paste(image, offset)
   return square
-
 
 
 if __name__ == '__main__':
