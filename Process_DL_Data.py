@@ -27,6 +27,7 @@ TEXT_LABEL_JP = 'TextLabelJP'
 TEXT_LABEL_DICT = {}
 
 CHAIN_COAB_SET = set()
+# CHAIN_COAB_DICT = {}
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
 RAID_EVENT_ITEM_DATA_NAME = 'RaidEventItem'
@@ -155,7 +156,7 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     if row[ROW_INDEX] in CHAIN_COAB_SET:
         # Process abilities known to be chain coabilities (from being
         # referenced in CharaData), separately.
-        process_ChainCoAbility(row, existing_data)
+        # process_ChainCoAbility(row, existing_data)
         return
     new_row = OrderedDict()
 
@@ -198,14 +199,21 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     existing_data.append((new_row['Name'], new_row))
 
 def process_ChainCoAbility(row, existing_data):
+    if not row[ROW_INDEX] in CHAIN_COAB_SET:
+        return
     new_row = OrderedDict()
     new_row['Id'] = row[ROW_INDEX]
-    new_row['TemplateOverride'] = 'ChainCoAbility'
 
     ability_value = (EDIT_THIS if row['_AbilityType1UpValue'] == '0'
                                else row['_AbilityType1UpValue'])
     new_row['Name'] = get_label(row['_Name']).format(
         ability_val0 = ability_value)
+    
+    # try:
+    #     CHAIN_COAB_DICT[new_row['Id']][0] = new_row['Name']
+    # except:
+    #     pass
+
     # guess the generic name by chopping off the last word, which is usually +n% or V
     new_row['GenericName'] = new_row['Name'][:new_row['Name'].rfind(' ')]
 
@@ -352,6 +360,11 @@ def process_CharaData(row, existing_data):
         ex_k = 'ExAbility2Data{}'.format(i)
         new_row[ex_k] = row['_' + ex_k]
         CHAIN_COAB_SET.add(new_row[ex_k])
+        # if i == 5:
+        #     try:
+        #         CHAIN_COAB_DICT[new_row[ex_k]][1].append(new_row['FullName'])
+        #     except:
+        #         CHAIN_COAB_DICT[new_row[ex_k]] = [None, [new_row['FullName']]]
     new_row['ManaCircleName'] = row['_ManaCircleName']
 
     # new_row['EffNameCriticalHit'] = row['_EffNameCriticalHit']
@@ -929,9 +942,6 @@ def process_KeyValues(row, existing_data):
     
 
 def build_wikitext_row(template_name, row, delim='|'):
-    if 'TemplateOverride' in row:
-        template_name = row['TemplateOverride']
-        del row['TemplateOverride']
     row_str = '{{' + template_name + delim
     if template_name in ORDERING_DATA:
         key_source = ORDERING_DATA[template_name]
@@ -971,6 +981,7 @@ DATA_PARSER_PROCESSING = {
     'AbilityData': ('Ability', row_as_wikitext,
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
+    'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
     'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
@@ -1061,3 +1072,6 @@ if __name__ == '__main__':
         parser.process()
         parser.emit(kv_out)
         print('Saved kv/{}{}'.format(data_name, EXT))
+
+    # with open('chaincoabs.json', 'w', newline='') as f:
+    #     json.dump(CHAIN_COAB_DICT, f, sort_keys=True, indent=2)
