@@ -26,6 +26,7 @@ TEXT_LABEL = 'TextLabel'
 TEXT_LABEL_JP = 'TextLabelJP'
 TEXT_LABEL_DICT = {}
 
+CHAIN_COAB_SET = set()
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
 RAID_EVENT_ITEM_DATA_NAME = 'RaidEventItem'
@@ -151,6 +152,11 @@ def process_AbilityShiftGroup(row, existing_data, ability_shift_groups):
     ability_shift_groups[row[ROW_INDEX]] = row
 
 def process_AbilityData(row, existing_data, ability_shift_groups):
+    if row[ROW_INDEX] in CHAIN_COAB_SET:
+        # Process abilities known to be chain coabilities (from being
+        # referenced in CharaData), separately.
+        process_ChainCoAbility(row, existing_data)
+        return
     new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
@@ -189,6 +195,32 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     new_row['AbilityLimitedGroupId1'] = row['_AbilityLimitedGroupId1']
     new_row['AbilityLimitedGroupId2'] = row['_AbilityLimitedGroupId2']
     new_row['AbilityLimitedGroupId3'] = row['_AbilityLimitedGroupId3']
+    existing_data.append((new_row['Name'], new_row))
+
+def process_ChainCoAbility(row, existing_data):
+    new_row = OrderedDict()
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['TemplateOverride'] = 'ChainCoAbility'
+
+    ability_value = (EDIT_THIS if row['_AbilityType1UpValue'] == '0'
+                               else row['_AbilityType1UpValue'])
+    new_row['Name'] = get_label(row['_Name']).format(
+        ability_val0 = ability_value)
+    # guess the generic name by chopping off the last word, which is usually +n% or V
+    new_row['GenericName'] = new_row['Name'][:new_row['Name'].rfind(' ')]
+
+    # _ElementalType seems unreliable, use (element) in _Name for now
+    detail_label = get_label(row['_Details'])
+    if '{element_owner}' in detail_label and ')' in new_row['Name']:
+        element = new_row['Name'][1:new_row['Name'].index(')')]
+    else:
+        element = ELEMENT_TYPE[int(row['_ElementalType'])]
+    new_row['Details'] = detail_label.format(
+        ability_cond0   =   row['_ConditionValue'],
+        ability_val0    =   ability_value,
+        element_owner   =   element)
+    new_row['AbilityIconName'] = row['_AbilityIconName']
+
     existing_data.append((new_row['Name'], new_row))
 
 def process_AmuletData(row, existing_data):
@@ -316,6 +348,10 @@ def process_CharaData(row, existing_data):
     for i in range(1, 6):
         ex_k = 'ExAbilityData{}'.format(i)
         new_row[ex_k] = row['_' + ex_k]
+    for i in range(1, 6):
+        ex_k = 'ExAbility2Data{}'.format(i)
+        new_row[ex_k] = row['_' + ex_k]
+        CHAIN_COAB_SET.add(new_row[ex_k])
     new_row['ManaCircleName'] = row['_ManaCircleName']
 
     # new_row['EffNameCriticalHit'] = row['_EffNameCriticalHit']
@@ -893,6 +929,9 @@ def process_KeyValues(row, existing_data):
     
 
 def build_wikitext_row(template_name, row, delim='|'):
+    if 'TemplateOverride' in row:
+        template_name = row['TemplateOverride']
+        del row['TemplateOverride']
     row_str = '{{' + template_name + delim
     if template_name in ORDERING_DATA:
         key_source = ORDERING_DATA[template_name]
@@ -927,12 +966,13 @@ def row_as_kv_pairs(row, template_name=None, display_name=None, delim=': '):
 
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
+    'CharaData': ('Adventurer', row_as_wikitext, process_CharaData),
+    # Must come after CharaData processing
     'AbilityData': ('Ability', row_as_wikitext,
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
     'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
-    'CharaData': ('Adventurer', row_as_wikitext, process_CharaData),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
