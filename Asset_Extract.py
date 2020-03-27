@@ -132,7 +132,7 @@ def unpack_asset(file_path, destination_folder, root=None, source_folder=None):
                 # create destination path
                 if root and source_folder:
                     intermediate = root.replace(source_folder, '')
-                    if intermediate[0] == '\\':
+                    if len(intermediate) > 0 and intermediate[0] == '\\':
                         intermediate = intermediate[1:]
                 else:
                     intermediate = ''
