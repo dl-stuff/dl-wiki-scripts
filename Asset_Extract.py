@@ -138,9 +138,10 @@ def unpack_asset(file_path, destination_folder, root=None, source_folder=None):
                     intermediate = ''
                 if obj_type_str == 'GameObject':
                     dest = os.path.join(destination_folder, intermediate)
+                    unpack_dict[obj_type_str](data, dest)
                 elif data.name:
                     dest = os.path.join(destination_folder, intermediate, data.name)
-                unpack_dict[obj_type_str](data, dest)
+                    unpack_dict[obj_type_str](data, dest)
                 
 
 def unpack_all_assets(source_folder, destination_folder):
