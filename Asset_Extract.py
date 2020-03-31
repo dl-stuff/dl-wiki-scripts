@@ -23,35 +23,15 @@ def filter_dict(d):
         return d
 
 def process_json(tree):
-    while True:
-        if isinstance(tree, dict):
-            if 'dict' in tree:
-                tree = tree['dict']
-            elif 'entriesValue' in tree:
-                tree = tree['entriesValue']
-            else:
-                break
+    while isinstance(tree, dict):
+        if 'dict' in tree:
+            tree = tree['dict']
+        elif 'list' in tree:
+            tree = tree['list']
+        elif 'entriesValue' in tree and 'entriesHashCode' in tree:
+            return {k: process_json(v) for k, v in zip(tree['entriesHashCode'], tree['entriesValue'])}
         else:
-            for idx, k in enumerate(tree):
-                if 'dict' in k:
-                    k = k['dict']
-                if 'entriesValue' in k:
-                    k = k['entriesValue']
-                tree[idx] = k
-            for idx, k in enumerate(tree):
-                if isinstance(k, list):
-                    new_list = []
-                    for v in k:
-                        try:
-                            kv = filter_dict(v)
-                            if kv:
-                                new_list.append(kv)
-                        except:
-                            pass
-                    tree[idx] = new_list
-                else:
-                    tree[idx] = filter_dict(k)
-            break
+            return tree
     return tree
 
 def write_json(f, data):
