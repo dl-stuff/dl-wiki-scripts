@@ -320,7 +320,12 @@ def process_CharaData(row, existing_data):
     new_row['Rarity'] = row['_Rarity']
     new_row['Gender'] = '' # EDIT_THIS
     new_row['Race'] = '' # EDIT_THIS
-    new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
+    elemental_type_int = int(row['_ElementalType'])
+    if elemental_type_int == 99:
+        # The puppy has a non-existent elemental type as an adventurer.
+        new_row['ElementalType'] = ''
+    else:
+        new_row['ElementalType'] = ELEMENT_TYPE[elemental_type_int]
     new_row['CharaType'] = CLASS_TYPE[int(row['_CharaType'])]
     new_row['VariationId'] = row['_VariationId']
     for stat in ('Hp', 'Atk'):
