@@ -107,14 +107,14 @@ def csv_as_index(path, index=None, value_key=None, tabs=False):
             reader = csv.DictReader(csvfile, dialect='excel-tab')
         else:
             reader = csv.DictReader(csvfile)
-        first_row = next(reader)
-        key_iter = iter(first_row.keys())
-        csvfile.seek(0)
+
+        keys = reader.fieldnames
+
         if not index:
-            index = next(key_iter) # get first key as index
-        if len(first_row) == 2:
-            # load 2 column files as dict[string] = string
-            value_key = next(key_iter) # get second key
+            index = keys[0] # get first key as index
+        if not value_key and len(keys) == 2:
+            # If not otherwise specified, load 2 column files as dict[string] = string
+            value_key = keys[1] # get second key
         if value_key:
             return {row[index]: row[value_key] for row in reader if row[index] != '0'}
         else:
