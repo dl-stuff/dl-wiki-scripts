@@ -1001,6 +1001,7 @@ DATA_PARSER_PROCESSING = {
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
     'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
+    'MissionMemoryEventData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionNormalData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'QuestData': ('QuestDisplay', row_as_wikitext,
         [('QuestData', process_QuestData),
@@ -1019,11 +1020,23 @@ DATA_PARSER_PROCESSING = {
 }
 
 KV_PROCESSING = {
+    'AbilityData': ('AbilityData', row_as_kv_pairs, process_KeyValues),
     'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_KeyValues),
-    'EnemyActionHitAttribute': ('EnemyActionHitAttribute', row_as_kv_pairs, process_KeyValues),
-    'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
+    'BuildEventReward': ('BuildEventReward', row_as_kv_pairs, process_KeyValues),
+    'CampaignData': ('CampaignData', row_as_kv_pairs, process_KeyValues),
+    'CharaModeData': ('CharaModeData', row_as_kv_pairs, process_KeyValues),
+    'CharaUniqueCombo': ('CharaUniqueCombo', row_as_kv_pairs, process_KeyValues),
+    'CommonActionHitAttribute': ('CommonActionHitAttribute', row_as_kv_pairs, process_KeyValues),
     'EnemyAbility': ('EnemyAbility', row_as_kv_pairs, process_KeyValues),
-    'AbilityData': ('AbilityData', row_as_kv_pairs, process_KeyValues)
+    'EnemyActionHitAttribute': ('EnemyActionHitAttribute', row_as_kv_pairs, process_KeyValues),
+    'EnemyParam': ('EnemyParam', row_as_kv_pairs, process_KeyValues),
+    'EventData': ('EventData', row_as_kv_pairs, process_KeyValues),
+    'EventPassive': ('EventPassive', row_as_kv_pairs, process_KeyValues),
+    'LoginBonusReward': ('LoginBonusReward', row_as_kv_pairs, process_KeyValues),
+    'PlayerAction': ('PlayerAction', row_as_kv_pairs, process_KeyValues),
+    'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
+    'QuestData': ('QuestData', row_as_kv_pairs, process_KeyValues),
+    'RaidEventReward': ('RaidEventReward', row_as_kv_pairs, process_KeyValues)
 }
 
 if __name__ == '__main__':
