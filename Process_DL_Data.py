@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import Enemy_Parser
 import argparse
 import csv
 import json
@@ -1090,6 +1091,9 @@ if __name__ == '__main__':
         parser.process()
         parser.emit(kv_out)
         print('Saved kv/{}{}'.format(data_name, EXT))
+
+    # Outsource enemy parsing
+    Enemy_Parser.parse(in_dir, text_label_dict=TEXT_LABEL_DICT['en'])
 
     # with open('chaincoabs.json', 'w', newline='') as f:
     #     json.dump(CHAIN_COAB_DICT, f, sort_keys=True, indent=2)
