@@ -228,7 +228,9 @@ def parse(input_dir, output_dir='EnemyData',
     else:
         TEXT_LABEL = csv_to_dict(os.path.join(input_dir, 'TextLabel.txt'), tabs=True)
 
+    enemies_set = set()
     tribes = defaultdict(list)
+    enemies_count = 0
     nameless = []
     questless = []
     for enemy_param in enemy_param.values():
@@ -241,7 +243,9 @@ def parse(input_dir, output_dir='EnemyData',
             questless.append('{}: {}'.format(enemy_param['_ParamGroupName'], enemy))
             add = False
         if add:
+            enemies_set.add(enemy.data['Name'])
             tribes[enemy.data['Tribe']].append(enemy)
+            enemies_count += 1
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -254,7 +258,7 @@ def parse(input_dir, output_dir='EnemyData',
             outfile.write('\n'.join((str(e) for e in enemies)))
 
     if nameless or questless:
-        with open(os.path.join(output_dir, 'MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
+        with open(os.path.join(output_dir, '_MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
             if nameless:
                 outfile.write('Missing Enemy Names\n')
                 outfile.write('===================\n')
@@ -264,6 +268,14 @@ def parse(input_dir, output_dir='EnemyData',
                 outfile.write('Missing Quest Name Mapping\n')
                 outfile.write('==========================\n')
                 outfile.write('\n'.join((str(e) for e in questless)))
+
+    # Lastly, print the summary
+    with open(os.path.join(output_dir, '_Summary.txt'), 'w', encoding='utf-8') as outfile:
+        outfile.write('Total Enemy Entries: ' + str(enemies_count))
+        outfile.write('\nUnique Enemy Names: ' + str(len(enemies_set)))
+        outfile.write('\nEnemy Names\n')
+        outfile.write('===========\n')
+        outfile.write('\n'.join(sorted(enemies_set)))
 
 
 if __name__ == "__main__":
