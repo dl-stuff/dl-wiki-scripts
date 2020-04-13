@@ -881,6 +881,10 @@ def process_WeaponCraftData(row, existing_data):
     curr_row['DisassembleCoin'] = row['_DisassembleCoin']
     curr_row['MainWeaponId'] = row['_MainWeaponId']
     curr_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
+    if int(row['_AcquiredWeaponId1']) != 0:
+        curr_row['AcquiredWeaponId1'] = row['_AcquiredWeaponId1']
+    if int(row['_AcquiredWeaponId2']) != 0:
+        curr_row['AcquiredWeaponId2'] = row['_AcquiredWeaponId2']
 
     for i in range(1,WEAPON_CRAFT_DATA_MATERIAL_COUNT+1):
         curr_row['CraftMaterialType{}'.format(i)] = row['_CraftEntityType{}'.format(i)]
