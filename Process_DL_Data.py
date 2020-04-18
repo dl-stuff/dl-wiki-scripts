@@ -606,9 +606,8 @@ def process_SkillData(row, existing_data):
     new_row['Name']= get_label(row['_Name'])
     for i in range(1, 5):
         si_k = 'SkillLv{}IconName'.format(i)
-        new_row[si_k]= row['_'+si_k]
-    for i in range(1, 5):
         des_k = 'Description{}'.format(i)
+        new_row[si_k]= row['_'+si_k]
         new_row[des_k]= get_label(row['_'+des_k])
     new_row['MaxSkillLevel']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
