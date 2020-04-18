@@ -123,6 +123,7 @@ class Enemy:
         data['Id'] = ep['_Id']
         data['DataId'] = ep['_DataId']
         data['Name'] = get_label(el['_Name']) or DATA_ID_NAME_OVERRIDES.get(data['DataId'], '')
+        data['EnemyGroupName'] = ed['_EnemyGroupName']
         data['RareStayTime'] = ep['_RareStayTime']
         data['HP'] = ep['_HP']
         data['Atk'] = ep['_Atk']

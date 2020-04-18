@@ -1232,6 +1232,20 @@ BUILD_07_06_E_12	Full-Bloom Festivities: Master
 BUILD_07_06_E_14	Full-Bloom Festivities: Master
 BUILD_07_06_E_15	Full-Bloom Festivities: Master
 BUILD_07_06_E_16	Full-Bloom Festivities: Master
+BUILD_07_07_E_01	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_02	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_03	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_04	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_05	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_06	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_07	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_08	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_09	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_10	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_11	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_12	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_13	Full-Bloom Festivities: Nightmare
+BUILD_07_07_E_14	Full-Bloom Festivities: Nightmare
 BUILD_08_01_E_01	Flames of Reflection: Event
 BUILD_08_01_E_02	Flames of Reflection: Event
 BUILD_08_01_E_03	Flames of Reflection: Event
@@ -1837,21 +1851,21 @@ EX_HUNTER_01_05_E_12	Rathalos's Trial (Solo)
 EX_HUNTER_01_05_E_13	Rathalos's Trial (Solo)
 EX_HUNTER_01_05_E_14	Rathalos's Trial (Solo)
 EX_HUNTER_01_05_E_15	Rathalos's Trial (Solo)
-EX_HUNTER_01_05_E_21	Advanced Rathalos's Trial (Solo)
-EX_HUNTER_01_05_E_22	Advanced Rathalos's Trial (Solo)
-EX_HUNTER_01_05_E_23	Advanced Rathalos's Trial (Solo)
-EX_HUNTER_01_05_E_24	Advanced Rathalos's Trial (Solo)
-EX_HUNTER_01_05_E_25	Advanced Rathalos's Trial (Solo)
+EX_HUNTER_01_05_E_21	Advanced: Rathalos's Trial (Solo)
+EX_HUNTER_01_05_E_22	Advanced: Rathalos's Trial (Solo)
+EX_HUNTER_01_05_E_23	Advanced: Rathalos's Trial (Solo)
+EX_HUNTER_01_05_E_24	Advanced: Rathalos's Trial (Solo)
+EX_HUNTER_01_05_E_25	Advanced: Rathalos's Trial (Solo)
 EX_HUNTER_01_05_E_31	Rathalos's Trial
 EX_HUNTER_01_05_E_32	Rathalos's Trial
 EX_HUNTER_01_05_E_33	Rathalos's Trial
 EX_HUNTER_01_05_E_34	Rathalos's Trial
 EX_HUNTER_01_05_E_35	Rathalos's Trial
-EX_HUNTER_01_05_E_41	Advanced Rathalos's Trial
-EX_HUNTER_01_05_E_42	Advanced Rathalos's Trial
-EX_HUNTER_01_05_E_43	Advanced Rathalos's Trial
-EX_HUNTER_01_05_E_44	Advanced Rathalos's Trial
-EX_HUNTER_01_05_E_45	Advanced Rathalos's Trial
+EX_HUNTER_01_05_E_41	Advanced: Rathalos's Trial
+EX_HUNTER_01_05_E_42	Advanced: Rathalos's Trial
+EX_HUNTER_01_05_E_43	Advanced: Rathalos's Trial
+EX_HUNTER_01_05_E_44	Advanced: Rathalos's Trial
+EX_HUNTER_01_05_E_45	Advanced: Rathalos's Trial
 EX_HUNTER_01_06_E_01	Fatalis Clash: G★★★★ (Solo)
 EX_HUNTER_01_06_E_02	Fatalis Clash: G★★★★ (Solo)
 EX_HUNTER_01_06_E_03	Fatalis Clash: G★★★★ (Solo)
@@ -1867,31 +1881,31 @@ EX_HUNTER_01_06_E_22	Dreadking Rathalos's Trial (Solo)
 EX_HUNTER_01_06_E_23	Dreadking Rathalos's Trial (Solo)
 EX_HUNTER_01_06_E_24	Dreadking Rathalos's Trial (Solo)
 EX_HUNTER_01_06_E_25	Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_31	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_32	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_33	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_34	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_35	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_41	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_42	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_43	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_44	Advanced Dreadking Rathalos's Trial (Solo)
-EX_HUNTER_01_06_E_45	Advanced Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_31	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_32	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_33	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_34	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_35	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_41	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_42	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_43	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_44	Advanced: Dreadking Rathalos's Trial (Solo)
+EX_HUNTER_01_06_E_45	Advanced: Dreadking Rathalos's Trial (Solo)
 EX_HUNTER_01_06_E_51	Dreadking Rathalos's Trial
 EX_HUNTER_01_06_E_52	Dreadking Rathalos's Trial
 EX_HUNTER_01_06_E_53	Dreadking Rathalos's Trial
 EX_HUNTER_01_06_E_54	Dreadking Rathalos's Trial
 EX_HUNTER_01_06_E_55	Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_61	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_62	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_63	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_64	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_65	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_71	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_72	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_73	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_74	Advanced Dreadking Rathalos's Trial
-EX_HUNTER_01_06_E_75	Advanced Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_61	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_62	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_63	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_64	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_65	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_71	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_72	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_73	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_74	Advanced: Dreadking Rathalos's Trial
+EX_HUNTER_01_06_E_75	Advanced: Dreadking Rathalos's Trial
 
 
 
