@@ -123,7 +123,7 @@ class Enemy:
         data['Id'] = ep['_Id']
         data['DataId'] = ep['_DataId']
         data['Name'] = get_label(el['_Name']) or DATA_ID_NAME_OVERRIDES.get(data['DataId'], '')
-        data['EnemyGroupName'] = ed['_EnemyGroupName']
+        data['ModelId'] = get_model_name(ed)
         data['RareStayTime'] = ep['_RareStayTime']
         data['HP'] = ep['_HP']
         data['Atk'] = ep['_Atk']
@@ -196,6 +196,30 @@ def get_rare_enemy_quest_name(x, y):
         return 'Campaign / Avenue / Ruins Quests'
     else:
         return RARE_ENEMY_QUESTS[y] + str(x)
+
+# Categories whose 3D model resource IDs depend on their Base and Variation IDs
+BASE_VARIATION_PREFIXES = {
+    '3': 'd',
+    '5': 'c',
+}
+# Categories whose 3D model resource IDs depend on their BookIds
+BOOK_PREFIXES = {
+    '1': 'e',
+    '2': 'b',
+    '4': 'r',
+    '7': 'h',
+    '9': 'o',
+}
+def get_model_name(ed):
+    category = ed['_Category']
+    if category in BOOK_PREFIXES:
+        return BOOK_PREFIXES[category] + ed['_BookId'][-7:]
+    elif category in BASE_VARIATION_PREFIXES:
+        return '{}{}_{}'.format(BASE_VARIATION_PREFIXES[category],
+                                ed['_BaseId'], ed['_VariationId'].zfill(2))
+    else:
+        return ''
+
 
 def csv_to_dict(path, index=None, value_key=None, tabs=False):
     with open(path, 'r', newline='', encoding='utf-8') as csvfile:
