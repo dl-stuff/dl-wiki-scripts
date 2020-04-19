@@ -7,7 +7,10 @@ import os
 import re
 
 BOOK_ID_NAME_OVERRIDES = {
-    '320000801': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType']))
+    '320000801': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # Fafnir Roy III
+    '200170101': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 1
+    '200170401': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 2
+    '900400001': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 2
 }
 DATA_ID_NAME_OVERRIDES = {
     '400010002': 'Head',
