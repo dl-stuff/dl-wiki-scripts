@@ -74,6 +74,7 @@ FACILITY_EFFECT_TYPE_DICT = {
 }
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
+PERCENTAGE_REGEX = re.compile(r' (\d+)%')
 
 class DataParser:
     def __init__(self, _data_name, _template, _formatter, _process_info):
@@ -164,13 +165,11 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     if row[ROW_INDEX] in CHAIN_COAB_SET:
         # Process abilities known to be chain coabilities (from being
         # referenced in CharaData), separately.
-        # process_ChainCoAbility(row, existing_data)
         return
     new_row = OrderedDict()
 
     new_row['Id'] = row[ROW_INDEX]
     new_row['PartyPowerWeight'] = row['_PartyPowerWeight']
-    new_row['GenericName'] = '' # EDIT_THIS
 
     shift_value = 0
     try:
@@ -184,9 +183,12 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
 
     # TODO: figure out what actually goes to {ability_val0}
     ability_value = EDIT_THIS if row['_AbilityType1UpValue'] == '0' else row['_AbilityType1UpValue']
-    new_row['Name'] = get_label(row['_Name']).format(
+    name = get_label(row['_Name']).format(
         ability_shift0  =   ROMAN_NUMERALS[shift_value], # heck
         ability_val0    =   ability_value)
+    # guess the generic name by chopping off the last word, which is usually +n% or V
+    new_row['GenericName'] = name[:name.rfind(' ')].replace('%', '')
+    new_row['Name'] = name
 
     # _ElementalType seems unreliable, use (element) in _Name for now
     detail_label = get_label(row['_Details'])
@@ -198,6 +200,7 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
         element_owner   =   element)
+    new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
 
     new_row['AbilityIconName'] = row['_AbilityIconName']
     new_row['AbilityGroup'] = row['_ViewAbilityGroupId1']
@@ -223,7 +226,7 @@ def process_ChainCoAbility(row, existing_data):
     #     pass
 
     # guess the generic name by chopping off the last word, which is usually +n% or V
-    new_row['GenericName'] = new_row['Name'][:new_row['Name'].rfind(' ')]
+    new_row['GenericName'] = new_row['Name'][:new_row['Name'].rfind(' ')].replace('%', '')
 
     # _ElementalType seems unreliable, use (element) in _Name for now
     detail_label = get_label(row['_Details'])
@@ -235,6 +238,7 @@ def process_ChainCoAbility(row, existing_data):
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
         element_owner   =   element)
+    new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
     new_row['AbilityIconName'] = row['_AbilityIconName']
 
     existing_data.append((new_row['Name'], new_row))
@@ -611,6 +615,7 @@ def process_SkillData(row, existing_data):
         des_k = 'Description{}'.format(i)
         new_row[si_k]= row['_'+si_k]
         new_row[des_k]= get_label(row['_'+des_k])
+        new_row[des_k] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row[des_k])
     new_row['MaxSkillLevel']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
