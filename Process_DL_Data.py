@@ -1042,30 +1042,23 @@ KV_PROCESSING = {
     'RaidEventReward': ('RaidEventReward', row_as_kv_pairs, process_KeyValues)
 }
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
-    parser.add_argument('-i', type=str, help='directory of input text files', default='./')
-    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output-data)', default='./output-data')
-    parser.add_argument('-j', type=str, help='path to json file with ordering', default='')
-    # parser.add_argument('-data', type=list)
-    parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
-
-    args = parser.parse_args()
-    if args.delete_old:
-        if os.path.exists(args.o):
+def process(input_dir='./', output_dir='./output-data', ordering_data_path=None, delete_old=False):
+    global in_dir, ORDERING_DATA, SKILL_DATA_NAMES, EPITHET_RANKS, RAID_ITEM_LABELS
+    if delete_old:
+        if os.path.exists(output_dir):
             try:
-                rmtree(args.o)
-                print('Deleted old {}'.format(args.o))
+                rmtree(output_dir)
+                print('Deleted old {}'.format(output_dir))
             except Exception:
-                print('Could not delete old {}'.format(args.o))
-    if args.j:
-        with open(args.j, 'r') as json_ordering_fp:
+                print('Could not delete old {}'.format(output_dir))
+    if ordering_data_path:
+        with open(ordering_data_path, 'r') as json_ordering_fp:
             ORDERING_DATA = json.load(json_ordering_fp)
-    if not os.path.exists(args.o):
-        os.makedirs(args.o)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    in_dir = args.i if args.i[-1] == '/' else args.i+'/'
-    out_dir = args.o if args.o[-1] == '/' else args.o+'/'
+    in_dir = input_dir if input_dir[-1] == '/' else input_dir+'/'
+    out_dir = output_dir if output_dir[-1] == '/' else output_dir+'/'
 
     TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
     try:
@@ -1097,5 +1090,13 @@ if __name__ == '__main__':
     # Outsource enemy parsing
     Enemy_Parser.parse(in_dir, text_label_dict=TEXT_LABEL_DICT['en'])
 
-    # with open('chaincoabs.json', 'w', newline='') as f:
-    #     json.dump(CHAIN_COAB_DICT, f, sort_keys=True, indent=2)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Process CSV data into Wikitext.')
+    parser.add_argument('-i', type=str, help='directory of input text files', default='./')
+    parser.add_argument('-o', type=str, help='directory of output text files  (default: ./output-data)', default='./output-data')
+    parser.add_argument('-j', type=str, help='path to json file with ordering', default='')
+    parser.add_argument('--delete_old', help='delete older output files', dest='delete_old', action='store_true')
+
+    args = parser.parse_args()
+    process(input_dir=args.i, output_dir=args.o, ordering_data_path=args.j, delete_old=args.delete_old)
