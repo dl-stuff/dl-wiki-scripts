@@ -433,9 +433,10 @@ def process_Dragon(row, existing_data):
     try:
         new_row['SkillID'] = row['_Skill1']
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+        new_row['Skill2ID'] = row['_Skill2']
+        new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
     except KeyError:
-        new_row['SkillID'] = ''
-        new_row['SkillName'] = ''
+        pass
     for i in (1, 2):
         for j in (1, 2):
             ab_k = 'Abilities{}{}'.format(i, j)
@@ -670,7 +671,7 @@ def process_QuestData(row, existing_data):
     pay_entity_type_dict = {
         "20" : get_raid_item_label(row['_PayEntityId']),
         "26" : 'Astral Piece',
-        "32" : 'Otherworld Fragment' if row['_PayEntityId'] == '2200131' else 'Otherworld Gem'
+        "32" : 'Otherworld Fragment' if row['_PayEntityId'] == '2200131' else 'Otherworld Gem',
     }
 
     new_row = {}
@@ -760,7 +761,7 @@ def process_QuestRewardData(row, existing_data):
         '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
         '15': (lambda x: 'Don\'t use any continues'),
         '18': (lambda x: 'Finish in {} seconds or less'.format(x)),
-        '32': (lambda x: 'Don\'t use any revives')
+        '32': (lambda x: 'Don\'t use any revives'),
     }
     clear_reward_dict = {
         '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
