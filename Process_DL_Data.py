@@ -28,7 +28,6 @@ TEXT_LABEL_JP = 'TextLabelJP'
 TEXT_LABEL_DICT = {}
 
 CHAIN_COAB_SET = set()
-# CHAIN_COAB_DICT = {}
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
 RAID_EVENT_ITEM_DATA_NAME = 'RaidEventItem'
@@ -39,7 +38,15 @@ SKILL_DATA_NAMES = None
 ORDERING_DATA = {}
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
-ELEMENT_TYPE = [None, 'Flame', 'Water', 'Wind', 'Light', 'Shadow']
+ELEMENT_TYPE = {
+    '0': None,
+    '1': 'Flame',
+    '2': 'Water',
+    '3': 'Wind',
+    '4': 'Light',
+    '5': 'Shadow',
+    '99': 'None'
+}
 CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
 QUEST_TYPE_DICT = {
@@ -186,7 +193,7 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     if '{element_owner}' in detail_label and ')' in new_row['Name']:
         element = new_row['Name'][1:new_row['Name'].index(')')]
     else:
-        element = ELEMENT_TYPE[int(row['_ElementalType'])]
+        element = ELEMENT_TYPE[row['_ElementalType']]
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
@@ -223,7 +230,7 @@ def process_ChainCoAbility(row, existing_data):
     if '{element_owner}' in detail_label and ')' in new_row['Name']:
         element = new_row['Name'][1:new_row['Name'].index(')')]
     else:
-        element = ELEMENT_TYPE[int(row['_ElementalType'])]
+        element = ELEMENT_TYPE[row['_ElementalType']]
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
@@ -321,12 +328,7 @@ def process_CharaData(row, existing_data):
     new_row['Rarity'] = row['_Rarity']
     new_row['Gender'] = '' # EDIT_THIS
     new_row['Race'] = '' # EDIT_THIS
-    elemental_type_int = int(row['_ElementalType'])
-    if elemental_type_int == 99:
-        # The puppy has a non-existent elemental type as an adventurer.
-        new_row['ElementalType'] = ''
-    else:
-        new_row['ElementalType'] = ELEMENT_TYPE[elemental_type_int]
+    new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
     new_row['CharaType'] = CLASS_TYPE[int(row['_CharaType'])]
     new_row['VariationId'] = row['_VariationId']
     for stat in ('Hp', 'Atk'):
@@ -417,7 +419,7 @@ def process_Dragon(row, existing_data):
     new_row['Availability'] = '' # EDIT_THIS
     new_row['Rarity'] = row['_Rarity']
     new_row['Gender'] = '' # EDIT_THIS
-    new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
+    new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
     new_row['VariationId'] = row['_VariationId']
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MinHp'] = row['_MinHp']
@@ -685,13 +687,8 @@ def process_QuestData(row, existing_data):
     new_row['EventName'] = get_label('EVENT_NAME_{}'.format(row['_Gid']))
     new_row['SectionName'] = get_label(row['_SectionName'])
     new_row['QuestViewName'] = get_label(row['_QuestViewName'])
-    # Case when quest has no elemental type
-    try:
-        new_row['Elemental'] = ELEMENT_TYPE[int(row['_Elemental'])]
-        # new_row['ElementalId'] = int(row['_Elemental'])
-    except IndexError:
-        new_row['Elemental'] = 'None'
-        # new_row['ElementalId'] = 0
+    new_row['Elemental'] = ELEMENT_TYPE[row['_Elemental']]
+    # new_row['ElementalId'] = int(row['_Elemental'])
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
         new_row['SuggestedMight'] = row['_Difficulty']
@@ -835,11 +832,7 @@ def process_WeaponData(row, existing_data):
     new_row['WeaponNameJP'] = get_label(row['_Name'], lang='jp')
     new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
     new_row['Rarity'] = row['_Rarity']
-    # Case when weapon has no elemental type
-    try:
-        new_row['ElementalType'] = ELEMENT_TYPE[int(row['_ElementalType'])]
-    except IndexError:
-        new_row['ElementalType'] = 'None'
+    new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = availability_dict.get(row['_CraftSeriesId'], '')
