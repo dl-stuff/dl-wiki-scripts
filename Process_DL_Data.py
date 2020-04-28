@@ -734,7 +734,16 @@ def process_QuestData(row, existing_data):
     new_row['ShowEnemies'] = 1
     new_row['AutoPlayType'] = row['_AutoPlayType']
 
-    existing_data.append((new_row['QuestViewName'], new_row))
+    page_name = new_row['QuestViewName']
+    if new_row.get('GroupType', '') == 'Campaign':
+      if row['_VariationType'] == '1':
+        page_name += '/Normal'
+      elif row['_VariationType'] == '2':
+        page_name += '/Hard'
+      elif row['_VariationType'] == '3':
+        page_name += '/Very Hard'
+
+    existing_data.append((page_name, new_row))
 
 def process_QuestRewardData(row, existing_data):
     QUEST_FIRST_CLEAR_COUNT = 5
@@ -1004,6 +1013,7 @@ DATA_PARSER_PROCESSING = {
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
     'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
+    'MissionMainStoryData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionMemoryEventData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionNormalData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'QuestData': ('QuestDisplay', row_as_wikitext,
