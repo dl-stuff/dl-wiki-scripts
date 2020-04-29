@@ -574,7 +574,7 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     if len(upgrades) > 0:
     # if False:
         remaining = upgrade_totals['Materials'].copy()
-        mat_delim = ' '
+        mat_delim = ', '
         for u in upgrades:
             if len(remaining) == 1:
                 remaing_mats = []
