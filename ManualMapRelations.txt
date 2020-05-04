@@ -1601,10 +1601,22 @@ CLB_01_01_24_E_02	Veronica's Trial
 
 
 
-
-
-
-
+CLB_01_03_04_E_01	Sweet Dream
+CLB_01_03_04_E_02	Dragon Scion
+CLB_01_03_04_E_03	Prince of Ylisse
+CLB_01_03_05_E_01	Battle with Peony (Normal)
+CLB_01_03_06_E_01	Battle with Peony (Hard)
+CLB_01_03_07_E_01	Peony's Trial
+CLB_01_03_05_E_02	Battle with Tiki (Normal)
+CLB_01_03_05_E_04	Battle with Tiki (Normal)
+CLB_01_03_06_E_02	Battle with Tiki (Hard)
+CLB_01_03_06_E_04	Battle with Tiki (Hard)
+CLB_01_03_07_E_02	Tiki's Trial
+CLB_01_03_07_E_04	Tiki's Trial
+CLB_01_03_07_E_05	Tiki's Trial
+CLB_01_03_05_E_03	Battle with Chrom (Normal)
+CLB_01_03_06_E_03	Battle with Chrom (Hard)
+CLB_01_03_07_E_03	Chrom's Trial
 
 
 
