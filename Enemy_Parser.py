@@ -108,7 +108,7 @@ QUEST_NAME_REGEX = {
     # CLB_01_03_21_E_01
     # CLB_01_03_22_E_01
     # CLB_01_03_27_E_01
-    re.compile(r'CLB_01_03_(20|21|22|27)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403140{int(x)-19 if x != "27" else 4}')),
+    re.compile(r'CLB_01_03_(20|21|22|27)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403150{int(x)-19 if x != "27" else 4}')),
 }
 QUEST_NAME_OVERRIDES = {
     'VOIDBATTLE': {
