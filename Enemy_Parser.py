@@ -6,40 +6,6 @@ import csv
 import os
 import re
 
-BOOK_ID_NAME_OVERRIDES = {
-    '320000801': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # Fafnir Roy III
-    '200170101': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 1
-    '200170401': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 2
-    '900400001': (lambda data: '{} ({})'.format(data['Name'], data['ElementalType'])), # ?????? Cube 2
-}
-DATA_ID_NAME_OVERRIDES = {
-    '400010002': 'Head',
-    '100360006': 'Imperial Defender (Jeanne)',
-    '500010007': 'Imperial Soldier (Jeanne)',
-    '500030007': 'Imperial Lancer (Jeanne)',
-    '500050013': 'Imperial Mage (Jeanne)',
-    '500140001': 'Imperial Phantom (Flame)',
-    '500150002': 'Imperial Phantom (Water)',
-    '500150003': 'Imperial Phantom (Wind)',
-    '500150004': 'Imperial Phantom (Light)',
-    '500150015': 'Imperial Phantom (Shadow)',
-    '900160001': 'Reaper',
-    '900180001': 'Magma Lump',
-    '900190001': 'Drawbridge',
-    '900220001': 'Large Bubble',
-    '900230001': 'Small Bubble',
-    '900240001': 'Whirlpool',
-    '900110001': 'Sphere of Salvation',
-    '900250001': 'Sphere of Salvation',
-    '900260001': 'Dominion Lance',
-    '900270001': 'Octopus Bomb',
-    '900290501': 'Purgatorial Prison',
-    '900320301': 'Wily Machine 2 Cockpit Armor',
-    '900330301': 'Underdog\'s Mine',
-    '900350001': 'Floating Spirit Summoning Circle',
-    '900400001': '???????',
-    '900410401': 'Unbreakable Satellite',
-}
 QUEST_NAME_REGEX = {
     re.compile(r'TUTORIAL_'): (lambda: 'Prologue'),
     re.compile(r'MAIN_(\d+)_(\d+)_E_'):
@@ -165,7 +131,7 @@ class Enemy:
         data = OrderedDict()
         data['Id'] = ep['_Id']
         data['DataId'] = ep['_DataId']
-        data['Name'] = get_label(el['_Name']) or DATA_ID_NAME_OVERRIDES.get(data['DataId'], '')
+        data['Name'] = get_label(el['_Name'])
         data['ModelId'] = get_model_name(ed)
         data['RareStayTime'] = ep['_RareStayTime']
         data['HP'] = ep['_HP']
@@ -212,9 +178,17 @@ class Enemy:
         data['Ability04'] = ep['_Ability04']
         self.data = data
 
-        # Name overrides that take precedence over a known name
-        if ed['_BookId'] in BOOK_ID_NAME_OVERRIDES:
-            data['Name'] = BOOK_ID_NAME_OVERRIDES[ed['_BookId']](data)
+    def summary(self):
+        return ''.join([
+                'Id: ', self.data['Id'],
+                ', DataId: ', self.data['DataId'],
+                ', ModelId: ', self.data['ModelId'],
+                '\n\tName: ', self.data['Name'],
+                '\n\tQuest: ', self.data['MissionType'],
+                '\n\tTribe: ', self.data['Tribe'],
+                '\n\tElement: ', self.data['ElementalType'],
+                '\n\tHP: ', self.data['HP'], ', ATK: ', self.data['Atk'],
+            ])
 
     def __repr__(self):
         for item in self.data.items():
@@ -279,7 +253,7 @@ def csv_to_dict(path, index=None, value_key=None, tabs=False):
 
         if not index:
             index = keys[0] # get first key as index
-        if not value_key and 2 <= len(keys) <= 3: # bolb
+        if not value_key and len(keys) == 2:
             # If not otherwise specified, load 2 column files as dict[string] = string
             value_key = keys[-1] # get second key
         if value_key:
@@ -299,24 +273,23 @@ def parse(input_dir, output_dir='EnemyData',
     if text_label_dict:
         TEXT_LABEL = text_label_dict
     else:
-        TEXT_LABEL = csv_to_dict(os.path.join(input_dir, 'TextLabel.txt'), tabs=True)
+        TEXT_LABEL = csv_to_dict(os.path.join(input_dir, 'TextLabel.txt'), index='_Id', value_key='_Text', tabs=True)
 
     enemies_set = set()
     tribes = defaultdict(list)
     enemies_count = 0
-    nameless = []
     questless = []
     for enemy_param in enemy_param.values():
         enemy = Enemy(enemy_param, enemy_data, enemy_list, weapon_data)
-        add = True
-        if not enemy.data['Name']:
-            nameless.append(enemy)
-            add = False
+
         if not enemy.data['MissionType']:
-            questless.append('{}: {}'.format(enemy_param['_ParamGroupName'], enemy))
-            add = False
-        if add:
-            enemies_set.add(enemy.data['Name'])
+            questless.append('{}: {}'.format(enemy_param['_ParamGroupName'], enemy.summary()))
+        else:
+            try:
+                enemies_set.add(enemy.data['Name'])
+            except Exception as e:
+                print(e)
+                print(enemy.data['Name'])
             tribes[enemy.data['Tribe']].append(enemy)
             enemies_count += 1
 
@@ -330,17 +303,12 @@ def parse(input_dir, output_dir='EnemyData',
         with open(output_path, 'w', encoding='utf-8') as outfile:
             outfile.write('\n'.join((str(e) for e in enemies)))
 
-    if nameless or questless:
+    if questless:
         with open(os.path.join(output_dir, '_MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
-            if nameless:
-                outfile.write('Missing Enemy Names\n')
-                outfile.write('===================\n')
-                outfile.write('\n'.join((str(e) for e in nameless)))
-                outfile.write('\n\n')
             if questless:
                 outfile.write('Missing Quest Name Mapping\n')
                 outfile.write('==========================\n')
-                outfile.write('\n'.join((str(e) for e in questless)))
+                outfile.write('\n'.join((e for e in questless)))
 
     # Lastly, print the summary
     with open(os.path.join(output_dir, '_Summary.txt'), 'w', encoding='utf-8') as outfile:
