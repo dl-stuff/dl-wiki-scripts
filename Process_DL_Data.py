@@ -611,6 +611,7 @@ def process_SkillData(row, existing_data):
 
     new_row['SkillId']= row[ROW_INDEX]
     new_row['Name']= get_label(row['_Name'])
+    new_row['SkillType']= row['_SkillType']
     for i in range(1, 5):
         si_k = 'SkillLv{}IconName'.format(i)
         des_k = 'Description{}'.format(i)
@@ -620,6 +621,16 @@ def process_SkillData(row, existing_data):
     new_row['MaxSkillLevel']= '' # EDIT_THIS
     new_row['Sp']= row['_Sp']
     new_row['SpLv2']= row['_SpLv2']
+    new_row['SpLv3']= row['_SpLv3']
+    new_row['SpLv4']= row['_SpLv4']
+    new_row['SpEdit']= row['_SpEdit']
+    new_row['SpLv2Edit']= row['_SpLv2Edit']
+    new_row['SpLv3Edit']= row['_SpLv3Edit']
+    new_row['SpLv4Edit']= row['_SpLv4Edit']
+    new_row['SpDragon']= row['_SpDragon']
+    new_row['SpLv2Dragon']= row['_SpLv2Dragon']
+    new_row['SpLv3Dragon']= row['_SpLv3Dragon']
+    new_row['SpLv4Dragon']= row['_SpLv4Dragon']
     new_row['SpRegen']= '' # EDIT_THIS
     new_row['IsAffectedByTension']= row['_IsAffectedByTension']
     new_row['ZoominTime']= '{:.1f}'.format(float(row['_ZoominTime']))
