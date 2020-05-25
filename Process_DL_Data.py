@@ -361,6 +361,15 @@ def process_CharaData(row, existing_data):
         new_row['Skill1Name'] = ''
         new_row['Skill2Name'] = ''
 
+    new_row['HoldEditSkillCost'] = row['_HoldEditSkillCost']
+    new_row['EditSkillId'] = row['_EditSkillId']
+    new_row['EditSkillLevelNum'] = row['_EditSkillLevelNum']
+    new_row['EditSkillCost'] = row['_EditSkillCost']
+    new_row['EditSkillRelationId'] = row['_EditSkillRelationId']
+    new_row['EditReleaseEntityType1'] = row['_EditReleaseEntityType1']
+    new_row['EditReleaseEntityId1'] = row['_EditReleaseEntityId1']
+    new_row['EditReleaseEntityQuantity1'] = row['_EditReleaseEntityQuantity1']
+
     for i in range(1, 4):
         for j in range(1, 5):
             ab_k = 'Abilities{}{}'.format(i, j)
