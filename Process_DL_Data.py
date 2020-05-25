@@ -617,29 +617,26 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
 
 def process_SkillData(row, existing_data):
     new_row = OrderedDict()
+    max_skill_lv = 4
 
     new_row['SkillId']= row[ROW_INDEX]
     new_row['Name']= get_label(row['_Name'])
     new_row['SkillType']= row['_SkillType']
-    for i in range(1, 5):
+    for i in range(1, max_skill_lv + 1):
         si_k = 'SkillLv{}IconName'.format(i)
-        des_k = 'Description{}'.format(i)
         new_row[si_k]= row['_'+si_k]
+    for i in range(1, max_skill_lv + 1):
+        des_k = 'Description{}'.format(i)
         new_row[des_k]= get_label(row['_'+des_k])
         new_row[des_k] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row[des_k])
     new_row['MaxSkillLevel']= '' # EDIT_THIS
-    new_row['Sp']= row['_Sp']
-    new_row['SpLv2']= row['_SpLv2']
-    new_row['SpLv3']= row['_SpLv3']
-    new_row['SpLv4']= row['_SpLv4']
-    new_row['SpEdit']= row['_SpEdit']
-    new_row['SpLv2Edit']= row['_SpLv2Edit']
-    new_row['SpLv3Edit']= row['_SpLv3Edit']
-    new_row['SpLv4Edit']= row['_SpLv4Edit']
-    new_row['SpDragon']= row['_SpDragon']
-    new_row['SpLv2Dragon']= row['_SpLv2Dragon']
-    new_row['SpLv3Dragon']= row['_SpLv3Dragon']
-    new_row['SpLv4Dragon']= row['_SpLv4Dragon']
+
+    # For Sp, SpLv2, SpLv3, SpEdit, SpDragon, etc fields
+    for suffix in ('', 'Edit', 'Dragon'):
+        for prefix in ['Sp'] + ['SpLv'+str(i) for i in range(2, max_skill_lv + 1)]:
+            sp_key = prefix + suffix
+            new_row[sp_key]= row['_' + sp_key]
+
     new_row['SpRegen']= '' # EDIT_THIS
     new_row['IsAffectedByTension']= row['_IsAffectedByTension']
     new_row['ZoominTime']= '{:.1f}'.format(float(row['_ZoominTime']))
