@@ -36,44 +36,29 @@ QUEST_NAME_REGEX = {
             (lambda x, y: get_label('QUEST_NAME_300{}01{}'.format(
                     QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y))),
 
-    # QUEST_NAME_214010301 - front normal
-    # CLB_01_01_11_E_01
-    # QUEST_NAME_214010302 - hard
-    # CLB_01_01_12_E_01
-    # QUEST_NAME_214010303 - lunatic
-    # CLB_01_01_13_E_01
+    # Phraeganoth
+    re.compile(r'RAID_01_0([56])_E_(\d)\d'): (lambda x, y: get_label(f'QUEST_NAME_204200{x}0{int(y)+1}')),
+
+    # Timeworn Torment
+    re.compile(r'RAID_10_01_E_0\d'): (lambda: get_label(f'QUEST_NAME_204100301')),
+    re.compile(r'RAID_10_03_E_0\d'): (lambda: get_label(f'QUEST_NAME_204100302')),
+    re.compile(r'RAID_10_04_E_0\d'): (lambda: get_label(f'QUEST_NAME_204100401')),
+    re.compile(r'RAID_10_05_E_0\d'): (lambda: get_label(f'QUEST_NAME_204100501')),
+    re.compile(r'RAID_10_06_E_0\d'): (lambda: get_label(f'QUEST_NAME_204100601')),
+    re.compile(r'RAID_10_06_E_1\d'): (lambda: get_label(f'QUEST_NAME_204100602')),
+    re.compile(r'RAID_10_06_E_2\d'): (lambda: get_label(f'QUEST_NAME_204100603')),
+    re.compile(r'RAID_10_01_E_18'): (lambda: get_label(f'QUEST_NAME_204100201')),
+    re.compile(r'RAID_10_03_E_11'): (lambda: get_label(f'QUEST_NAME_204100202')),
+    re.compile(r'RAID_10_01_E_1[1-3]'): (lambda: get_label(f'QUEST_NAME_204100101')),
+    re.compile(r'RAID_10_01_E_1[4-7]'): (lambda: get_label(f'QUEST_NAME_204100102')),
+
+    # FEH collab
     re.compile(r'CLB_01_01_1([1-3])_E_\d\d'): (lambda x: get_label('QUEST_NAME_21401030{}'.format(x))),
-    # QUEST_NAME_214030601 - thorr normal
-    # CLB_01_03_01_E_01
-    # QUEST_NAME_214030602 - hard
-    # CLB_01_03_02_E_01
-    # QUEST_NAME_214030603 - lunatic
-    # CLB_01_03_03_E_01
     re.compile(r'CLB_01_03_0([1-3])_E_\d\d'): (lambda x: get_label('QUEST_NAME_21403060{}'.format(x))),
-    # CLB_01_03_08_E_01
-    # CLB_01_03_09_E_01
-    # CLB_01_03_10_E_01
-    # CLB_01_03_23_E_01
     re.compile(r'CLB_01_03_(08|09|10|23)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403110{int(x)-7 if x != "23" else 4}')),
-    # CLB_01_03_11_E_01
-    # CLB_01_03_12_E_01
-    # CLB_01_03_13_E_01
-    # CLB_01_03_24_E_01
     re.compile(r'CLB_01_03_(11|12|13|24)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403120{int(x)-10 if x != "24" else 4}')),
-    # CLB_01_03_14_E_01
-    # CLB_01_03_15_E_01
-    # CLB_01_03_16_E_01
-    # CLB_01_03_25_E_01
     re.compile(r'CLB_01_03_(14|15|16|25)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403130{int(x)-13 if x != "25" else 4}')),
-    # CLB_01_03_17_E_01
-    # CLB_01_03_18_E_01
-    # CLB_01_03_19_E_01
-    # CLB_01_03_26_E_01
     re.compile(r'CLB_01_03_(17|18|19|26)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403140{int(x)-16 if x != "26" else 4}')),
-    # CLB_01_03_20_E_01
-    # CLB_01_03_21_E_01
-    # CLB_01_03_22_E_01
-    # CLB_01_03_27_E_01
     re.compile(r'CLB_01_03_(20|21|22|27)_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_21403150{int(x)-19 if x != "27" else 4}')),
 }
 QUEST_NAME_OVERRIDES = {
@@ -209,7 +194,8 @@ def get_enemy_quest_name(group_name):
     for pattern in QUEST_NAME_REGEX:
         match = pattern.match(group_name)
         if match:
-            return QUEST_NAME_REGEX[pattern](*match.groups())
+            name = QUEST_NAME_REGEX[pattern](*match.groups())
+            return name
     return MANUAL_QUEST_MAP.get(group_name, '')
 
 def get_rare_enemy_quest_name(x, y):
@@ -303,12 +289,11 @@ def parse(input_dir, output_dir='EnemyData',
         with open(output_path, 'w', encoding='utf-8') as outfile:
             outfile.write('\n'.join((str(e) for e in enemies)))
 
-    if questless:
-        with open(os.path.join(output_dir, '_MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
-            if questless:
-                outfile.write('Missing Quest Name Mapping\n')
-                outfile.write('==========================\n')
-                outfile.write('\n'.join((e for e in questless)))
+    with open(os.path.join(output_dir, '_MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
+        if questless:
+            outfile.write('Missing Quest Name Mapping\n')
+            outfile.write('==========================\n')
+            outfile.write('\n'.join((e for e in questless)))
 
     # Lastly, print the summary
     with open(os.path.join(output_dir, '_Summary.txt'), 'w', encoding='utf-8') as outfile:
