@@ -218,10 +218,18 @@ BOOK_PREFIXES = {
     '7': 'h',
     '9': 'o',
 }
+BOOK_GROUP_PREFIXES = {
+    'ENM': 'e',
+    'BOS': 'b',
+    'RID': 'r',
+    'HBS': 'h',
+    'EOJ': 'o',
+}
 def get_model_name(ed):
     category = ed['_Category']
-    if category in BOOK_PREFIXES:
-        return BOOK_PREFIXES[category] + ed['_BookId'][-7:]
+    group = ed['_EnemyGroupName'].split('_', 1)[0]
+    if group in BOOK_GROUP_PREFIXES:
+        return BOOK_GROUP_PREFIXES[group] + ed['_BookId'][-7:]
     elif category in BASE_VARIATION_PREFIXES:
         return '{}{}_{}'.format(BASE_VARIATION_PREFIXES[category],
                                 ed['_BaseId'], ed['_VariationId'].zfill(2))
