@@ -210,14 +210,6 @@ BASE_VARIATION_PREFIXES = {
     '3': 'd',
     '5': 'c',
 }
-# Categories whose 3D model resource IDs depend on their BookIds
-BOOK_PREFIXES = {
-    '1': 'e',
-    '2': 'b',
-    '4': 'r',
-    '7': 'h',
-    '9': 'o',
-}
 BOOK_GROUP_PREFIXES = {
     'ENM': 'e',
     'BOS': 'b',
@@ -228,11 +220,11 @@ BOOK_GROUP_PREFIXES = {
 def get_model_name(ed):
     category = ed['_Category']
     group = ed['_EnemyGroupName'].split('_', 1)[0]
-    if group in BOOK_GROUP_PREFIXES:
-        return BOOK_GROUP_PREFIXES[group] + ed['_BookId'][-7:]
-    elif category in BASE_VARIATION_PREFIXES:
+    if category in BASE_VARIATION_PREFIXES:
         return '{}{}_{}'.format(BASE_VARIATION_PREFIXES[category],
                                 ed['_BaseId'], ed['_VariationId'].zfill(2))
+    elif group in BOOK_GROUP_PREFIXES:
+        return BOOK_GROUP_PREFIXES[group] + ed['_BookId'][-7:]
     else:
         return ''
 
