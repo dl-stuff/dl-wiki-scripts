@@ -30,8 +30,13 @@ TEXT_LABEL_DICT = {}
 CHAIN_COAB_SET = set()
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
-RAID_EVENT_ITEM_DATA_NAME = 'RaidEventItem'
-RAID_ITEM_LABELS = None
+ITEM_NAMES = {
+    'CollectEventItem': {},
+    'CombatEventItem': {},
+    'Clb01EventItem': {},
+    'ExHunterEventItem': {},
+    'RaidEventItem': {},
+}
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
 
@@ -137,9 +142,9 @@ def get_label(key, lang='en'):
         txt_label = TEXT_LABEL_DICT['en']
     return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
 
-def get_raid_item_label(key):
+def get_item_label(type, key):
     try:
-        label_key = RAID_ITEM_LABELS[key]
+        label_key = ITEM_NAMES[type][key]
         return get_label(label_key)
     except KeyError:
         return key
@@ -219,7 +224,7 @@ def process_ChainCoAbility(row, existing_data):
                                else row['_AbilityType1UpValue'])
     new_row['Name'] = get_label(row['_Name']).format(
         ability_val0 = ability_value)
-    
+
     # try:
     #     CHAIN_COAB_DICT[new_row['Id']][0] = new_row['Name']
     # except:
@@ -275,6 +280,17 @@ def process_AmuletData(row, existing_data):
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['SellCoin'] = row['_SellCoin']
     new_row['SellDewPoint'] = row['_SellDewPoint']
+
+    existing_data.append((new_row['Name'], new_row))
+
+def process_Consumable(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Description'])
+    new_row['SortId'] = row[ROW_INDEX]
+    new_row['Obtain'] = '\n*'
 
     existing_data.append((new_row['Name'], new_row))
 
@@ -399,7 +415,7 @@ def process_CharaData(row, existing_data):
         new_row['ChargeType'] = row['_ChargeType']
         new_row['MaxChargeLv'] = row['_MaxChargeLv']
         new_row['DefaultBurstAttackLevel'] = row['_DefaultBurstAttackLevel']
-    
+
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
     new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
     new_row['Description'] = get_label(row['_ProfileText'])
@@ -667,18 +683,25 @@ def process_MissionData(row, existing_data):
         "17": [get_label("SUMMON_TICKET_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "18": ["Mana", row['_EntityQuantity']],
-        "20": [get_raid_item_label(row['_EntityId']), row['_EntityQuantity']],
+        "20": [get_item_label('RaidEventItem', row['_EntityId']), row['_EntityQuantity']],
         "23": ["Wyrmite", row['_EntityQuantity']],
+        "24": [get_item_label('CollectEventItem', row['_EntityId']), row['_EntityQuantity']],
+        "25": [get_item_label('Clb01EventItem', row['_EntityId']), row['_EntityQuantity']],
         "28": ["Hustle Hammer", row['_EntityQuantity']],
         "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
                 row['_EntityQuantity']],
         "31": [get_label("LOTTERY_TICKET_NAME_" + row['_EntityId']), row['_EntityQuantity']],
+        "32": [get_item_label('ExHunterEventItem', row['_EntityId']), row['_EntityQuantity']],
+        "34": [get_item_label('CombatEventItem', row['_EntityId']), row['_EntityQuantity']],
     }
 
     new_row = [get_label(row['_Text'])]
     try:
-        new_row.extend(entity_type_dict[row['_EntityType']])
-    except KeyError:
+        entity_type = entity_type_dict[row['_EntityType']]
+        if not len(entity_type):
+          entity_type = '{}: {}'.format(row['_EntityType'], row['_EntityId'])
+        new_row.extend(entity_type)
+    except KeyError as e:
         new_row.extend(['Entity type {}: {}'.format(row['_EntityType'], row['_EntityId']), row['_EntityQuantity']])
         pass
 
@@ -686,9 +709,11 @@ def process_MissionData(row, existing_data):
 
 def process_QuestData(row, existing_data):
     pay_entity_type_dict = {
-        "20" : get_raid_item_label(row['_PayEntityId']),
+        "20" : get_item_label('RaidEventItem', row['_PayEntityId']),
+        "25" : get_item_label('Clb01EventItem', row['_PayEntityId']),
         "26" : 'Astral Piece',
         "32" : 'Otherworld Fragment' if row['_PayEntityId'] == '2200131' else 'Otherworld Gem',
+        "34" : get_item_label('CombatEventItem', row['_PayEntityId']),
     }
 
     new_row = {}
@@ -780,8 +805,12 @@ def process_QuestRewardData(row, existing_data):
         '8': (lambda x: reward_template.format(
                 'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId' + x])), row['_FirstClearSetEntityQuantity' + x])),
         '20': (lambda x: reward_template.format(
-                'Material', get_raid_item_label(row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
+                'Material', get_item_label('RaidEventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
         '23': (lambda x: reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity' + x])),
+        '25': (lambda x: reward_template.format(
+                'Material', get_item_label('Clb01EventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
+        '34': (lambda x: reward_template.format(
+                'Material', get_item_label('CombatEventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
     }
     complete_type_dict = {
         '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
@@ -791,8 +820,10 @@ def process_QuestRewardData(row, existing_data):
     }
     clear_reward_dict = {
         '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
-        '20': (lambda x: get_raid_item_label(x)),
+        '20': (lambda x: get_item_label('RaidEventItem', x)),
         '23': (lambda x: 'Wyrmite'),
+        '25': (lambda x: get_item_label('Clb01EventItem', x)),
+        '34': (lambda x: get_item_label('CombatEventItem', x)),
     }
 
     curr_row['FirstClearRewards'] = ''
@@ -973,7 +1004,6 @@ def process_KeyValues(row, existing_data):
         elif v != '0' and v != '':
             new_row[k[1:]] = v
     existing_data.append((None, new_row))
-    
 
 def build_wikitext_row(template_name, row, delim='|'):
     row_str = '{{' + template_name + delim
@@ -1018,7 +1048,9 @@ DATA_PARSER_PROCESSING = {
     'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
     'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
+    'Clb01EventItem': ('Material', row_as_wikitext, process_Material),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
+    'CombatEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
     'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
@@ -1047,6 +1079,7 @@ DATA_PARSER_PROCESSING = {
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
     'MC': ('MC', row_as_wikitext, process_GenericTemplate),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
+    'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
 }
 
 KV_PROCESSING = {
@@ -1094,7 +1127,8 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
     EPITHET_RANKS = csv_as_index(in_dir+EPITHET_DATA_NAME+EXT, index='_Id', value_key='_Rarity')
-    RAID_ITEM_LABELS = csv_as_index(in_dir+RAID_EVENT_ITEM_DATA_NAME+EXT, index='_Id', value_key='_Name')
+    for item_type in ITEM_NAMES:
+        ITEM_NAMES[item_type] = csv_as_index(in_dir+item_type+EXT, index='_Id', value_key='_Name')
     # find_fmt_params(in_dir, out_dir)
 
     for data_name, process_params in DATA_PARSER_PROCESSING.items():
