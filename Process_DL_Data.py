@@ -927,6 +927,7 @@ def process_WeaponCraftData(row, existing_data):
     curr_row['FortCraftLevel'] = row['_FortCraftLevel']
     curr_row['AssembleCoin'] = row['_AssembleCoin']
     curr_row['DisassembleCoin'] = row['_DisassembleCoin']
+    curr_row['DisassembleCost'] = row['_DisassembleCost']
     curr_row['Undisassemblable'] = row['_IsUnableDisassemble']
     curr_row['MainWeaponId'] = row['_MainWeaponId']
     curr_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
