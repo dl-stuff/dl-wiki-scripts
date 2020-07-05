@@ -887,8 +887,8 @@ def process_WeaponData(row, existing_data):
     new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
     new_row['Rarity'] = row['_Rarity']
     new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
-    new_row['Obtain'] = '' # EDIT_THIS
-    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['Obtain'] = '' # EDIT_THIS: partially covered by WeaponCraftData
+    new_row['ReleaseDate'] = '' # EDIT_THIS: partially covered by WeaponCraftData
     new_row['Availability'] = availability_dict.get(row['_CraftSeriesId'], '')
     new_row['MinHp'] = row['_MinHp']
     new_row['MaxHp'] = row['_MaxHp']
@@ -922,9 +922,12 @@ def process_WeaponCraftData(row, existing_data):
     assert(found)
 
     curr_row = existing_row[1]
+    curr_row['Obtain'] = 'Crafting'
+    curr_row['ReleaseDate'] = row['_StartDate']
     curr_row['FortCraftLevel'] = row['_FortCraftLevel']
     curr_row['AssembleCoin'] = row['_AssembleCoin']
     curr_row['DisassembleCoin'] = row['_DisassembleCoin']
+    curr_row['Undisassemblable'] = row['_IsUnableDisassemble']
     curr_row['MainWeaponId'] = row['_MainWeaponId']
     curr_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
     if int(row['_AcquiredWeaponId1']) != 0:
