@@ -159,6 +159,8 @@ def get_jp_epithet(emblem_id):
 def process_AbilityLimitedGroup(row, existing_data):
     new_row = OrderedDict()
     for k, v in row.items():
+        if 'EntriesKey' in k:
+            continue
         new_row[k.strip('_')] = v
     new_row['AbilityLimitedText'] = get_label(row['_AbilityLimitedText']).format(ability_limit0=row['_MaxLimitedValue'])
     existing_data.append((None, new_row))
@@ -224,12 +226,6 @@ def process_ChainCoAbility(row, existing_data):
                                else row['_AbilityType1UpValue'])
     new_row['Name'] = get_label(row['_Name']).format(
         ability_val0 = ability_value)
-
-    # try:
-    #     CHAIN_COAB_DICT[new_row['Id']][0] = new_row['Name']
-    # except:
-    #     pass
-
     # guess the generic name by chopping off the last word, which is usually +n% or V
     new_row['GenericName'] = new_row['Name'][:new_row['Name'].rfind(' ')].replace('%', '')
 
@@ -397,11 +393,6 @@ def process_CharaData(row, existing_data):
         ex_k = 'ExAbility2Data{}'.format(i)
         new_row[ex_k] = row['_' + ex_k]
         CHAIN_COAB_SET.add(new_row[ex_k])
-        # if i == 5:
-        #     try:
-        #         CHAIN_COAB_DICT[new_row[ex_k]][1].append(new_row['FullName'])
-        #     except:
-        #         CHAIN_COAB_DICT[new_row[ex_k]] = [None, [new_row['FullName']]]
     new_row['ManaCircleName'] = row['_ManaCircleName']
 
     # new_row['EffNameCriticalHit'] = row['_EffNameCriticalHit']
@@ -989,6 +980,8 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
 def process_GenericTemplate(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
+    if 'EntriesKey1' in new_row:
+        del new_row['EntriesKey1']
     existing_data.append((None, new_row))
 
 def process_KeyValues(row, existing_data):
