@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import Enemy_Parser
 import argparse
 import csv
 import json
@@ -31,11 +30,16 @@ CHAIN_COAB_SET = set()
 EPITHET_DATA_NAME = 'EmblemData'
 EPITHET_DATA_NAMES = None
 ITEM_NAMES = {
+    'AstralItem': {},
+    'BuildEventItem': {},
     'CollectEventItem': {},
     'CombatEventItem': {},
     'Clb01EventItem': {},
     'ExHunterEventItem': {},
+    'ExRushEventItem': {},
+    'GatherItem': {},
     'RaidEventItem': {},
+    'SimpleEventItem': {},
 }
 SKILL_DATA_NAME = 'SkillData'
 SKILL_DATA_NAMES = None
@@ -76,6 +80,98 @@ FACILITY_EFFECT_TYPE_DICT = {
     '2': 'Adventurer', # elemental
     '4': 'Dragon', # dracolith
     '6': 'Dragon' # fafnir
+}
+
+# (icon+text, text only, category)
+ENTITY_TYPE_DICT = {
+    '2': (lambda id: '{{' + get_label('USE_ITEM_NAME_' + id) + '-}}',
+          lambda id: get_label('USE_ITEM_NAME_' + id),
+          'Consumable'),
+    '3': (lambda id: '{{Icon|Weapon|' + get_label('WEAPON_NAME_' + id) + '|size=24px|text=1}}',
+          lambda id: get_label('WEAPON_NAME_' + id),
+          'Weapon'),
+    '4': (lambda _: '{{Rupies-}}',
+          lambda _: 'Rupies',
+          'Resource'),
+    '7': (lambda id: '{{Icon|Dragon|' + get_label('DRAGON_NAME_' + id) + '|size=24px|text=1}}',
+          lambda id: get_label('DRAGON_NAME_' + id),
+          'Dragon'),
+    '8': (lambda id: '{{' + get_label('MATERIAL_NAME_' + id) + '-}}',
+          lambda id: get_label('MATERIAL_NAME_' + id),
+          'Material'),
+    '9': (lambda id: '{{Icon|Facility|' + get_label('FORT_PLANT_NAME_' + id) + '|size=24px|text=1}}',
+          lambda id: get_label('FORT_PLANT_NAME_' + id),
+          'Facility'),
+    '10': (lambda id: '[[File:Icon Profile 0' + EPITHET_RANKS.get(id, '') + ' Frame.png|19px|Epithet|link=Epithets]] ' + get_label('EMBLEM_NAME_' + id),
+           lambda id: get_label('EMBLEM_NAME_' + id),
+           'Epithet'),
+    '11': (lambda id: '[[File:' + id + ' en.png|24px|Sticker|link=Stickers]] ' + get_label('STAMP_NAME_' + id),
+           lambda id: get_label('STAMP_NAME_' + id),
+           'Sticker'),
+    '12': (lambda id: '{{Icon|Wyrmprint|' + get_label('AMULET_NAME_' + id) + '|size=24px|text=1}}',
+           lambda id: get_label('AMULET_NAME_' + id),
+           'Wyrmprint'),
+    '14': (lambda _: '{{Eldwater-}}',
+           lambda _: 'Eldwater',
+           'Resource'),
+    '15': (lambda id: '{{' + get_label('DRAGON_GIFT_NAME_' + id) + '-}}',
+           lambda id: get_label('DRAGON_GIFT_NAME_' + id),
+           'Gift'),
+    '16': (lambda _: '{{Skip Ticket-}}',
+           lambda _: 'Skip Ticket',
+           'Consumable'),
+    '17': (lambda id: '{{' + get_label('SUMMON_TICKET_NAME_' + id) + '-}}',
+           lambda id: get_label('SUMMON_TICKET_NAME_' + id),
+           'Consumable'),
+    '18': (lambda _: '{{Mana-}}',
+           lambda _: 'Mana',
+           'Resource'),
+    '20': (lambda id: '{{' + get_item_label('RaidEventItem', id) + '-}}',
+           lambda id: get_item_label('RaidEventItem', id),
+           'Material'),
+    '22': (lambda id: '{{' + get_item_label('BuildEventItem', id) + '-}}',
+           lambda id: get_item_label('BuildEventItem', id),
+           'Material'),
+    '23': (lambda _: '{{Wyrmite-}}',
+           lambda _: 'Wyrmite',
+           'Currency'),
+    '24': (lambda id: '{{' + get_item_label('CollectEventItem', id) + '-}}',
+           lambda id: get_item_label('CollectEventItem', id),
+           'Material'),
+    '25': (lambda id: '{{' + get_item_label('Clb01EventItem', id) + '-}}',
+           lambda id: get_item_label('Clb01EventItem', id),
+           'Material'),
+    '26': (lambda id: '{{' + get_item_label('AstralItem', id) + '-}}',
+           lambda id: get_item_label('AstralItem', id),
+           'Consumable'),
+    '28': (lambda _: '{{Hustle Hammer-}}',
+           lambda _: 'Hustle Hammer',
+           'Consumable'),
+    '29': (lambda id: '{{' + get_item_label('ExRushEventItem', id) + '-}}',
+           lambda id: get_item_label('ExRushEventItem', id),
+           'Material'),
+    '30': (lambda id: '{{' + get_item_label('SimpleEventItem', id) + '-}}',
+           lambda id: get_item_label('SimpleEventItem', id),
+           'Material'),
+    '31': (lambda id: '{{' + get_label('LOTTERY_TICKET_NAME_' + id) + '-}}',
+           lambda id: get_label('LOTTERY_TICKET_NAME_' + id),
+           'Consumable'),
+    '32': (lambda id: '{{' + get_item_label('ExHunterEventItem', id) + '-}}',
+           lambda id: get_item_label('ExHunterEventItem', id),
+           'Material'),
+    '33': (lambda id: '{{' + get_item_label('GatherItem', id) + '-}}',
+           lambda id: get_item_label('GatherItem', id),
+           'Material'),
+    '34': (lambda id: '{{' + get_item_label('CombatEventItem', id) + '-}}',
+           lambda id: get_item_label('CombatEventItem', id),
+           'Material'),
+}
+MISSION_ENTITY_OVERRIDES_DICT = {
+    '3' : lambda x: ["Override={}".format(get_entity_item('3', x, format=0))],
+    '7' : lambda x: ["Override={}".format(get_entity_item('7', x, format=0))],
+    '10': lambda x: ["Epithet: {}".format(get_label(EMBLEM_N + x)), "Rank=" + EPITHET_RANKS.get(x, '')],
+    '11' : lambda x: ["Override={}".format(get_entity_item('11', x, format=0))],
+    '12' : lambda x: ["Override={}".format(get_entity_item('12', x, format=0))],
 }
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
@@ -153,6 +249,16 @@ def get_jp_epithet(emblem_id):
     if 'jp' in TEXT_LABEL_DICT:
         return '{{' + 'Ruby|{}|{}'.format(get_label(EMBLEM_N + emblem_id, lang='jp'), get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
     return ''
+
+# Formats= 0: icon + text, 1: text only, 2: category
+def get_entity_item(item_type, item_id, format=1):
+    try:
+        if format == 2:
+            return ENTITY_TYPE_DICT[item_type][format]
+        else:
+            return ENTITY_TYPE_DICT[item_type][format](item_id)
+    except KeyError:
+        return 'Entity type {}: {}'.format(item_type, item_id)
 
 # All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
 # Make sure the keys are added to the OrderedDict in the desired output order
@@ -482,6 +588,7 @@ def process_ExAbilityData(row, existing_data):
     new_row['Details'] = get_label(row['_Details']).format(
         value1=row['_AbilityType1UpValue0']
     )
+    new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
     new_row['AbilityIconName'] = row['_AbilityIconName']
     new_row['Category'] = row['_Category']
     new_row['PartyPowerWeight'] = row['_PartyPowerWeight']
@@ -653,60 +760,18 @@ def process_SkillData(row, existing_data):
     existing_data.append((new_row['Name'], new_row))
 
 def process_MissionData(row, existing_data):
-    entity_type_dict = {
-        "2" : [get_label("USE_ITEM_NAME_" + row['_EntityId']),
-                row['_EntityQuantity']],
-        "3" : ["Override={{{{Icon|Weapon|{}|size=24px|text=1}}}}".format(get_label("WEAPON_NAME_" + row['_EntityId'])),
-                row['_EntityQuantity']],
-        "4" : ["Rupies", row['_EntityQuantity']],
-        "7" : ["Override={{{{Icon|Dragon|{}|size=24px|text=1}}}}".format(get_label("DRAGON_NAME_" + row['_EntityId'])),
-                row['_EntityQuantity']],
-        "8" : [get_label("MATERIAL_NAME_" + row['_EntityId']),
-                row['_EntityQuantity']],
-        "10": ["Epithet: {}".format(get_label(EMBLEM_N + row['_EntityId'])), "Rank=" + EPITHET_RANKS.get(row['_EntityId'], '')],
-        "11": ["Override=[[File:{0}.png|32px|link=Stickers]] {1}".format(row['_EntityId'], get_label("STAMP_NAME_" + row['_EntityId'])),
-                row['_EntityQuantity']],
-        "12" : ["Override={{{{Icon|Wyrmprint|{}|size=24px|text=1}}}}".format(get_label("AMULET_NAME_" + row['_EntityId'])),
-                row['_EntityQuantity']],
-        "14": ["Eldwater", row['_EntityQuantity']],
-        "15": [get_label("DRAGON_GIFT_NAME_" + row['_EntityId']), row['_EntityQuantity']],
-        "16": ["Skip Ticket", row['_EntityQuantity']],
-        "17": [get_label("SUMMON_TICKET_NAME_" + row['_EntityId']),
-                row['_EntityQuantity']],
-        "18": ["Mana", row['_EntityQuantity']],
-        "20": [get_item_label('RaidEventItem', row['_EntityId']), row['_EntityQuantity']],
-        "23": ["Wyrmite", row['_EntityQuantity']],
-        "24": [get_item_label('CollectEventItem', row['_EntityId']), row['_EntityQuantity']],
-        "25": [get_item_label('Clb01EventItem', row['_EntityId']), row['_EntityQuantity']],
-        "28": ["Hustle Hammer", row['_EntityQuantity']],
-        "29": [get_label("EV_EX_RUSH_ITEM_NAME_" + row['_EntityId']),
-                row['_EntityQuantity']],
-        "31": [get_label("LOTTERY_TICKET_NAME_" + row['_EntityId']), row['_EntityQuantity']],
-        "32": [get_item_label('ExHunterEventItem', row['_EntityId']), row['_EntityQuantity']],
-        "34": [get_item_label('CombatEventItem', row['_EntityId']), row['_EntityQuantity']],
-    }
-
     new_row = [get_label(row['_Text'])]
     try:
-        entity_type = entity_type_dict[row['_EntityType']]
-        if not len(entity_type):
-          entity_type = '{}: {}'.format(row['_EntityType'], row['_EntityId'])
-        new_row.extend(entity_type)
-    except KeyError as e:
-        new_row.extend(['Entity type {}: {}'.format(row['_EntityType'], row['_EntityId']), row['_EntityQuantity']])
+        entity_type = MISSION_ENTITY_OVERRIDES_DICT[row['_EntityType']](row['_EntityId'])
+        new_row.extend(entity_type + [row['_EntityQuantity']])
+    except KeyError:
+        entity_type = get_entity_item(row['_EntityType'], row['_EntityId'])
+        new_row.extend([entity_type, row['_EntityQuantity']])
         pass
 
     existing_data.append((new_row[0], new_row))
 
 def process_QuestData(row, existing_data):
-    pay_entity_type_dict = {
-        "20" : get_item_label('RaidEventItem', row['_PayEntityId']),
-        "25" : get_item_label('Clb01EventItem', row['_PayEntityId']),
-        "26" : 'Astral Piece',
-        "32" : 'Otherworld Fragment' if row['_PayEntityId'] == '2200131' else 'Otherworld Gem',
-        "34" : get_item_label('CombatEventItem', row['_PayEntityId']),
-    }
-
     new_row = {}
     for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
         if row['_Id'].startswith(quest_type_id_check):
@@ -746,8 +811,7 @@ def process_QuestData(row, existing_data):
     new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
 
     if row['_PayEntityType'] != '0':
-        new_row['OtherCostType'] = pay_entity_type_dict.get(row['_PayEntityType'],
-            '{}: {}'.format(row['_PayEntityType'], row['_PayEntityId']))
+        new_row['OtherCostType'] = get_entity_item(row['_PayEntityType'], row['_PayEntityId'])
         new_row['OtherCostQuantity'] = row['_PayEntityQuantity']
 
     new_row['ClearTermsType'] = get_label('QUEST_CLEAR_CONDITION_{}'.format(row['_ClearTermsType']))
@@ -791,57 +855,38 @@ def process_QuestRewardData(row, existing_data):
     assert(found)
 
     curr_row = existing_row[1]
-    first_clear_dict = {
-        '4': (lambda x: reward_template.format('Resource', 'Rupies', row['_FirstClearSetEntityQuantity' + x])),
-        '8': (lambda x: reward_template.format(
-                'Material', get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_FirstClearSetEntityId' + x])), row['_FirstClearSetEntityQuantity' + x])),
-        '20': (lambda x: reward_template.format(
-                'Material', get_item_label('RaidEventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
-        '23': (lambda x: reward_template.format('Currency', 'Wyrmite', row['_FirstClearSetEntityQuantity' + x])),
-        '25': (lambda x: reward_template.format(
-                'Material', get_item_label('Clb01EventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
-        '34': (lambda x: reward_template.format(
-                'Material', get_item_label('CombatEventItem', row['_FirstClearSetEntityId' + x]), row['_FirstClearSetEntityQuantity' + x])),
-    }
     complete_type_dict = {
         '1' : (lambda x: 'Don\'t allow any of your team to fall in battle' if x == '0' else 'Allow no more than {} of your team to fall in battle'.format(x)),
         '15': (lambda x: 'Don\'t use any continues'),
         '18': (lambda x: 'Finish in {} seconds or less'.format(x)),
         '32': (lambda x: 'Don\'t use any revives'),
     }
-    clear_reward_dict = {
-        '8': (lambda x: get_label( '{}{}'.format(MATERIAL_NAME_LABEL, x))),
-        '20': (lambda x: get_item_label('RaidEventItem', x)),
-        '23': (lambda x: 'Wyrmite'),
-        '25': (lambda x: get_item_label('Clb01EventItem', x)),
-        '34': (lambda x: get_item_label('CombatEventItem', x)),
-    }
 
     curr_row['FirstClearRewards'] = ''
     for i in range(1,QUEST_FIRST_CLEAR_COUNT+1):
-        try:
-            curr_row['FirstClearRewards'] += first_clear_dict[row['_FirstClearSetEntityType{}'.format(i)]](str(i))
-        except KeyError:
-            pass
+        entity_type = row['_FirstClearSetEntityType{}'.format(i)]
+        entity_id = row['_FirstClearSetEntityId{}'.format(i)]
+        if entity_type != '0':
+            curr_row['FirstClearRewards'] += reward_template.format(
+                get_entity_item(entity_type, entity_id, format=2),
+                get_entity_item(entity_type, entity_id),
+                row['_FirstClearSetEntityQuantity{}'.format(i)])
+
     for i in range(1,QUEST_COMPLETE_COUNT+1):
         complete_type = row['_MissionCompleteType{}'.format(i)]
         complete_value = row['_MissionCompleteValues{}'.format(i)]
         clear_reward_type = row['_MissionsClearSetEntityType{}'.format(i)]
 
-        try:
+        entity_type = row['_MissionsClearSetEntityType{}'.format(i)]
+        if entity_type != '0':
             curr_row['MissionCompleteType{}'.format(i)] = complete_type_dict[complete_type](complete_value)
-            curr_row['MissionsClearSetEntityType{}'.format(i)] = clear_reward_dict[clear_reward_type](row['_MissionsClearSetEntityType{}'.format(i)])
+            curr_row['MissionsClearSetEntityType{}'.format(i)] = get_entity_item(clear_reward_type, entity_type)
             curr_row['MissionsClearSetEntityQuantity{}'.format(i)] = row['_MissionsClearSetEntityQuantity{}'.format(i)]
-        except KeyError:
-            pass
 
     first_clear1_type = row['_FirstClearSetEntityType1']
-    try:
-        curr_row['MissionCompleteEntityType'] = clear_reward_dict[
-            first_clear1_type](row['_MissionCompleteEntityType'])
+    if first_clear1_type != '0':
+        curr_row['MissionCompleteEntityType'] = get_entity_item(first_clear1_type, row['_MissionCompleteEntityType'])
         curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
-    except KeyError:
-        pass
 
     existing_data[index] = (existing_row[0], curr_row)
 
@@ -1057,6 +1102,7 @@ DATA_PARSER_PROCESSING = {
          ('FortPlantData', process_FortPlantData)]),
     'MaterialData': ('Material', row_as_wikitext, process_Material),
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
+    'SimpleEventItem': ('Material', row_as_wikitext, process_Material),
     'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionMainStoryData': ('EndeavorRow', row_as_wikirow, process_MissionData),
@@ -1100,7 +1146,7 @@ KV_PROCESSING = {
 }
 
 def process(input_dir='./', output_dir='./output-data', ordering_data_path=None, delete_old=False):
-    global in_dir, ORDERING_DATA, SKILL_DATA_NAMES, EPITHET_RANKS, RAID_ITEM_LABELS
+    global in_dir, ORDERING_DATA, SKILL_DATA_NAMES, EPITHET_RANKS
     if delete_old:
         if os.path.exists(output_dir):
             try:
@@ -1117,9 +1163,9 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
     in_dir = input_dir if input_dir[-1] == '/' else input_dir+'/'
     out_dir = output_dir if output_dir[-1] == '/' else output_dir+'/'
 
-    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, tabs=True)
+    TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, index='_Id', value_key='_Text', tabs=True)
     try:
-        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, tabs=True)
+        TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, index='_Id', value_key='_Text', tabs=True)
     except:
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
@@ -1144,9 +1190,6 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
         parser.process()
         parser.emit(kv_out)
         print('Saved kv/{}{}'.format(data_name, EXT))
-
-    # Outsource enemy parsing
-    Enemy_Parser.parse(in_dir, text_label_dict=TEXT_LABEL_DICT['en'])
 
 
 if __name__ == '__main__':
