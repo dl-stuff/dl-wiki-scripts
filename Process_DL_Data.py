@@ -8,7 +8,7 @@ import os
 import re
 import string
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from shutil import copyfile, rmtree
 
 import pdb
@@ -211,6 +211,17 @@ class DataParser:
             for display_name, row in self.row_data:
                 out_file.write(self.formatter(row, self.template, display_name))
 
+class CustomDataParser:
+    def __init__(self, _data_name, _processor):
+        self.data_name = _data_name
+        self.process_func = _processor
+
+    def process(self, in_dir, out_dir):
+        with open(in_dir+self.data_name+EXT, 'r', newline='', encoding='utf-8') as in_file:
+            reader = csv.DictReader(in_file)
+            with open(out_dir+self.data_name+EXT, 'w', newline='', encoding='utf-8') as out_file:
+                self.process_func(reader, out_file)
+
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, 'r', newline='', encoding='utf-8') as csvfile:
         if tabs:
@@ -344,7 +355,7 @@ def process_ChainCoAbility(row, existing_data):
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
-        element_owner   =   element)
+        element_owner   =   element).replace('  ', ' ')
     new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
     new_row['AbilityIconName'] = row['_AbilityIconName']
 
@@ -1027,6 +1038,81 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
     existing_data.append((lvl, new_row))
 
+def process_BuildEventReward(reader, outfile):
+    table_header = ('|CollectionRewards=<div style="max-height:500px;overflow:auto;width:100%">\n'
+                    '{{{{Wikitable|class="wikitable darkpurple sortable" style="width:100%"\n'
+                    '|-\n'
+                    '! Item !! Qty !! {event_item_req}')
+    row_divider = '\n|- style{{=}}"text-align:right"\n| style{{=}}"text-align:left" | '
+    events = defaultdict(list)
+
+    for row in reader:
+        if row['_Id'] == '0':
+            continue
+        event_item_qty = int(row['_EventItemQuantity'])
+        reward_item = get_entity_item(row['_RewardEntityType'], row['_RewardEntityId'], format=0)
+        events[row['_EntriesKey']].append({
+            'evt_item_qty': event_item_qty,
+            'row': ' || '.join((
+                reward_item,
+                f'{int(row["_RewardEntityQuantity"]):,}',
+                f'{event_item_qty:,}',
+                ))
+        })
+
+    for event_id in events:
+        event_item_req = get_label('EVENT_SCORING_{}'.format(event_id)).replace('Required: {0}', 'Req.')
+        reward_list = sorted(events[event_id], key = lambda x: x['evt_item_qty'])
+
+        outfile.write('{} - {}'.format(get_label('EVENT_NAME_' + event_id), event_id))
+        outfile.write(ENTRY_LINE_BREAK)
+        outfile.write(table_header.format(event_item_req=event_item_req))
+        outfile.write(row_divider)
+        outfile.write(row_divider.join((x['row'] for x in reward_list)))
+        outfile.write('\n}}\n</div>')
+        outfile.write(ENTRY_LINE_BREAK)
+
+def process_RaidEventReward(reader, outfile):
+    table_header = ('|-| {emblem_type}=\n'
+                    '<div style="max-height:500px;overflow:auto;">\n'
+                    '{{{{Wikitable|class="wikitable darkred sortable" style="width:100%"\n'
+                    '|-\n'
+                    '! Item !! Qty !! {event_item_req}')
+    row_divider = '\n|- style{{=}}"text-align:right"\n| style{{=}}"text-align:left" | '
+    events = defaultdict(lambda: defaultdict(list))
+
+    for row in reader:
+        if row['_Id'] == '0':
+            continue
+        event_item_qty = int(row['_RaidEventItemQuantity'])
+        event_item_type = get_item_label('RaidEventItem', row['_RaidEventItemId']).replace(' Emblem', '')
+        reward_item = get_entity_item(row['_RewardEntityType'], row['_RewardEntityId'], format=0)
+        events[row['_EntriesKey']][event_item_type].append({
+            'evt_item_qty': event_item_qty,
+            'row': ' || '.join((
+                reward_item,
+                f'{int(row["_RewardEntityQuantity"]):,}',
+                f'{event_item_qty:,}',
+                ))
+        })
+
+    for event_id in events:
+        event_item_req = get_label('EVENT_SCORING_{}'.format(event_id)).replace('Required: {0}', 'Req.')
+        outfile.write('{} - {}'.format(get_label('EVENT_NAME_' + event_id), event_id))
+        outfile.write(ENTRY_LINE_BREAK)
+        outfile.write('|CollectionRewards=<div style="width:100%">\n'
+                      '<tabber>\n')
+
+        for emblem_type in ('Bronze', 'Silver', 'Gold'):
+            reward_list = sorted(events[event_id][emblem_type], key = lambda x: x['evt_item_qty'])
+            outfile.write(table_header.format(emblem_type=emblem_type, event_item_req=event_item_req))
+            outfile.write(row_divider)
+            outfile.write(row_divider.join((x['row'] for x in reward_list)))
+            outfile.write('\n}}\n</div>\n')
+
+        outfile.write('</tabber>\n</div>')
+        outfile.write(ENTRY_LINE_BREAK)
+
 def process_GenericTemplate(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     if 'EntriesKey1' in new_row:
@@ -1125,10 +1211,16 @@ DATA_PARSER_PROCESSING = {
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
 }
 
+# Data that cannot be structured into a simple row->template relationship, and
+# will be parsed into a custom output format determined by each specific function.
+NON_TEMPLATE_PROCESSING = {
+    'BuildEventReward': process_BuildEventReward,
+    'RaidEventReward': process_RaidEventReward,
+}
+
 KV_PROCESSING = {
     'AbilityData': ('AbilityData', row_as_kv_pairs, process_KeyValues),
     'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_KeyValues),
-    'BuildEventReward': ('BuildEventReward', row_as_kv_pairs, process_KeyValues),
     'CampaignData': ('CampaignData', row_as_kv_pairs, process_KeyValues),
     'CharaModeData': ('CharaModeData', row_as_kv_pairs, process_KeyValues),
     'CharaUniqueCombo': ('CharaUniqueCombo', row_as_kv_pairs, process_KeyValues),
@@ -1142,7 +1234,6 @@ KV_PROCESSING = {
     'PlayerAction': ('PlayerAction', row_as_kv_pairs, process_KeyValues),
     'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
     'QuestData': ('QuestData', row_as_kv_pairs, process_KeyValues),
-    'RaidEventReward': ('RaidEventReward', row_as_kv_pairs, process_KeyValues)
 }
 
 def process(input_dir='./', output_dir='./output-data', ordering_data_path=None, delete_old=False):
@@ -1179,6 +1270,11 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
         parser = DataParser(data_name, template, formatter, process_info)
         parser.process()
         parser.emit(out_dir)
+        print('Saved {}{}'.format(data_name, EXT))
+
+    for data_name, processor in NON_TEMPLATE_PROCESSING.items():
+        parser = CustomDataParser(data_name, processor)
+        parser.process(in_dir, out_dir)
         print('Saved {}{}'.format(data_name, EXT))
 
     kv_out = out_dir+'/kv/'
