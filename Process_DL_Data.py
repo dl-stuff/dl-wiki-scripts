@@ -628,7 +628,6 @@ def process_FortPlantDetail(row, existing_data, fort_plant_detail):
 
 def process_FortPlantData(row, existing_data, fort_plant_detail):
     new_row = OrderedDict()
-    dlm = '{{!}}'
 
     new_row['Id'] = row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
@@ -660,11 +659,11 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
             if detail['_EffectId'] == '4':
                 upgrade_row['Bonus Dmg'] = detail['_EffArgs1']
             else:
-                upgrade_row['Str +%'] = detail['_EffArgs1']
-                upgrade_row['HP +%'] = detail['_EffArgs2']
+                upgrade_row['HP +%'] = detail['_EffArgs1']
+                upgrade_row['Str +%'] = detail['_EffArgs2']
         if detail['_EventEffectType'] != '0':
             # event fac
-            upgrade_row['Damage +%'] = detail['_EventEffectArgs']
+            upgrade_row['Damage +% {{Tooltip|(Event)|This Damage boost will only be active during its associated event and will disappear after the event ends.}}'] = detail['_EventEffectArgs']
         if detail['_MaterialMaxTime'] != '0':
             # dragontree
             upgrade_row['Prod Time'] = detail['_MaterialMaxTime']
@@ -680,7 +679,6 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
         for i in range(1, 6):
             if detail['_MaterialsId' + str(i)] != '0':
                 material_name = get_label(MATERIAL_NAME_LABEL + detail['_MaterialsId' + str(i)])
-                # mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {}'.format(material_name, detail['_MaterialsNum' + str(i)]))
                 mats[material_name] = int(detail['_MaterialsNum' + str(i)])
                 try:
                     upgrade_totals['Materials'][material_name] += mats[material_name]
@@ -706,7 +704,6 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
         new_row['Images'] = ''
 
     if len(upgrades) > 0:
-    # if False:
         remaining = upgrade_totals['Materials'].copy()
         mat_delim = ', '
         for u in upgrades:
@@ -718,24 +715,28 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
                     except KeyError:
                         pass
                     if remaining[k] > 0:
-                        remaing_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, remaining[k]))
-                u['Total Materials Left to Max Level'] = mat_delim.join(remaing_mats) if len(remaing_mats) > 0 else '—'
+                        remaing_mats.append('{{{{{}-}}}} x{:,}'.format(k, remaining[k]))
+                u['Total Materials Left to Max Level'] = 'style{{=}}"text-align:left" | ' + mat_delim.join(remaing_mats) if len(remaing_mats) > 0 else '—'
             else:
                 del u['Total Materials Left to Max Level']
 
             current_mats = []
             for k, v in u['Materials Needed'].items():
-                current_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {:,}'.format(k, v))
-            u['Materials Needed'] = mat_delim.join(current_mats) if len(current_mats) > 0 else '—'
+                current_mats.append('{{{{{}-}}}} x{:,}'.format(k, v))
+            u['Materials Needed'] = 'style{{=}}"text-align:left" | ' + mat_delim.join(current_mats) if len(current_mats) > 0 else '—'
 
         colspan = list(upgrades[0].keys()).index('{{Rupies}}Cost')
         total_mats = []
         for k, v in upgrade_totals['Materials'].items():
-            total_mats.append('{{{{Icon|Material|{}|size=19px|text=1}}}} x {}'.format(k, v))
+            total_mats.append('{{{{{}-}}}} x{:,}'.format(k, v))
 
-        totals_row = '{{!}}-\n{{!}}colspan="' + str(colspan) + '"{{!}}Total{{!}}{{!}}' + '{:,}'.format(upgrade_totals['Cost']) + '{{!}}{{!}}' + mat_delim.join(total_mats) + ('{{!}}{{!}}—' if len(remaining) == 1 else '') + '{{!}}{{!}}{{BuildTime|' + str(upgrade_totals['Build Time']) + '}}\n'
+        totals_row = ('|-\n| style{{=}}"text-align:center" colspan{{=}}"' + str(colspan) + '" | Total || '
+                + '{:,}'.format(upgrade_totals['Cost']) + ' || style{{=}}"text-align:left" | ' + mat_delim.join(total_mats)
+                + (' || style{{=}}"text-align:left" | —' if len(remaining) == 1 else '')
+                + ' || {{BuildTime|' + str(upgrade_totals['Build Time']) + '}}\n')
 
-        new_row['UpgradeTable'] = '\n{{{!}} class="wikitable" style="width: 100%" \n! ' + ' !! '.join(upgrades[0].keys()) + '\n' + ''.join(map((lambda r: row_as_wikitable(r, delim=dlm)), upgrades)) + totals_row + '{{!}}-{{!}}}'
+        new_row['UpgradeTable'] = ('\n{{Wikitable|class="wikitable right" style="width:100%"\n! ' + ' !! '.join(upgrades[0].keys())
+                + '\n' + ''.join(map((lambda r: row_as_wikitable(r)), upgrades)) + totals_row + '}}')
     else:
         new_row['UpgradeTable'] = ''
     existing_data.append((new_row['Name'], new_row))
@@ -1040,10 +1041,10 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
 def process_BuildEventReward(reader, outfile):
     table_header = ('|CollectionRewards=<div style="max-height:500px;overflow:auto;width:100%">\n'
-                    '{{{{Wikitable|class="wikitable darkpurple sortable" style="width:100%"\n'
+                    '{{{{Wikitable|class="wikitable darkpurple sortable right" style="width:100%"\n'
                     '|-\n'
                     '! Item !! Qty !! {event_item_req}')
-    row_divider = '\n|- style{{=}}"text-align:right"\n| style{{=}}"text-align:left" | '
+    row_divider = '\n|-\n| style{{=}}"text-align:left" | '
     events = defaultdict(list)
 
     for row in reader:
@@ -1075,10 +1076,10 @@ def process_BuildEventReward(reader, outfile):
 def process_RaidEventReward(reader, outfile):
     table_header = ('|-| {emblem_type}=\n'
                     '<div style="max-height:500px;overflow:auto;">\n'
-                    '{{{{Wikitable|class="wikitable darkred sortable" style="width:100%"\n'
+                    '{{{{Wikitable|class="wikitable darkred sortable right" style="width:100%"\n'
                     '|-\n'
                     '! Item !! Qty !! {event_item_req}')
-    row_divider = '\n|- style{{=}}"text-align:right"\n| style{{=}}"text-align:left" | '
+    row_divider = '\n|-\n| style{{=}}"text-align:left" | '
     events = defaultdict(lambda: defaultdict(list))
 
     for row in reader:
@@ -1158,7 +1159,7 @@ def row_as_wikitext(row, template_name, display_name = None):
     return text
 
 def row_as_wikitable(row, template_name=None, display_name=None, delim='|'):
-    return '{0}-\n{0} {1}\n'.format(delim, (delim*2).join([v for v in row.values()]))
+    return '{0}-\n{0} {1}\n'.format(delim, ' {} '.format(delim*2).join([v for v in row.values()]))
 
 def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
     return '{{' + template_name + '|' + delim.join(row) + '}}\n'
