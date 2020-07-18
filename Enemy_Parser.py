@@ -62,19 +62,28 @@ QUEST_NAME_REGEX = {
     re.compile(r'BUILD_23_05_E_[45]\d'): (lambda: get_label(f'QUEST_NAME_208230601')),
 
     # Nadine & Linnea (hecc)
-    re.compile(r'COMBAT_01_.*'): (lambda: ''),
+    re.compile(r'COMBAT_01_0([1-3])_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_222010{x}03')),
+    re.compile(r'COMBAT_01_04_E_(\d\d)'): (lambda x: get_label(f'QUEST_NAME_22201040{3 if int(x) < 30 else 4}')),
+    re.compile(r'COMBAT_01_05_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010101')),
+    re.compile(r'COMBAT_01_06_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010102')),
+    re.compile(r'COMBAT_01_07_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010201')),
+    re.compile(r'COMBAT_01_08_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010202')),
+    re.compile(r'COMBAT_01_09_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010301')),
+    re.compile(r'COMBAT_01_10_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010302')),
+    re.compile(r'COMBAT_01_11_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010401')),
+    re.compile(r'COMBAT_01_12_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010402')),
 
-    # # Summertime Saviors
+    # Summertime Saviors
     re.compile(r'COMBAT_02_0([1-4])_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_222020{x}03')+' (Summertime_Saviors)'),
-    re.compile(r'COMBAT_02_05_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_222020404')+' (Summertime_Saviors)'),
-    re.compile(r'COMBAT_02_06_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010101')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_07_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010102')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_08_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010201')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_09_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010202')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_10_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010301')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_11_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010302')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_12_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010401')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_13_E_0\d'): (lambda: get_label(f'QUEST_NAME_222010402')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_05_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222020404')+' (Summertime_Saviors)'),
+    re.compile(r'COMBAT_02_06_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010101')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_07_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010102')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_08_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010201')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_09_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010202')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_10_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010301')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_11_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010302')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_12_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010401')+' (Summertime Saviors)'),
+    re.compile(r'COMBAT_02_13_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010402')+' (Summertime Saviors)'),
 
     # FEH collab
     re.compile(r'CLB_01_01_1([1-3])_E_\d\d'): (lambda x: get_label('QUEST_NAME_21401030{}'.format(x))),
@@ -244,7 +253,9 @@ BOOK_GROUP_PREFIXES = {
 def get_model_name(ed):
     category = ed['_Category']
     group = ed['_EnemyGroupName'].split('_', 1)[0]
-    if category in BASE_VARIATION_PREFIXES:
+    if category == '0':
+        return ''
+    elif category in BASE_VARIATION_PREFIXES:
         return '{}{}_{}'.format(BASE_VARIATION_PREFIXES[category],
                                 ed['_BaseId'], ed['_VariationId'].zfill(2))
     elif group in BOOK_GROUP_PREFIXES:
