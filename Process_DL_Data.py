@@ -571,7 +571,7 @@ def process_Dragon(row, existing_data):
     except KeyError:
         pass
     for i in (1, 2):
-        for j in (1, 2):
+        for j in range(1, 6):
             ab_k = 'Abilities{}{}'.format(i, j)
             new_row[ab_k] = row['_' + ab_k]
     new_row['ProfileText'] = get_label(row['_Profile'])
