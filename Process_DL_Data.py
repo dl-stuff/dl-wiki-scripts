@@ -575,6 +575,7 @@ def process_Dragon(row, existing_data):
             ab_k = 'Abilities{}{}'.format(i, j)
             new_row[ab_k] = row['_' + ab_k]
     new_row['ProfileText'] = get_label(row['_Profile'])
+    new_row['LimitBreakMaterialId'] = row['_LimitBreakMaterialId']
     new_row['FavoriteType'] = row['_FavoriteType']
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
     new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
@@ -899,6 +900,12 @@ def process_QuestRewardData(row, existing_data):
     if first_clear1_type != '0':
         curr_row['MissionCompleteEntityType'] = get_entity_item(first_clear1_type, row['_MissionCompleteEntityType'])
         curr_row['MissionCompleteEntityQuantity'] = row['_MissionCompleteEntityQuantity']
+
+    limit_break_material_id = row['_DropLimitBreakMaterialId']
+    if limit_break_material_id != '0':
+        curr_row['DropLimitBreakMaterial'] = get_entity_item('8', limit_break_material_id)
+        curr_row['DropLimitBreakMaterialQuantity'] = row['_DropLimitBreakMaterialQuantity']
+        curr_row['LimitBreakMaterialDailyDrop'] = row['_LimitBreakMaterialDailyDrop']
 
     existing_data[index] = (existing_row[0], curr_row)
 
