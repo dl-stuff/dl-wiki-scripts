@@ -52,6 +52,17 @@ QUEST_NAME_REGEX = {
     re.compile(r'RAID_10_01_E_1[1-3]'): (lambda: get_label(f'QUEST_NAME_204100101')),
     re.compile(r'RAID_10_01_E_1[4-7]'): (lambda: get_label(f'QUEST_NAME_204100102')),
 
+    # Doomsday Getaway
+    re.compile(r'RAID_09_01_E_0\d'): (lambda: get_label(f'QUEST_NAME_204090301')), # Scylla Clash: Beginner
+    re.compile(r'RAID_09_03_E_0\d'): (lambda: get_label(f'QUEST_NAME_204090302')), # Scylla Clash: Expert
+    re.compile(r'RAID_09_04_E_0\d'): (lambda: get_label(f'QUEST_NAME_204090401')), # Scylla Clash EX
+    re.compile(r'RAID_09_05_E_0\d'): (lambda: get_label(f'QUEST_NAME_204090501')), # Scylla Clash: Nightmare
+    re.compile(r'RAID_09_06_E_0\d'): (lambda: get_label(f'QUEST_NAME_204090601')), # Scylla Clash: Omega (Solo)
+    re.compile(r'RAID_09_06_E_1\d'): (lambda: get_label(f'QUEST_NAME_204090602')), # Scylla Clash: Omega Level 1 (Raid)
+    re.compile(r'RAID_09_06_E_2\d'): (lambda: get_label(f'QUEST_NAME_204090603')), # Scylla Clash: Omega Level 2 (Raid)
+    re.compile(r'RAID_09_01_E_11'): (lambda: get_label(f'QUEST_NAME_204090201')),  # Assault on Admiral Pincers: Beginner
+    re.compile(r'RAID_09_03_E_11'): (lambda: get_label(f'QUEST_NAME_204090202')),  # Assault on Admiral Pincers: Expert
+
     # Rhythmic Resolution
     re.compile(r'BUILD_23_01_E_0\d'): (lambda: get_label(f'QUEST_NAME_208230101')),
     re.compile(r'BUILD_23_02_E_0\d'): (lambda: get_label(f'QUEST_NAME_208230102')),
