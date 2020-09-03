@@ -188,6 +188,7 @@ class Enemy:
         data['PartsD'] = ep['_PartsD']
         data['PartsNode'] = ep['_PartsNode']
         # data['CrashedHPRate'] = ep['_CrashedHPRate'] # Currently unused
+        data['ParamGroupName'] = ep['_ParamGroupName']
         data['MissionType'] = get_enemy_quest_name(ep['_ParamGroupName'])
         data['MissionDifficulty'] = ''    # Currently unused
         data['Tribe'] = TRIBES.get(el['_TribeType'], el['_TribeType'])
@@ -240,7 +241,7 @@ def get_enemy_quest_name(group_name):
         if match:
             name = QUEST_NAME_REGEX[pattern](*match.groups())
             return name
-    return MANUAL_QUEST_MAP.get(group_name, '')
+    return ''
 
 def get_rare_enemy_quest_name(x, y):
     x = int(x)
@@ -294,14 +295,12 @@ def csv_to_dict(path, index=None, value_key=None, tabs=False):
             # load >2 column files as a dict[string] = OrderedDict
             return {row[index]: row for row in reader if row[index] != '0'}
 
-def parse(input_dir, output_dir='EnemyData',
-          manual_map_file_path='./ManualMapRelations.txt', text_label_dict=None):
-    global MANUAL_QUEST_MAP, TEXT_LABEL 
+def parse(input_dir, output_dir='EnemyData', text_label_dict=None):
+    global TEXT_LABEL 
     enemy_param = csv_to_dict(os.path.join(input_dir, 'EnemyParam.txt'), index='_Id')
     enemy_data = csv_to_dict(os.path.join(input_dir, 'EnemyData.txt'), index='_Id')
     enemy_list = csv_to_dict(os.path.join(input_dir, 'EnemyList.txt'), index='_Id')
     weapon_data = csv_to_dict(os.path.join(input_dir, 'WeaponData.txt'), index='_Id', value_key='_Name')
-    MANUAL_QUEST_MAP = csv_to_dict(manual_map_file_path, tabs=True)
     if text_label_dict:
         TEXT_LABEL = text_label_dict
     else:
@@ -310,20 +309,20 @@ def parse(input_dir, output_dir='EnemyData',
     enemies_set = set()
     tribes = defaultdict(list)
     enemies_count = 0
-    questless = []
     for enemy_param in enemy_param.values():
         enemy = Enemy(enemy_param, enemy_data, enemy_list, weapon_data)
 
-        if not enemy.data['MissionType']:
-            questless.append('{}: {}'.format(enemy_param['_ParamGroupName'], enemy.summary()))
-        else:
-            try:
-                enemies_set.add(enemy.data['Name'])
-            except Exception as e:
-                print(e)
-                print(enemy.data['Name'])
-            tribes[enemy.data['Tribe']].append(enemy)
-            enemies_count += 1
+        if enemy_param['_ParamGroupName'].startswith('DEBUG'):
+            # We think these were left in by accident, hide them from the output
+            continue
+
+        try:
+            enemies_set.add(enemy.data['Name'])
+        except Exception as e:
+            print(e)
+            print(enemy.data['Name'])
+        tribes[enemy.data['Tribe']].append(enemy)
+        enemies_count += 1
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -334,12 +333,6 @@ def parse(input_dir, output_dir='EnemyData',
         enemies.sort(key=lambda x: x.data.get('Name', ''))
         with open(output_path, 'w', encoding='utf-8') as outfile:
             outfile.write('\n'.join((str(e) for e in enemies)))
-
-    with open(os.path.join(output_dir, '_MISSING_NAMES.txt'), 'w', encoding='utf-8') as outfile:
-        if questless:
-            outfile.write('Missing Quest Name Mapping\n')
-            outfile.write('==========================\n')
-            outfile.write('\n'.join((e for e in questless)))
 
     # Lastly, print the summary
     with open(os.path.join(output_dir, '_Summary.txt'), 'w', encoding='utf-8') as outfile:
@@ -354,10 +347,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process Enemy CSV data into Wikitext.')
     parser.add_argument('-i', type=str, help='directory of input text files  (default: ./)', default='./')
     parser.add_argument('-o', type=str, help='directory of output text files  (default: ./EnemyData)', default='./EnemyData')
-    parser.add_argument('-map', type=str, help='path to ManualMapRelations.txt  (default: ./)', default='./')
 
     args = parser.parse_args()
     input_dir = args.i
     output_dir = args.o
-    map_file = os.path.join(args.map, 'ManualMapRelations.txt')
     parse(input_dir, output_dir, map_file)
