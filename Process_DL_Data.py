@@ -6,6 +6,7 @@ import csv
 import json
 import os
 import re
+import sqlite3
 import string
 
 from collections import OrderedDict, defaultdict
@@ -57,7 +58,7 @@ ELEMENT_TYPE = {
     '99': 'None'
 }
 CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
-WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff']
+WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff', 'Manacaster']
 QUEST_TYPE_DICT = {
     '1'   : 'Campaign',
     '201' : 'Event',
@@ -165,6 +166,9 @@ ENTITY_TYPE_DICT = {
     '34': (lambda id: '{{' + get_item_label('CombatEventItem', id) + '-}}',
            lambda id: get_item_label('CombatEventItem', id),
            'Material'),
+    '38': (lambda id: '{{Icon|Weapon|' + get_label('WEAPON_NAME_' + id) + '|size=24px|text=1}}',
+           lambda id: get_label('WEAPON_NAME_' + id),
+           'Weapon'),
 }
 MISSION_ENTITY_OVERRIDES_DICT = {
     '3' : lambda x: ["Override={}".format(get_entity_item('3', x, format=0))],
@@ -247,7 +251,7 @@ def get_label(key, lang='en'):
         txt_label = TEXT_LABEL_DICT[lang]
     except KeyError:
         txt_label = TEXT_LABEL_DICT['en']
-    return txt_label[key].replace('\\n', ' ') if key in txt_label else DEFAULT_TEXT_LABEL
+    return (txt_label.get(key, DEFAULT_TEXT_LABEL) or DEFAULT_TEXT_LABEL).replace('\\n', ' ')
 
 def get_item_label(type, key):
     try:
@@ -264,6 +268,8 @@ def get_jp_epithet(emblem_id):
 # Formats= 0: icon + text, 1: text only, 2: category
 def get_entity_item(item_type, item_id, format=1):
     try:
+        if item_type == '0':
+            return ''
         if format == 2:
             return ENTITY_TYPE_DICT[item_type][format]
         else:
@@ -275,10 +281,7 @@ def get_entity_item(item_type, item_id, format=1):
 # Make sure the keys are added to the OrderedDict in the desired output order
 def process_AbilityLimitedGroup(row, existing_data):
     new_row = OrderedDict()
-    for k, v in row.items():
-        if 'EntriesKey' in k:
-            continue
-        new_row[k.strip('_')] = v
+    copy_without_entriesKey(new_row, row)
     new_row['AbilityLimitedText'] = get_label(row['_AbilityLimitedText']).format(ability_limit0=row['_MaxLimitedValue'])
     existing_data.append((None, new_row))
 
@@ -320,6 +323,8 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
         element = new_row['Name'][1:new_row['Name'].index(')')]
     else:
         element = ELEMENT_TYPE[row['_ElementalType']]
+        if element == 'None':
+            element = 'EDIT_THIS'
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
@@ -361,40 +366,78 @@ def process_ChainCoAbility(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
-def process_AmuletData(row, existing_data):
-    ABILITY_COUNT = 3
-    FLAVOR_COUNT = 5
+def process_AbilityCrest(row, existing_data):
     new_row = OrderedDict()
 
-    new_row['Id'] = row[ROW_INDEX]
+    new_row['Id'] = row['_Id']
     new_row['BaseId'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['FeaturedCharacters'] = '' # EDIT_THIS
-    new_row['Obtain'] = '' # EDIT_THIS
-    new_row['ReleaseDate'] = '' # EDIT_THIS
-    new_row['Availability'] = '' # EDIT_THIS
+    new_row['IsHideChangeImage'] = row['_IsHideChangeImage']
     new_row['Rarity'] = row['_Rarity']
-    new_row['AmuletType'] = CLASS_TYPE[int(row['_AmuletType'])]
-    new_row['MinHp'] = row['_MinHp']
+    new_row['AmuletType'] = row['_AbilityCrestType']
+    new_row['CrestSlotType'] = row['_CrestSlotType']
+    new_row['UnitType'] = row['_UnitType']
+    new_row['MinHp'] = row['_BaseHp']
     new_row['MaxHp'] = row['_MaxHp']
-    new_row['MinAtk'] = row['_MinAtk']
+    new_row['MinAtk'] = row['_BaseAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
     new_row['VariationId'] = row['_VariationId']
-    for i in range(1, ABILITY_COUNT+1):
-        for j in range(1, ABILITY_COUNT+1):
-            ab_k = 'Abilities{}{}'.format(i, j)
-            new_row[ab_k] = row['_' + ab_k]
-    for i in range(1, ABILITY_COUNT+1):
-        new_row['Ability{}Event'.format(i)] = 0
-    new_row['ArtistCV'] = '' # EDIT_THIS
-    for i in range(1, FLAVOR_COUNT+1):
-        new_row['FlavorText{}'.format(i)] = get_label(row['_Text{}'.format(i)])
+    new_row['Abilities11'] = row['_Abilities11']
+    new_row['Abilities12'] = row['_Abilities12']
+    new_row['Abilities13'] = row['_Abilities13']
+    new_row['Abilities21'] = row['_Abilities21']
+    new_row['Abilities22'] = row['_Abilities22']
+    new_row['Abilities23'] = row['_Abilities23']
+    new_row['UnionAbilityGroupId'] = row['_UnionAbilityGroupId']
+    for i in range(1, 6):
+        new_row[f'FlavorText{i}'] = get_label(row[f'_Text{i}'])
     new_row['IsPlayable'] = row['_IsPlayable']
-    new_row['SellCoin'] = row['_SellCoin']
-    new_row['SellDewPoint'] = row['_SellDewPoint']
+    new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
+    new_row['DuplicateEntityQuantity'] = row['_DuplicateEntityQuantity']
+    new_row['AbilityCrestBuildupGroupId'] = row['_AbilityCrestBuildupGroupId']
+
+    # Trade/obtain info
+    trade = db_query_one('SELECT * FROM AbilityCrestTrade '
+                        f'WHERE _AbilityCrestId="{row["_Id"]}"')
+
+    if trade:
+        new_row['NeedDewPoint'] = trade['_NeedDewPoint']
+        new_row['Obtain'] = '[[Shop/Wyrmprints|Wyrmprints Shop]]'
+        new_row['ReleaseDate'] = trade['_CommenceDate']
+        if trade['_MemoryPickupEventId'] != '0':
+            new_row['Availability'] = 'Compendium'
+        elif trade['_CompleteDate']:
+            new_row['Availability'] = 'Limited'
+        else:
+            new_row['Availability'] = 'Permanent'
+
+    else:
+        new_row['NeedDewPoint'] = 0
+        new_row['Obtain'] = ''
+        new_row['ReleaseDate'] = ''
+        new_row['Availability'] = ''
+
+    new_row['ArtistCV'] = row['_CvInfo']
+    new_row['FeaturedCharacters'] = ''
+    new_row['Notes'] = ''
 
     existing_data.append((new_row['Name'], new_row))
+
+def process_AbilityCrestBuildupGroup(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+
+def process_AbilityCrestBuildupLevel(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+
+def process_AbilityCrestRarity(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
 
 def process_Consumable(row, existing_data):
     new_row = OrderedDict()
@@ -420,8 +463,13 @@ def process_Material(row, existing_data):
     if '_EventId' in row:
         new_row['QuestEventId'] = row['_EventId']
         new_row['SortId'] = row[ROW_INDEX]
+
+        if 'EV_BATTLE_ROYAL' in row['_Name']:
+            new_row['Category'] = 'Battle Royale'
+
     elif '_RaidEventId' in row:
         new_row['QuestEventId'] = row['_RaidEventId']
+        new_row['Category'] = 'Raid'
         new_row['SortId'] = row[ROW_INDEX]
     elif '_QuestEventId' in row:
         new_row['QuestEventId'] = row['_QuestEventId']
@@ -492,6 +540,12 @@ def process_CharaData(row, existing_data):
 
     new_row['HoldEditSkillCost'] = row['_HoldEditSkillCost']
     new_row['EditSkillId'] = row['_EditSkillId']
+    
+    if (row['_EditSkillId'] != row['_Skill1'] and
+        row['_EditSkillId'] != row['_Skill2'] and
+        row['_EditSkillId'] != '0'):
+        new_row['EditSkillId'] += ' // Shared skill differs from actual skill. Double check shared skill entry!'
+
     new_row['EditSkillLevelNum'] = row['_EditSkillLevelNum']
     new_row['EditSkillCost'] = row['_EditSkillCost']
     new_row['EditSkillRelationId'] = row['_EditSkillRelationId']
@@ -697,10 +751,10 @@ def process_FortPlantData(row, existing_data, fort_plant_detail):
     if len(images) > 1:
         new_row['Images'] = '{{#tag:tabber|\nLv' + \
             '\n{{!}}-{{!}}\n'.join(
-            ['{}=\n[[File:{}.png|120px]]'.format(lvl, name) for lvl, name in images]) + \
+            ['{}=\n[[File:{}.png|256px]]'.format(lvl, name) for lvl, name in images]) + \
             '}}'
     elif len(images) == 1:
-        new_row['Images'] = '[[File:{}.png|120px]]'.format(images[0][1])
+        new_row['Images'] = '[[File:{}.png|256px]]'.format(images[0][1])
     else:
         new_row['Images'] = ''
 
@@ -932,6 +986,17 @@ def process_QuestBonusData(row, existing_data):
 
     existing_data[index] = (existing_row[0], curr_row)
 
+def process_UnionAbility(row, existing_data):
+    new_row = OrderedDict()
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['IconEffect'] = row['_IconEffect']
+    for i in range(1, 6):
+        new_row[f'CrestGroup1Count{i}'] = row[f'_CrestGroup1Count{i}']
+        new_row[f'AbilityId{i}'] = row[f'_AbilityId{i}']
+
+    existing_data.append((None, new_row))
+
 def process_WeaponData(row, existing_data):
     new_row = OrderedDict()
 
@@ -1048,7 +1113,7 @@ def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
 
 def process_BuildEventReward(reader, outfile):
     table_header = ('|CollectionRewards=<div style="max-height:500px;overflow:auto;width:100%">\n'
-                    '{{{{Wikitable|class="wikitable darkpurple sortable right" style="width:100%"\n'
+                    '{{Wikitable|class="wikitable darkpurple sortable right" style="width:100%"\n'
                     '|-\n'
                     '! Item !! Qty !! {event_item_req}')
     row_divider = '\n|-\n| style{{=}}"text-align:left" | '
@@ -1174,6 +1239,23 @@ def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
 def row_as_kv_pairs(row, template_name=None, display_name=None, delim=': '):
     return '\n\t'.join([k+delim+v for k, v in row.items()]) + '\n'
 
+def copy_without_entriesKey(new_row, row):
+    for k, v in row.items():
+        if 'EntriesKey' in k:
+            continue
+        new_row[k.strip('_')] = v
+
+def db_query_one(query):
+    db.execute(query)
+    return db.fetchone()
+
+def db_query_all(query):
+    db.execute(query)
+    return db.fetchall()
+
+def row_factory(cursor, row):
+    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
     'CharaData': ('Adventurer', row_as_wikitext, process_CharaData),
@@ -1181,9 +1263,13 @@ DATA_PARSER_PROCESSING = {
     'AbilityData': ('Ability', row_as_wikitext,
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
-    'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
-    'AmuletData': ('Wyrmprint', row_as_wikitext, process_AmuletData),
+    'AbilityCrest': ('Wyrmprint', row_as_wikitext, process_AbilityCrest),
+    'AbilityCrestBuildupGroup': ('WyrmprintBuildupGroup', row_as_wikitext, process_AbilityCrestBuildupGroup),
+    'AbilityCrestBuildupLevel': ('WyrmprintBuildupLevel', row_as_wikitext, process_AbilityCrestBuildupLevel),
+    'AbilityCrestRarity': ('WyrmprintRarity', row_as_wikitext, process_AbilityCrestRarity),
+    'BattleRoyalEventItem': ('Material', row_as_wikitext, process_Material),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
+    'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
     'Clb01EventItem': ('Material', row_as_wikitext, process_Material),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
     'CombatEventItem': ('Material', row_as_wikitext, process_Material),
@@ -1216,6 +1302,7 @@ DATA_PARSER_PROCESSING = {
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
     'MC': ('MC', row_as_wikitext, process_GenericTemplate),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
+    'UnionAbility': ('AffinityBonus', row_as_wikitext, process_UnionAbility),
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
 }
 
@@ -1261,6 +1348,27 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
 
     in_dir = input_dir if input_dir[-1] == '/' else input_dir+'/'
     out_dir = output_dir if output_dir[-1] == '/' else output_dir+'/'
+
+    # Set up in-memory sql database for all monos
+    con = sqlite3.connect(':memory:')
+    con.row_factory = row_factory
+    db = con.cursor()
+
+    for mono in glob.glob(f'{in_dir}*{EXT}'):
+        with open(mono, encoding='utf-8', newline='') as file:
+            table_name = os.path.basename(mono).replace(EXT, '')
+            dialect = 'excel-tab' if 'TextLabel' in table_name else 'excel'
+            reader = csv.reader(file, dialect=dialect)
+            columns = next(reader)
+            rows = [tuple(row) for row in reader]
+            placeholder = ','.join(["?" for i in columns])
+
+            db.execute(f'CREATE TABLE {table_name} ({",".join(columns)})')
+            try:
+                db.executemany(f'INSERT INTO {table_name} VALUES ({placeholder})', rows)
+            except:
+                print('Error in input csv: {}'.format(table_name))
+    con.commit()
 
     TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, index='_Id', value_key='_Text', tabs=True)
     try:
