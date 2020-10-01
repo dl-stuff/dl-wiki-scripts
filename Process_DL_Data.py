@@ -1085,6 +1085,26 @@ def process_WeaponCraftTree(row, existing_data):
     curr_row['CraftGroupId'] = row['_CraftGroupId']
     existing_data[index] = (existing_row[0], curr_row)
 
+def process_WeaponBodyBuildupGroup(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+
+def process_WeaponBodyBuildupLevel(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+
+def process_WeaponBodyRarity(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+
+def process_WeaponPassiveAbility(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    existing_data.append((None, new_row))
+ 
 def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
     new_row = OrderedDict()
     reward_entity_dict = {
@@ -1237,7 +1257,7 @@ def row_as_wikirow(row, template_name=None, display_name=None, delim='|'):
     return '{{' + template_name + '|' + delim.join(row) + '}}\n'
 
 def row_as_kv_pairs(row, template_name=None, display_name=None, delim=': '):
-    return '\n\t'.join([k+delim+v for k, v in row.items()]) + '\n'
+    return '\n\t'.join([str(k)+delim+str(v) for k, v in row.items()]) + '\n'
 
 def copy_without_entriesKey(new_row, row):
     for k, v in row.items():
@@ -1329,10 +1349,16 @@ KV_PROCESSING = {
     'PlayerAction': ('PlayerAction', row_as_kv_pairs, process_KeyValues),
     'PlayerActionHitAttribute': ('PlayerActionHitAttribute', row_as_kv_pairs, process_KeyValues),
     'QuestData': ('QuestData', row_as_kv_pairs, process_KeyValues),
+#     'WeaponBody': ('Weapon', row_as_wikitext, process_WeaponBody),
+    'WeaponBodyBuildupGroup': ('WeaponBodyBuildupGroup', row_as_wikitext, process_WeaponBodyBuildupGroup),
+    'WeaponBodyBuildupLevel': ('WeaponBodyBuildupLevel', row_as_wikitext, process_WeaponBodyBuildupLevel),
+    'WeaponBodyRarity': ('WeaponBodyRarity', row_as_wikitext, process_WeaponBodyRarity),
+    'WeaponPassiveAbility': ('WeaponPassiveAbility', row_as_wikitext, process_WeaponPassiveAbility),
+#     'WeaponSkin': ('WeaponSkin', row_as_wikitext, process_WeaponSkin),
 }
 
 def process(input_dir='./', output_dir='./output-data', ordering_data_path=None, delete_old=False):
-    global in_dir, ORDERING_DATA, SKILL_DATA_NAMES, EPITHET_RANKS
+    global db, in_dir, ORDERING_DATA, SKILL_DATA_NAMES, EPITHET_RANKS
     if delete_old:
         if os.path.exists(output_dir):
             try:
