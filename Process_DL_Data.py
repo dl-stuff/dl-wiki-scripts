@@ -3,6 +3,7 @@
 
 import argparse
 import csv
+import glob
 import json
 import os
 import re
@@ -25,6 +26,8 @@ EMBLEM_P = 'EMBLEM_PHONETIC_'
 
 TEXT_LABEL = 'TextLabel'
 TEXT_LABEL_JP = 'TextLabelJP'
+TEXT_LABEL_TC = 'TextLabelTC'
+TEXT_LABEL_SC = 'TextLabelSC'
 TEXT_LABEL_DICT = {}
 
 CHAIN_COAB_SET = set()
@@ -60,20 +63,25 @@ ELEMENT_TYPE = {
 CLASS_TYPE = [None, 'Attack', 'Defense', 'Support', 'Healing']
 WEAPON_TYPE = [None, 'Sword', 'Blade', 'Dagger', 'Axe', 'Lance', 'Bow', 'Wand', 'Staff', 'Manacaster']
 QUEST_TYPE_DICT = {
-    '1'   : 'Campaign',
-    '201' : 'Event',
-    '202' : 'Event',
-    '203' : 'Event',
-    '210' : 'Event',
-    '211' : 'Event',
-    '300' : 'Event',
-    '204' : 'Raid',
-    '208' : 'Facility',
+    'Campaign': re.compile(r'MAIN_|PROLOGUE_'),
+    'Event': re.compile(r'AGITO_|ASTRAL_|DRAGONBATTLE_|WEEKLY_|EXP_|EMPIRE_|VOIDBATTLE_'),
+    'Facility': re.compile(r'BUILD_'),
+    'Raid': re.compile(r'RAID_'),
+    'Onslaught': re.compile(r'COMBAT_'),
+    'Defensive': re.compile(r'CLB_DEF_'),
+    'Collab': re.compile(r'CLB_\d|EX_'),
+    'Battle Royale': re.compile(r'BR_'),
+    'Simple': re.compile(r'SIMPLE_'),
 }
 
 GROUP_TYPE_DICT = {
     '1' : 'Campaign',
     '2' : 'Event',
+}
+QUEST_MODE_PLAY_TYPE_DICT = {
+    '1' : '',
+    '2' : ' (Solo)',
+    '3' : ' (Co-op)',
 }
 
 FACILITY_EFFECT_TYPE_DICT = {
@@ -177,6 +185,16 @@ MISSION_ENTITY_OVERRIDES_DICT = {
     '11' : lambda x: ["Override={}".format(get_entity_item('11', x, format=0))],
     '12' : lambda x: ["Override={}".format(get_entity_item('12', x, format=0))],
 }
+EVENT_TYPES = {
+    '1': 'Raid',
+    '4': 'Facility',
+    '5': 'Story',
+    '6': 'Collab', # CLB01 / Fire Emblem
+    '7': 'Collab', # EX_RUSH / Mega Man
+    '8': 'Collab', # EX_HUNTER / MonHun
+    '9': 'Simple',
+    '10': 'Onslaught',
+}
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
 PERCENTAGE_REGEX = re.compile(r' (\d+)%')
@@ -216,15 +234,16 @@ class DataParser:
                 out_file.write(self.formatter(row, self.template, display_name))
 
 class CustomDataParser:
-    def __init__(self, _data_name, _processor):
+    def __init__(self, _data_name, _processor_params):
         self.data_name = _data_name
-        self.process_func = _processor
+        self.process_func = _processor_params[0]
+        self.extra_files = _processor_params[1:]
 
     def process(self, in_dir, out_dir):
         with open(in_dir+self.data_name+EXT, 'r', newline='', encoding='utf-8') as in_file:
             reader = csv.DictReader(in_file)
             with open(out_dir+self.data_name+EXT, 'w', newline='', encoding='utf-8') as out_file:
-                self.process_func(reader, out_file)
+                self.process_func(reader, out_file, *[in_dir+f+EXT for f in self.extra_files])
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, 'r', newline='', encoding='utf-8') as csvfile:
@@ -260,9 +279,14 @@ def get_item_label(type, key):
     except KeyError:
         return key
 
+def get_epithet(emblem_id, lang='en'):
+    return get_label(EMBLEM_N + emblem_id, lang=lang)
+
 def get_jp_epithet(emblem_id):
     if 'jp' in TEXT_LABEL_DICT:
-        return '{{' + 'Ruby|{}|{}'.format(get_label(EMBLEM_N + emblem_id, lang='jp'), get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
+        return '{{' + 'Ruby|{}|{}'.format(
+            get_label(EMBLEM_N + emblem_id, lang='jp'),
+            get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
     return ''
 
 # Formats= 0: icon + text, 1: text only, 2: category
@@ -373,6 +397,8 @@ def process_AbilityCrest(row, existing_data):
     new_row['BaseId'] = row['_BaseId']
     new_row['Name'] = get_label(row['_Name'])
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
     new_row['IsHideChangeImage'] = row['_IsHideChangeImage']
     new_row['Rarity'] = row['_Rarity']
     new_row['AmuletType'] = row['_AbilityCrestType']
@@ -500,8 +526,12 @@ def process_CharaData(row, existing_data):
     new_row['Name'] = get_label(row['_Name'])
     new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
+    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+    new_row['Title'] = get_epithet(row['_EmblemId'])
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
+    new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
+    new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
@@ -540,7 +570,7 @@ def process_CharaData(row, existing_data):
 
     new_row['HoldEditSkillCost'] = row['_HoldEditSkillCost']
     new_row['EditSkillId'] = row['_EditSkillId']
-    
+
     if (row['_EditSkillId'] != row['_Skill1'] and
         row['_EditSkillId'] != row['_Skill2'] and
         row['_EditSkillId'] != '0'):
@@ -603,8 +633,12 @@ def process_Dragon(row, existing_data):
     new_row['Name'] = get_label(row['_Name'])
     new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['Title'] = get_label(EMBLEM_N + row['_EmblemId'])
+    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+    new_row['Title'] = get_epithet(row['_EmblemId'])
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
+    new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
+    new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
     new_row['Obtain'] = '' # EDIT_THIS
     new_row['ReleaseDate'] = '' # EDIT_THIS
     new_row['Availability'] = '' # EDIT_THIS
@@ -667,6 +701,8 @@ def process_EmblemData(row, existing_data):
 
     new_row['Title'] = get_label(row['_Title'])
     new_row['TitleJP'] = get_jp_epithet(row['_Id'])
+    new_row['TitleSC'] = get_label(row['_Title'], lang='sc')
+    new_row['TitleTC'] = get_label(row['_Title'], lang='tc')
     new_row['Icon'] = 'data-sort-value ="{0}" | [[File:Icon_Profile_0{0}_Frame.png|28px|center]]'.format(row['_Rarity'])
     new_row['Text'] = get_label(row['_Gettext'])
     res = event_emblem_pattern.match(new_row['Text'])
@@ -840,8 +876,8 @@ def process_MissionData(row, existing_data):
 
 def process_QuestData(row, existing_data):
     new_row = {}
-    for quest_type_id_check,quest_type in QUEST_TYPE_DICT.items():
-        if row['_Id'].startswith(quest_type_id_check):
+    for quest_type, quest_type_pattern in QUEST_TYPE_DICT.items():
+        if quest_type_pattern.match(row['_AreaName01']):
             new_row['QuestType'] = quest_type
             break
     new_row['Id'] = row[ROW_INDEX]
@@ -900,12 +936,19 @@ def process_QuestData(row, existing_data):
 
     page_name = new_row['QuestViewName']
     if new_row.get('GroupType', '') == 'Campaign':
-      if row['_VariationType'] == '1':
-        page_name += '/Normal'
-      elif row['_VariationType'] == '2':
-        page_name += '/Hard'
-      elif row['_VariationType'] == '3':
-        page_name += '/Very Hard'
+        if row['_VariationType'] == '1':
+            page_name += '/Normal'
+        elif row['_VariationType'] == '2':
+            page_name += '/Hard'
+        elif row['_VariationType'] == '3':
+            page_name += '/Very Hard'
+    elif new_row.get('GroupType', '') == 'Event':
+        if new_row.get('QuestType', '') == 'Onslaught':
+            quest_mode_suffix = f" ({new_row['EventName']})"
+        else:
+            quest_mode_suffix = QUEST_MODE_PLAY_TYPE_DICT.get(row['_QuestPlayModeType'], '')
+        page_name += quest_mode_suffix
+        new_row['QuestViewName'] += quest_mode_suffix
 
     existing_data.append((page_name, new_row))
 
@@ -1135,7 +1178,7 @@ def process_BuildEventReward(reader, outfile):
     table_header = ('|CollectionRewards=<div style="max-height:500px;overflow:auto;width:100%">\n'
                     '{{Wikitable|class="wikitable darkpurple sortable right" style="width:100%"\n'
                     '|-\n'
-                    '! Item !! Qty !! {event_item_req}')
+                    '! Item !! Qty !! {} Req.')
     row_divider = '\n|-\n| style{{=}}"text-align:left" | '
     events = defaultdict(list)
 
@@ -1154,12 +1197,11 @@ def process_BuildEventReward(reader, outfile):
         })
 
     for event_id in events:
-        event_item_req = get_label('EVENT_SCORING_{}'.format(event_id)).replace('Required: {0}', 'Req.')
         reward_list = sorted(events[event_id], key = lambda x: x['evt_item_qty'])
 
         outfile.write('{} - {}'.format(get_label('EVENT_NAME_' + event_id), event_id))
         outfile.write(ENTRY_LINE_BREAK)
-        outfile.write(table_header.format(event_item_req=event_item_req))
+        outfile.write(table_header)
         outfile.write(row_divider)
         outfile.write(row_divider.join((x['row'] for x in reward_list)))
         outfile.write('\n}}\n</div>')
@@ -1170,7 +1212,7 @@ def process_RaidEventReward(reader, outfile):
                     '<div style="max-height:500px;overflow:auto;">\n'
                     '{{{{Wikitable|class="wikitable darkred sortable right" style="width:100%"\n'
                     '|-\n'
-                    '! Item !! Qty !! {event_item_req}')
+                    '! Item !! Qty !! Emblems Req.')
     row_divider = '\n|-\n| style{{=}}"text-align:left" | '
     events = defaultdict(lambda: defaultdict(list))
 
@@ -1190,7 +1232,6 @@ def process_RaidEventReward(reader, outfile):
         })
 
     for event_id in events:
-        event_item_req = get_label('EVENT_SCORING_{}'.format(event_id)).replace('Required: {0}', 'Req.')
         outfile.write('{} - {}'.format(get_label('EVENT_NAME_' + event_id), event_id))
         outfile.write(ENTRY_LINE_BREAK)
         outfile.write('|CollectionRewards=<div style="width:100%">\n'
@@ -1198,12 +1239,43 @@ def process_RaidEventReward(reader, outfile):
 
         for emblem_type in ('Bronze', 'Silver', 'Gold'):
             reward_list = sorted(events[event_id][emblem_type], key = lambda x: x['evt_item_qty'])
-            outfile.write(table_header.format(emblem_type=emblem_type, event_item_req=event_item_req))
+            outfile.write(table_header.format(emblem_type=emblem_type))
             outfile.write(row_divider)
             outfile.write(row_divider.join((x['row'] for x in reward_list)))
             outfile.write('\n}}\n</div>\n')
 
         outfile.write('</tabber>\n</div>')
+        outfile.write(ENTRY_LINE_BREAK)
+
+def process_CombatEventLocation(reader, outfile, reward_filename):
+    events = defaultdict(dict)
+
+    for row in reader:
+        if row['_Id'] == '0':
+            continue
+        events[row['_EventId']][row['_LocationRewardId']] = {
+            'Name': get_label(row['_LocationName']),
+            'Rewards': [],
+        }
+
+    with open(reward_filename, 'r', newline='', encoding='utf-8') as in_file:
+        rewards_reader = csv.DictReader(in_file)
+        for row in rewards_reader:
+            if row['_Id'] == '0':
+                continue
+            events[row['_EventId']][row['_LocationRewardId']]['Rewards'].append(
+                '* {{{{{}-}}}} x{:,}'.format(get_entity_item(row['_EntityType'], row['_EntityId']), int(row['_EntityQuantity']))
+            )
+
+    for event_id, locations in events.items():
+        outfile.write('{} - {}'.format(get_label('EVENT_NAME_' + event_id), event_id))
+        outfile.write(ENTRY_LINE_BREAK)
+
+        for location in locations.values():
+            outfile.write('{}:\n'.format(location['Name']))
+            outfile.write('\n'.join(location['Rewards']))
+            outfile.write('\n')
+
         outfile.write(ENTRY_LINE_BREAK)
 
 def process_GenericTemplate(row, existing_data):
@@ -1324,19 +1396,18 @@ DATA_PARSER_PROCESSING = {
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
     'UnionAbility': ('AffinityBonus', row_as_wikitext, process_UnionAbility),
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
-#     'WeaponBody': ('Weapon', row_as_wikitext, process_WeaponBody),
     'WeaponBodyBuildupGroup': ('WeaponBodyBuildupGroup', row_as_wikitext, process_WeaponBodyBuildupGroup),
     'WeaponBodyBuildupLevel': ('WeaponBodyBuildupLevel', row_as_wikitext, process_WeaponBodyBuildupLevel),
     'WeaponBodyRarity': ('WeaponBodyRarity', row_as_wikitext, process_WeaponBodyRarity),
     'WeaponPassiveAbility': ('WeaponPassiveAbility', row_as_wikitext, process_WeaponPassiveAbility),
-#     'WeaponSkin': ('WeaponSkin', row_as_wikitext, process_WeaponSkin),
 }
 
 # Data that cannot be structured into a simple row->template relationship, and
 # will be parsed into a custom output format determined by each specific function.
 NON_TEMPLATE_PROCESSING = {
-    'BuildEventReward': process_BuildEventReward,
-    'RaidEventReward': process_RaidEventReward,
+    'BuildEventReward': (process_BuildEventReward,),
+    'CombatEventLocation': (process_CombatEventLocation, 'CombatEventLocationReward'),
+    'RaidEventReward': (process_RaidEventReward,),
 }
 
 KV_PROCESSING = {
@@ -1399,6 +1470,8 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
     TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, index='_Id', value_key='_Text', tabs=True)
     try:
         TEXT_LABEL_DICT['jp'] = csv_as_index(in_dir+TEXT_LABEL_JP+EXT, index='_Id', value_key='_Text', tabs=True)
+        TEXT_LABEL_DICT['sc'] = csv_as_index(in_dir+TEXT_LABEL_SC+EXT, index='_Id', value_key='_Text', tabs=True)
+        TEXT_LABEL_DICT['tc'] = csv_as_index(in_dir+TEXT_LABEL_TC+EXT, index='_Id', value_key='_Text', tabs=True)
     except:
         pass
     SKILL_DATA_NAMES = csv_as_index(in_dir+SKILL_DATA_NAME+EXT, index='_Id', value_key='_Name')
@@ -1414,8 +1487,8 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
         parser.emit(out_dir)
         print('Saved {}{}'.format(data_name, EXT))
 
-    for data_name, processor in NON_TEMPLATE_PROCESSING.items():
-        parser = CustomDataParser(data_name, processor)
+    for data_name, process_params in NON_TEMPLATE_PROCESSING.items():
+        parser = CustomDataParser(data_name, process_params)
         parser.process(in_dir, out_dir)
         print('Saved {}{}'.format(data_name, EXT))
 
