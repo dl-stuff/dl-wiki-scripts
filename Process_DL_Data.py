@@ -9,8 +9,10 @@ import os
 import re
 import sqlite3
 import string
+import traceback
 
 from collections import OrderedDict, defaultdict
+from datetime import datetime
 from shutil import copyfile, rmtree
 
 import pdb
@@ -82,6 +84,14 @@ QUEST_MODE_PLAY_TYPE_DICT = {
     '1' : '',
     '2' : ' (Solo)',
     '3' : ' (Co-op)',
+}
+WEAPON_SERIES = {
+    '1' : 'Core',
+    '2' : 'Void',
+    '3' : 'High Dragon',
+    '4' : 'Agito',
+    '5' : 'Chimeratech',
+    '6' : 'Other',
 }
 
 FACILITY_EFFECT_TYPE_DICT = {
@@ -244,6 +254,15 @@ class CustomDataParser:
             reader = csv.DictReader(in_file)
             with open(out_dir+self.data_name+EXT, 'w', newline='', encoding='utf-8') as out_file:
                 self.process_func(reader, out_file, *[in_dir+f+EXT for f in self.extra_files])
+
+class DatabaseBasedParser:
+    def __init__(self, _data_name, _processor_params):
+        self.data_name = _data_name
+        self.process_func = _processor_params[0]
+
+    def process(self, out_dir):
+        with open(out_dir+self.data_name+EXT, 'w', newline='', encoding='utf-8') as out_file:
+            self.process_func(out_file)
 
 def csv_as_index(path, index=None, value_key=None, tabs=False):
     with open(path, 'r', newline='', encoding='utf-8') as csvfile:
@@ -1040,93 +1059,66 @@ def process_UnionAbility(row, existing_data):
 
     existing_data.append((None, new_row))
 
-def process_WeaponData(row, existing_data):
+def process_WeaponBody(row):
     new_row = OrderedDict()
 
-    availability_dict = {
-      '0': 'Limited', # Can also be core if 2* drop, so check carefully
-      '1': 'Core',
-      '2': 'Void',
-      '3': 'High Dragon',
-      '4': 'Agito',
-    }
-
-    new_row['Id'] = row[ROW_INDEX]
-    new_row['BaseId'] = row['_BaseId']
-    new_row['FormId'] = row['_FormId']
-    new_row['WeaponName'] = get_label(row['_Name'])
-    new_row['WeaponNameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['Type'] = WEAPON_TYPE[int(row['_Type'])]
+    new_row['Id'] = row['_Id']
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+    new_row['WeaponSeriesId'] = row['_WeaponSeriesId']
+    new_row['WeaponSkinId'] = row['_WeaponSkinId']
+    new_row['WeaponType'] = row['_WeaponType']
     new_row['Rarity'] = row['_Rarity']
-    new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
-    new_row['Obtain'] = '' # EDIT_THIS: partially covered by WeaponCraftData
-    new_row['ReleaseDate'] = '' # EDIT_THIS: partially covered by WeaponCraftData
-    new_row['Availability'] = availability_dict.get(row['_CraftSeriesId'], '')
-    new_row['MinHp'] = row['_MinHp']
-    new_row['MaxHp'] = row['_MaxHp']
-    new_row['MinAtk'] = row['_MinAtk']
-    new_row['MaxAtk'] = row['_MaxAtk']
-    new_row['VariationId'] = 1
-    # Case when weapon has no skill
-    try:
-        new_row['Skill'] = row['_Skill']
-        new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill']])
-    except KeyError:
-        new_row['Skill'] = ''
-        new_row['SkillName'] = ''
+    new_row['ElementalType'] = row['_ElementalType']
+    new_row['Obtain'] = 'Crafting' if row['_CreateCoin'] != '0' else '' # EDIT_THIS
+    new_row['MaxLimitOverCount'] = row['_MaxLimitOverCount']
+    new_row['BaseHp'] = row['_BaseHp']
+    new_row['MaxHp1'] = row['_MaxHp1']
+    new_row['MaxHp2'] = row['_MaxHp2']
+    new_row['MaxHp3'] = row['_MaxHp3']
+    new_row['BaseAtk'] = row['_BaseAtk']
+    new_row['MaxAtk1'] = row['_MaxAtk1']
+    new_row['MaxAtk2'] = row['_MaxAtk2']
+    new_row['MaxAtk3'] = row['_MaxAtk3']
+    new_row['LimitOverCountPartyPower1'] = row['_LimitOverCountPartyPower1']
+    new_row['LimitOverCountPartyPower2'] = row['_LimitOverCountPartyPower2']
+    new_row['CrestSlotType1BaseCount'] = row['_CrestSlotType1BaseCount']
+    new_row['CrestSlotType1MaxCount'] = row['_CrestSlotType1MaxCount']
+    new_row['CrestSlotType2BaseCount'] = row['_CrestSlotType2BaseCount']
+    new_row['CrestSlotType2MaxCount'] = row['_CrestSlotType2MaxCount']
+    new_row['ChangeSkillId1'] = row['_ChangeSkillId1']
+    new_row['ChangeSkillId2'] = row['_ChangeSkillId2']
+    new_row['ChangeSkillId3'] = row['_ChangeSkillId3']
     new_row['Abilities11'] = row['_Abilities11']
+    new_row['Abilities12'] = row['_Abilities12']
+    new_row['Abilities13'] = row['_Abilities13']
     new_row['Abilities21'] = row['_Abilities21']
-    new_row['IsPlayable'] = 1
-    new_row['FlavorText'] = get_label(row['_Text'])
-    new_row['SellCoin'] = row['_SellCoin']
-    new_row['SellDewPoint'] = row['_SellDewPoint']
+    new_row['Abilities22'] = row['_Abilities22']
+    new_row['Abilities23'] = row['_Abilities23']
+    new_row['IsPlayable'] = row['_IsPlayable']
+    new_row['Text'] = get_label(row['_Text'])
+    new_row['CreateStartDate'] = row['_CreateStartDate']
+    new_row['NeedFortCraftLevel'] = row['_NeedFortCraftLevel']
+    new_row['NeedCreateWeaponBodyId1'] = row['_NeedCreateWeaponBodyId1']
+    new_row['NeedCreateWeaponBodyId2'] = row['_NeedCreateWeaponBodyId2']
+    new_row['NeedAllUnlockWeaponBodyId1'] = row['_NeedAllUnlockWeaponBodyId1']
+    new_row['CreateCoin'] = row['_CreateCoin']
+    for i in range(1, 6):
+        new_row[f'CreateEntity{i}'] = get_entity_item(row[f'_CreateEntityType{i}'], row[f'_CreateEntityId{i}'])
+        new_row[f'CreateEntityQuantity{i}'] = row[f'_CreateEntityQuantity{i}']
+    new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
+    new_row['DuplicateEntityQuantity'] = row['_DuplicateEntityQuantity']
+    new_row['WeaponPassiveAbilityGroupId'] = row['_WeaponPassiveAbilityGroupId']
+    new_row['WeaponBodyBuildupGroupId'] = row['_WeaponBodyBuildupGroupId']
+    new_row['MaxWeaponPassiveCharaCount'] = row['_MaxWeaponPassiveCharaCount']
+    new_row['WeaponPassiveEffHp'] = row['_WeaponPassiveEffHp']
+    new_row['WeaponPassiveEffAtk'] = row['_WeaponPassiveEffAtk']
+    for i in range(1, 6):
+        new_row[f'RewardWeaponSkinId{i}'] = row[f'_RewardWeaponSkinId{i}']
 
-    existing_data.append((new_row['WeaponName'], new_row))
-
-def process_WeaponCraftData(row, existing_data):
-    WEAPON_CRAFT_DATA_MATERIAL_COUNT = 5
-
-    found = False
-    for index,existing_row in enumerate(existing_data):
-        if existing_row[1]['Id'] == row[ROW_INDEX]:
-            found = True
-            break
-    assert(found)
-
-    curr_row = existing_row[1]
-    curr_row['Obtain'] = 'Crafting'
-    curr_row['ReleaseDate'] = row['_StartDate']
-    curr_row['FortCraftLevel'] = row['_FortCraftLevel']
-    curr_row['AssembleCoin'] = row['_AssembleCoin']
-    curr_row['DisassembleCoin'] = row['_DisassembleCoin']
-    curr_row['DisassembleCost'] = row['_DisassembleCost']
-    curr_row['Undisassemblable'] = row['_IsUnableDisassemble']
-    curr_row['MainWeaponId'] = row['_MainWeaponId']
-    curr_row['MainWeaponQuantity'] = row['_MainWeaponQuantity']
-    if int(row['_AcquiredWeaponId1']) != 0:
-        curr_row['AcquiredWeaponId1'] = row['_AcquiredWeaponId1']
-    if int(row['_AcquiredWeaponId2']) != 0:
-        curr_row['AcquiredWeaponId2'] = row['_AcquiredWeaponId2']
-
-    for i in range(1,WEAPON_CRAFT_DATA_MATERIAL_COUNT+1):
-        curr_row['CraftMaterialType{}'.format(i)] = row['_CraftEntityType{}'.format(i)]
-        curr_row['CraftMaterial{}'.format(i)] = get_label('{}{}'.format(MATERIAL_NAME_LABEL, row['_CraftEntityId{}'.format(i)]))
-        curr_row['CraftMaterialQuantity{}'.format(i)] = row['_CraftEntityQuantity{}'.format(i)]
-    existing_data[index] = (existing_row[0], curr_row)
-
-def process_WeaponCraftTree(row, existing_data):
-    found = False
-    for index,existing_row in enumerate(existing_data):
-        if existing_row[1]['Id'] == row['_CraftWeaponId']:
-            found = True
-            break
-    assert(found)
-
-    curr_row = existing_row[1]
-    curr_row['CraftNodeId'] = row['_CraftNodeId']
-    curr_row['ParentCraftNodeId'] = row['_ParentCraftNodeId']
-    curr_row['CraftGroupId'] = row['_CraftGroupId']
-    existing_data[index] = (existing_row[0], curr_row)
+    return new_row
 
 def process_WeaponBodyBuildupGroup(row, existing_data):
     new_row = OrderedDict()
@@ -1147,6 +1139,45 @@ def process_WeaponPassiveAbility(row, existing_data):
     new_row = OrderedDict()
     copy_without_entriesKey(new_row, row)
     existing_data.append((None, new_row))
+
+def process_WeaponSkin(row):
+    new_row = OrderedDict()
+    # set some initial ordering
+    for x in ('Id', 'Name', 'NameJP', 'NameSC', 'NameTC', 'Text'):
+        new_row[x] = ''
+    copy_without_entriesKey(new_row, row)
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+    new_row['Text'] = get_label(row['_Text'])
+    new_row['Obtain'] = ''
+    new_row['Availability'] = ''
+    new_row['ReleaseDate'] = ''
+    return new_row
+
+def process_Weapons(out_file):
+    weapon_skins = db_query_all("SELECT * FROM WeaponSkin WHERE _Id!='0'")
+    for skin in weapon_skins:
+        skin_row = process_WeaponSkin(skin)
+        skin_id = skin_row['Id']
+        weapon = db_query_one(f"SELECT * FROM WeaponBody WHERE _WeaponSkinId='{skin_id}'")
+        if weapon:
+            weapon_row = process_WeaponBody(weapon)
+            skin_row['HideDisplay'] = 1
+            skin_row['Obtain'] = weapon_row['Obtain']
+            skin_row['Availability'] = WEAPON_SERIES.get(weapon_row['WeaponSeriesId'], '')
+            skin_row['ReleaseDate'] = weapon_row['CreateStartDate']
+
+            out_file.write(weapon_row['Name'])
+            out_file.write(ENTRY_LINE_BREAK)
+            out_file.write(build_wikitext_row('Weapon', weapon_row, delim='\n|'))
+        else:
+            out_file.write(skin_row['Name'].replace(' (Skin)', ''))
+            out_file.write(ENTRY_LINE_BREAK)
+
+        out_file.write(build_wikitext_row('WeaponSkin', skin_row, delim='\n|'))
+        out_file.write(ENTRY_LINE_BREAK)
  
 def prcoess_QuestWallMonthlyReward(row, existing_data, reward_sum):
     new_row = OrderedDict()
@@ -1385,10 +1416,6 @@ DATA_PARSER_PROCESSING = {
             ('QuestRewardData', process_QuestRewardData),
             ('QuestEvent', process_QuestBonusData),
         ]),
-    'WeaponData': ('Weapon', row_as_wikitext,
-        [('WeaponData', process_WeaponData),
-            ('WeaponCraftTree', process_WeaponCraftTree),
-            ('WeaponCraftData', process_WeaponCraftData)]),
     'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
     'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
@@ -1408,6 +1435,12 @@ NON_TEMPLATE_PROCESSING = {
     'BuildEventReward': (process_BuildEventReward,),
     'CombatEventLocation': (process_CombatEventLocation, 'CombatEventLocationReward'),
     'RaidEventReward': (process_RaidEventReward,),
+}
+
+# Data that cannot be structured into a simple row->template relationship, and
+# will be parsed into a custom output format determined by each specific function.
+DATABASE_BASED_PROCESSING = {
+    'Weapons': (process_Weapons,),
 }
 
 KV_PROCESSING = {
@@ -1465,6 +1498,7 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
                 db.executemany(f'INSERT INTO {table_name} VALUES ({placeholder})', rows)
             except:
                 print('Error in input csv: {}'.format(table_name))
+                traceback.print_exc()
     con.commit()
 
     TEXT_LABEL_DICT['en'] = csv_as_index(in_dir+TEXT_LABEL+EXT, index='_Id', value_key='_Text', tabs=True)
@@ -1485,6 +1519,11 @@ def process(input_dir='./', output_dir='./output-data', ordering_data_path=None,
         parser = DataParser(data_name, template, formatter, process_info)
         parser.process()
         parser.emit(out_dir)
+        print('Saved {}{}'.format(data_name, EXT))
+
+    for data_name, process_params in DATABASE_BASED_PROCESSING.items():
+        parser = DatabaseBasedParser(data_name, process_params)
+        parser.process(out_dir)
         print('Saved {}{}'.format(data_name, EXT))
 
     for data_name, process_params in NON_TEMPLATE_PROCESSING.items():
