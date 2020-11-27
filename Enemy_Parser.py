@@ -32,6 +32,10 @@ QUEST_NAME_REGEX = {
             (lambda x, y: get_label('QUEST_NAME_217{}01{}'.format(x, y))),
     re.compile(r'AGITO_(\d+)_(\d+)_E'):
             (lambda x, y: get_label('QUEST_NAME_219{}01{}'.format(x, y))),
+    re.compile(r'AGITO_ABS_(\d+)_0(\d+)_E'):
+            (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Co-op)' ),
+    re.compile(r'AGITO_ABS_(\d+)_1(\d+)_E'):
+            (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Solo)' ),
     re.compile(r'VOIDBATTLE_(\d+)_(\d+)_E'):
             (lambda x, y: get_label('QUEST_NAME_300{}01{}'.format(
                     QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y))),
@@ -190,6 +194,9 @@ class Enemy:
         # data['CrashedHPRate'] = ep['_CrashedHPRate'] # Currently unused
         data['ParamGroupName'] = ep['_ParamGroupName']
         data['MissionType'] = get_enemy_quest_name(ep['_ParamGroupName'])
+        if data['ParamGroupName'].startswith('AGITO_ABS'):
+            print(data['ParamGroupName'])
+            print(data['MissionType'])
         data['MissionDifficulty'] = ''    # Currently unused
         data['Tribe'] = TRIBES.get(el['_TribeType'], el['_TribeType'])
         data['Weapon'] = get_label(weapon_data.get(ed['_WeaponId'], ''))
@@ -351,4 +358,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     input_dir = args.i
     output_dir = args.o
-    parse(input_dir, output_dir, map_file)
+    parse(input_dir, output_dir)
