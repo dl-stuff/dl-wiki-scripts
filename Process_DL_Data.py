@@ -101,6 +101,12 @@ FACILITY_EFFECT_TYPE_DICT = {
     '6': 'Dragon' # fafnir
 }
 
+GUN_MODE = {
+    '1': 'Rifle',
+    '2': 'Shotgun',
+    '3': 'Machinegun'
+}
+
 # (icon+text, text only, category)
 ENTITY_TYPE_DICT = {
     '2': (lambda id: '{{' + get_label('USE_ITEM_NAME_' + id) + '-}}',
@@ -537,7 +543,10 @@ def process_Material(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
-def process_CharaData(row, existing_data):
+def process_CharaModeData(row, existing_data, chara_mode_data):
+    chara_mode_data[row[ROW_INDEX]] = row
+
+def process_CharaData(row, existing_data, chara_mode_data):
     new_row = OrderedDict()
 
     new_row['IdLong'] = row[ROW_INDEX]
@@ -617,16 +626,6 @@ def process_CharaData(row, existing_data):
 
     # new_row['EffNameCriticalHit'] = row['_EffNameCriticalHit']
 
-    mh_collab = [
-        new_row['Name'] == 'Berserker' and new_row['ElementalType'] == 'Flame',
-        new_row['Name'] == 'Vanessa' and new_row['ElementalType'] == 'Light',
-        new_row['Name'] == 'Sarisse' and new_row['ElementalType'] == 'Water',
-    ]
-    if any(mh_collab):
-        new_row['ChargeType'] = row['_ChargeType']
-        new_row['MaxChargeLv'] = row['_MaxChargeLv']
-        new_row['DefaultBurstAttackLevel'] = row['_DefaultBurstAttackLevel']
-
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
     new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
     new_row['Description'] = get_label(row['_ProfileText'])
@@ -634,6 +633,15 @@ def process_CharaData(row, existing_data):
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
 
     new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
+
+    gunmodes = set()
+    for m in range(1, 5):
+        mode = row['_ModeId{}'.format(m)]
+        if mode in chara_mode_data and int(chara_mode_data[mode]['_GunMode']):
+            gunmodes.add(GUN_MODE[chara_mode_data[mode]['_GunMode']])
+    if gunmodes:
+        new_row['GunModes'] = ','.join(sorted(gunmodes))
+
     existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
@@ -1381,7 +1389,9 @@ def row_factory(cursor, row):
 
 DATA_PARSER_PROCESSING = {
     'AbilityLimitedGroup': ('AbilityLimitedGroup', row_as_wikitext, process_AbilityLimitedGroup),
-    'CharaData': ('Adventurer', row_as_wikitext, process_CharaData),
+    'CharaData': ('Adventurer', row_as_wikitext,
+        [('CharaModeData', process_CharaModeData),
+         ('CharaData', process_CharaData)]),
     # Must come after CharaData processing
     'AbilityData': ('Ability', row_as_wikitext,
         [('AbilityShiftGroup', process_AbilityShiftGroup),
