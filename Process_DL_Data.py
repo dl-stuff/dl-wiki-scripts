@@ -101,12 +101,6 @@ FACILITY_EFFECT_TYPE_DICT = {
     '6': 'Dragon' # fafnir
 }
 
-GUN_MODE = {
-    '1': 'Rifle',
-    '2': 'Shotgun',
-    '3': 'Machinegun'
-}
-
 # (icon+text, text only, category)
 ENTITY_TYPE_DICT = {
     '2': (lambda id: '{{' + get_label('USE_ITEM_NAME_' + id) + '-}}',
@@ -638,7 +632,7 @@ def process_CharaData(row, existing_data, chara_mode_data):
     for m in range(1, 5):
         mode = row['_ModeId{}'.format(m)]
         if mode in chara_mode_data and int(chara_mode_data[mode]['_GunMode']):
-            gunmodes.add(GUN_MODE[chara_mode_data[mode]['_GunMode']])
+            gunmodes.add(chara_mode_data[mode]['_GunMode'])
     if gunmodes:
         new_row['GunModes'] = ','.join(sorted(gunmodes))
 
