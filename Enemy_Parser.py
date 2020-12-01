@@ -161,6 +161,7 @@ class Enemy:
         data['CounterRate'] = ep['_CounterRate']
         data['BarrierRate'] = ep['_BarrierRate']
         data['GetupActionRate'] = ep['_GetupActionRate']
+        # For the index order, match up against ActionCondition fields starting from 'RatePoison'.
         data['Poison'] = ep['_RegistAbnormalRate01']
         data['Burn'] = ep['_RegistAbnormalRate02']
         data['Freeze'] = ep['_RegistAbnormalRate03']
