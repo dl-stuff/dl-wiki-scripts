@@ -23,22 +23,31 @@ QUEST_NAME_REGEX = {
             (lambda x, y: get_label('QUEST_NAME_202{}01{}'.format(x, y))),
     re.compile(r'DRAGONBATTLE_(\d+)_(\d+)_E'):
             (lambda x, y: get_label('QUEST_NAME_203{}01{}'.format(x, y))),
-    re.compile(r'DRAGONBATTLE_ULT_(\d+)_(\d+)_E'):
-            (lambda x, y: get_label('QUEST_NAME_210{}01{}'.format(
-                    x, QUEST_DIFFICULTY_OVERRIDES['DRAGONBATTLE_ULT'].get(y, y)))),
+    re.compile(r'DRAGONBATTLE_ULT_(\d+)_0(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_210{}010{}'.format(
+                    x, QUEST_DIFFICULTY_OVERRIDES['DRAGONBATTLE_ULT'].get(y, y))) + ' (Co-op)'),
+    re.compile(r'DRAGONBATTLE_ULT_(\d+)_1(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_210{}010{}'.format(
+                    x, QUEST_DIFFICULTY_OVERRIDES['DRAGONBATTLE_ULT'].get(y, y))) + ' (Solo)'),
     re.compile(r'EMPIRE_(\d+)_(\d+)_E'):
             (lambda x, y: get_label('QUEST_NAME_211{}01{}'.format(x, y))),
     re.compile(r'ASTRAL_(\d+)_(\d+)_E'):
             (lambda x, y: get_label('QUEST_NAME_217{}01{}'.format(x, y))),
-    re.compile(r'AGITO_(\d+)_(\d+)_E'):
-            (lambda x, y: get_label('QUEST_NAME_219{}01{}'.format(x, y))),
+    re.compile(r'AGITO_(\d+)_0(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_219{}010{}'.format(x, y)) + ' (Co-op)'),
+    re.compile(r'AGITO_(\d+)_1(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_219{}010{}'.format(x, y)) + ' (Solo)'),
     re.compile(r'AGITO_ABS_(\d+)_0(\d+)_E'):
             (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Co-op)' ),
     re.compile(r'AGITO_ABS_(\d+)_1(\d+)_E'):
             (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Solo)' ),
-    re.compile(r'VOIDBATTLE_(\d+)_(\d+)_E'):
-            (lambda x, y: get_label('QUEST_NAME_300{}01{}'.format(
-                    QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y))),
+    re.compile(r'VOIDBATTLE_(\d+)_0(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_300{}010{}'.format(
+                    QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y)) + ' (Co-op)'),
+    re.compile(r'VOIDBATTLE_(\d+)_1(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_300{}010{}'.format(
+                    QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y)) + ' (Solo)'),
+
 
     # Phraeganoth
     re.compile(r'RAID_01_0([56])_E_(\d)\d'): (lambda x, y: get_label(f'QUEST_NAME_204200{x}0{int(y)+1}')),
@@ -76,30 +85,6 @@ QUEST_NAME_REGEX = {
     re.compile(r'BUILD_23_05_E_[23]\d'): (lambda: get_label(f'QUEST_NAME_208230502')),
     re.compile(r'BUILD_23_05_E_[45]\d'): (lambda: get_label(f'QUEST_NAME_208230601')),
 
-    # Nadine & Linnea (hecc)
-    re.compile(r'COMBAT_01_0([1-3])_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_222010{x}03')),
-    re.compile(r'COMBAT_01_04_E_(\d\d)'): (lambda x: get_label(f'QUEST_NAME_22201040{3 if int(x) < 30 else 4}')),
-    re.compile(r'COMBAT_01_05_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010101')),
-    re.compile(r'COMBAT_01_06_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010102')),
-    re.compile(r'COMBAT_01_07_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010201')),
-    re.compile(r'COMBAT_01_08_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010202')),
-    re.compile(r'COMBAT_01_09_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010301')),
-    re.compile(r'COMBAT_01_10_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010302')),
-    re.compile(r'COMBAT_01_11_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010401')),
-    re.compile(r'COMBAT_01_12_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010402')),
-
-    # Summertime Saviors
-    re.compile(r'COMBAT_02_0([1-4])_E_\d\d'): (lambda x: get_label(f'QUEST_NAME_222020{x}03')+' (Summertime_Saviors)'),
-    re.compile(r'COMBAT_02_05_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222020404')+' (Summertime_Saviors)'),
-    re.compile(r'COMBAT_02_06_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010101')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_07_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010102')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_08_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010201')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_09_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010202')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_10_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010301')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_11_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010302')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_12_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010401')+' (Summertime Saviors)'),
-    re.compile(r'COMBAT_02_13_E_\d\d'): (lambda: get_label(f'QUEST_NAME_222010402')+' (Summertime Saviors)'),
-
     # FEH collab
     re.compile(r'CLB_01_01_1([1-3])_E_\d\d'): (lambda x: get_label('QUEST_NAME_21401030{}'.format(x))),
     re.compile(r'CLB_01_03_0([1-3])_E_\d\d'): (lambda x: get_label('QUEST_NAME_21403060{}'.format(x))),
@@ -117,10 +102,10 @@ QUEST_NAME_OVERRIDES = {
 }
 QUEST_DIFFICULTY_OVERRIDES = {
     'DRAGONBATTLE_ULT': {
-        '01': '02',
-        '04': '01',
-        '05': '03',
-        '06': '04',
+        '1': '2',
+        '4': '1',
+        '5': '3',
+        '6': '4',
     },
 }
 MAIN_DIFFICULTY = {
@@ -186,6 +171,10 @@ class Enemy:
         data['Sleep'] = ep['_RegistAbnormalRate08']
         data['Curse'] = ep['_RegistAbnormalRate09']
         data['Frostbite'] = ep['_RegistAbnormalRate10']
+        data['Flashburn'] = ep['_RegistAbnormalRate11']
+        data['Stormlash'] = ep['_RegistAbnormalRate12']
+        data['Shadowblight'] = ep['_RegistAbnormalRate13']
+        data['Scorchrend'] = ep['_RegistAbnormalRate14']
         data['PartsA'] = ep['_PartsA']
         data['PartsB'] = ep['_PartsB']
         data['PartsC'] = ep['_PartsC']
@@ -303,7 +292,7 @@ def csv_to_dict(path, index=None, value_key=None, tabs=False):
             return {row[index]: row for row in reader if row[index] != '0'}
 
 def parse(input_dir, output_dir='EnemyData', text_label_dict=None):
-    global TEXT_LABEL 
+    global TEXT_LABEL
     enemy_param = csv_to_dict(os.path.join(input_dir, 'EnemyParam.txt'), index='_Id')
     enemy_data = csv_to_dict(os.path.join(input_dir, 'EnemyData.txt'), index='_Id')
     enemy_list = csv_to_dict(os.path.join(input_dir, 'EnemyList.txt'), index='_Id')
