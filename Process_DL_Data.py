@@ -315,6 +315,9 @@ def get_jp_epithet(emblem_id):
             get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
     return ''
 
+def get_epithet_rarity(emblem_id):
+    return db_query_one(f"SELECT _Rarity FROM EmblemData WHERE _Id='{emblem_id}'")['_Rarity']
+
 # Formats= 0: icon + text, 1: text only, 2: category
 def get_entity_item(item_type, item_id, format=1):
     try:
@@ -1286,6 +1289,159 @@ def process_CombatEventLocation(reader, outfile, reward_filename):
 
         outfile.write(ENTRY_LINE_BREAK)
 
+def process_LoginBonusData(out_file):
+    bonuses = db_query_all(
+        "SELECT _Id,_LoginBonusName,_StartTime,_EndTime,_EachDayEntityType,_EachDayEntityQuantity "
+        "FROM LoginBonusData WHERE _Id != '0' ORDER BY _EndTime DESC")
+
+    for bonus in bonuses:
+        bonus_id = bonus['_Id']
+        name = get_label(bonus['_LoginBonusName'])
+        # Output format: September 27, 2019 06:00:00 UTC
+        start_date = datetime.strptime(bonus['_StartTime'] + ' UTC', '%Y/%m/%d %H:%M:%S %Z').strftime('%B %d, %Y %X %Z').strip()
+        end_date = datetime.strptime(bonus['_EndTime'] + ' UTC', '%Y/%m/%d %H:%M:%S %Z').strftime('%B %d, %Y %X %Z').strip()
+
+        rewards = db_query_all(
+            "SELECT _Id,_Gid,_Day,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM LoginBonusReward WHERE _Gid='{bonus_id}'")
+        rewards = '\n'.join(login_bonus_reward_string(r) for r in rewards)
+
+        out_file.write('===' + name + '===\n')
+        out_file.write('[[File:Banner ' + name + '.png|300px|right]]\n')
+        out_file.write('This login bonus was active from ' + start_date +  ' to ' + end_date + '.\n')
+        out_file.write('{| class="wikitable"\n')
+        out_file.write('! Day || Bonus\n')
+        out_file.write(rewards)
+        out_file.write('\n|}\n\n')
+
+def login_bonus_reward_string(reward):
+    return ''.join([
+        '|-\n| Day ', reward['_Day'],
+        ' || ', get_entity_item(reward['_EntityType'], reward['_EntityId'], format=0),
+         ' x', reward['_EntityQuantity'],
+      ])
+
+def process_EndeavorSets(out_file):
+    campaigns = db_query_all(
+        "SELECT _Id,_CampaignName,_CampaignType,_StartDate,_EndDate "
+        "FROM CampaignData WHERE _CampaignType='9' AND _Id != '0' ORDER BY _StartDate")
+
+    for c in campaigns:
+        campaign_id = c['_Id']
+        start_date = c['_StartDate'] + ' UTC'
+        end_date = c['_EndDate'] + ' UTC'
+        month = datetime.strptime(start_date, '%Y/%m/%d %H:%M:%S %Z').strftime(' (%b %Y)')
+        name = get_label(c['_CampaignName']) + month
+
+        daily_endeavors = db_query_all(
+            "SELECT _Id,_Text,_SortId,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM MissionDailyData WHERE _CampaignId='{campaign_id}' ORDER BY _SortId")
+        limited_endeavors = db_query_all(
+            "SELECT _Id,_Text,_SortId,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM MissionPeriodData WHERE _CampaignId='{campaign_id}' ORDER BY _SortId")
+
+        if len(daily_endeavors):
+            daily_set = {
+                'Name': name,
+                'Type': 'Daily',
+                'Description': '',
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'Endeavors': '\n' + '\n'.join(endeavor_string(e, '(Daily) ') for e in daily_endeavors),
+            }
+            out_file.write(build_wikitext_row('EndeavorSet', daily_set, delim='\n|'))
+            out_file.write('\n')
+        if len(limited_endeavors):
+            limited_set = {
+                'Name': name,
+                'Type': 'Limited',
+                'Description': '',
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'Endeavors': '\n' + '\n'.join(endeavor_string(e) for e in limited_endeavors),
+            }
+            out_file.write(build_wikitext_row('EndeavorSet', limited_set, delim='\n|'))
+        out_file.write('\n\n')
+
+def process_EndeavorSetsEvents(out_file):
+    events = db_query_all(
+        "SELECT _Id,_Name,_StartDate,_EndDate FROM EventData "
+        "WHERE _Id != '0' ORDER BY _StartDate")
+
+    for e in events:
+        event_id = e['_Id']
+        start_date = e['_StartDate'] + ' UTC'
+        end_date = e['_EndDate'] + ' UTC'
+        month = datetime.strptime(start_date, '%Y/%m/%d %H:%M:%S %Z').strftime('%B %Y')
+        name = get_label(e['_Name'])
+
+        daily_endeavors = db_query_all(
+            "SELECT _Id,_Text,_SortId,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM MissionDailyData WHERE _QuestGroupId='{event_id}' ORDER BY _SortId")
+        limited_endeavors = db_query_all(
+            "SELECT _Id,_Text,_SortId,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM MissionPeriodData WHERE _QuestGroupId='{event_id}' ORDER BY _SortId")
+        memory_endeavors = db_query_all(
+            "SELECT _Id,_Text,_SortId,_EntityType,_EntityId,_EntityQuantity "
+            f"FROM MissionMemoryEventData WHERE _EventId='{event_id}' ORDER BY _SortId")
+
+        if len(daily_endeavors):
+            daily_set = {
+                'Name': f'{name} ({month}) Daily Endeavors',
+                'Event': f'{name}/{month}',
+                'Type': 'EventDaily',
+                'Description': '',
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'Endeavors': '\n' + '\n'.join(endeavor_string(e) for e in daily_endeavors),
+            }
+            out_file.write(build_wikitext_row('EndeavorSet', daily_set, delim='\n|'))
+            out_file.write('\n')
+        if len(limited_endeavors):
+            limited_set = {
+                'Name': f'{name} ({month}) Limited Endeavors',
+                'Event': f'{name}/{month}',
+                'Type': 'Event',
+                'Description': '',
+                'StartDate': start_date,
+                'EndDate': end_date,
+                'Endeavors': '\n' + '\n'.join(endeavor_string(e) for e in limited_endeavors),
+            }
+            out_file.write(build_wikitext_row('EndeavorSet', limited_set, delim='\n|'))
+            out_file.write('\n')
+        if len(memory_endeavors):
+            limited_set = {
+                'Name': f'{name} Compendium Endeavors',
+                'Event': f'{name}/Event Compendium',
+                'Type': 'Event',
+                'Description': '',
+                'StartDate': start_date,
+                'Endeavors': '\n' + '\n'.join(endeavor_string(e) for e in memory_endeavors),
+            }
+            out_file.write(build_wikitext_row('EndeavorSet', limited_set, delim='\n|'))
+        out_file.write('\n\n')
+
+def endeavor_string(e, prefix=''):
+    desc = get_label(e['_Text']).strip()
+    quantity = e['_EntityQuantity']
+    item_type = get_entity_item(e['_EntityType'], e['_EntityId'], format=2)
+    item = get_entity_item(e['_EntityType'], e['_EntityId'], format=1)
+    extras = ''
+
+    if item_type == 'Epithet':
+        rarity = get_epithet_rarity(e['_EntityId'])
+        item_type += 'Rank' + rarity
+    elif item_type == 'Sticker':
+        extras = '|StickerID=' + e['_EntityId'] + '_en'
+
+    return '|'.join([
+        '{{EndeavorSetRow',
+        prefix + desc,
+        item_type,
+        item,
+        quantity + extras + '}}',
+      ])
+
 def process_GenericTemplateWithEntriesKey(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     if 'EntriesKey1' in new_row:
@@ -1425,6 +1581,9 @@ NON_TEMPLATE_PROCESSING = {
 # will be parsed into a custom output format determined by each specific function.
 DATABASE_BASED_PROCESSING = {
     'Weapons': (process_Weapons,),
+    'LoginBonus': (process_LoginBonusData,),
+    'Endeavor_Sets': (process_EndeavorSets,),
+    'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
 }
 
 KV_PROCESSING = {
