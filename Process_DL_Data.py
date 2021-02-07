@@ -184,9 +184,15 @@ ENTITY_TYPE_DICT = {
     '34': (lambda id: '{{' + get_item_label('CombatEventItem', id) + '-}}',
            lambda id: get_item_label('CombatEventItem', id),
            'Material'),
+    '37': (lambda id: '{{Icon|WeaponSkin|' + str(id) + '|size=24px|text=1}}',
+           lambda id: get_label('WEAPON_SKIN_NAME_' + id),
+           'WeaponSkin'),
     '38': (lambda id: '{{Icon|Weapon|' + get_label('WEAPON_NAME_' + id) + '|size=24px|text=1}}',
            lambda id: get_label('WEAPON_NAME_' + id),
            'Weapon'),
+    '39': (lambda id: '{{Icon|Wyrmprint|' + get_label('AMULET_NAME_' + id) + '|size=24px|text=1}}',
+           lambda id: get_label('AMULET_NAME_' + id),
+           'Wyrmprint'),
 }
 MISSION_ENTITY_OVERRIDES_DICT = {
     '3' : lambda x: ["Override={}".format(get_entity_item('3', x, format=0))],
@@ -204,6 +210,7 @@ EVENT_TYPES = {
     '8': 'Collab', # EX_HUNTER / MonHun
     '9': 'Simple',
     '10': 'Onslaught',
+    '11': 'Alberian Battle Royale',
 }
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
@@ -468,21 +475,6 @@ def process_AbilityCrest(row, existing_data):
     new_row['Notes'] = ''
 
     existing_data.append((new_row['Name'], new_row))
-
-def process_AbilityCrestBuildupGroup(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
-def process_AbilityCrestBuildupLevel(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
-def process_AbilityCrestRarity(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
 
 def process_Consumable(row, existing_data):
     new_row = OrderedDict()
@@ -1122,32 +1114,14 @@ def process_WeaponBody(row):
 
     return new_row
 
-def process_WeaponBodyBuildupGroup(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
-def process_WeaponBodyBuildupLevel(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
-def process_WeaponBodyRarity(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
-def process_WeaponPassiveAbility(row, existing_data):
-    new_row = OrderedDict()
-    copy_without_entriesKey(new_row, row)
-    existing_data.append((None, new_row))
-
 def process_WeaponSkin(row):
     new_row = OrderedDict()
     # set some initial ordering
     for x in ('Id', 'Name', 'NameJP', 'NameSC', 'NameTC', 'Text'):
         new_row[x] = ''
     copy_without_entriesKey(new_row, row)
+    del new_row['DuplicateEntityType']
+    del new_row['DuplicateEntityId']
     new_row['Name'] = get_label(row['_Name'])
     new_row['NameJP'] = get_label(row['_Name'], lang='jp')
     new_row['NameSC'] = get_label(row['_Name'], lang='sc')
@@ -1156,6 +1130,7 @@ def process_WeaponSkin(row):
     new_row['Obtain'] = ''
     new_row['Availability'] = ''
     new_row['ReleaseDate'] = ''
+    new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
     return new_row
 
 def process_Weapons(out_file):
@@ -1311,10 +1286,15 @@ def process_CombatEventLocation(reader, outfile, reward_filename):
 
         outfile.write(ENTRY_LINE_BREAK)
 
-def process_GenericTemplate(row, existing_data):
+def process_GenericTemplateWithEntriesKey(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     if 'EntriesKey1' in new_row:
         del new_row['EntriesKey1']
+    existing_data.append((None, new_row))
+
+def process_GenericTemplate(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
     existing_data.append((None, new_row))
 
 def process_KeyValues(row, existing_data):
@@ -1368,7 +1348,7 @@ def copy_without_entriesKey(new_row, row):
     for k, v in row.items():
         if 'EntriesKey' in k:
             continue
-        new_row[k.strip('_')] = v
+        new_row[k[1:]] = v
 
 def db_query_one(query):
     db.execute(query)
@@ -1391,9 +1371,9 @@ DATA_PARSER_PROCESSING = {
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
     'AbilityCrest': ('Wyrmprint', row_as_wikitext, process_AbilityCrest),
-    'AbilityCrestBuildupGroup': ('WyrmprintBuildupGroup', row_as_wikitext, process_AbilityCrestBuildupGroup),
-    'AbilityCrestBuildupLevel': ('WyrmprintBuildupLevel', row_as_wikitext, process_AbilityCrestBuildupLevel),
-    'AbilityCrestRarity': ('WyrmprintRarity', row_as_wikitext, process_AbilityCrestRarity),
+    'AbilityCrestBuildupGroup': ('WyrmprintBuildupGroup', row_as_wikitext, process_GenericTemplate),
+    'AbilityCrestBuildupLevel': ('WyrmprintBuildupLevel', row_as_wikitext, process_GenericTemplate),
+    'AbilityCrestRarity': ('WyrmprintRarity', row_as_wikitext, process_GenericTemplate),
     'BattleRoyalEventItem': ('Material', row_as_wikitext, process_Material),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
     'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
@@ -1423,14 +1403,14 @@ DATA_PARSER_PROCESSING = {
     'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
     'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
-    'MC': ('MC', row_as_wikitext, process_GenericTemplate),
+    'MC': ('MC', row_as_wikitext, process_GenericTemplateWithEntriesKey),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
     'UnionAbility': ('AffinityBonus', row_as_wikitext, process_UnionAbility),
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
-    'WeaponBodyBuildupGroup': ('WeaponBodyBuildupGroup', row_as_wikitext, process_WeaponBodyBuildupGroup),
-    'WeaponBodyBuildupLevel': ('WeaponBodyBuildupLevel', row_as_wikitext, process_WeaponBodyBuildupLevel),
-    'WeaponBodyRarity': ('WeaponBodyRarity', row_as_wikitext, process_WeaponBodyRarity),
-    'WeaponPassiveAbility': ('WeaponPassiveAbility', row_as_wikitext, process_WeaponPassiveAbility),
+    'WeaponBodyBuildupGroup': ('WeaponBodyBuildupGroup', row_as_wikitext, process_GenericTemplate),
+    'WeaponBodyBuildupLevel': ('WeaponBodyBuildupLevel', row_as_wikitext, process_GenericTemplate),
+    'WeaponBodyRarity': ('WeaponBodyRarity', row_as_wikitext, process_GenericTemplate),
+    'WeaponPassiveAbility': ('WeaponPassiveAbility', row_as_wikitext, process_GenericTemplate),
 }
 
 # Data that cannot be structured into a simple row->template relationship, and
