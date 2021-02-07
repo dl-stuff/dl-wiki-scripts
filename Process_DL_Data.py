@@ -305,6 +305,9 @@ def get_item_label(type, key):
     except KeyError:
         return key
 
+def get_chara_name(chara_id):
+    return get_label('CHARA_NAME_COMMENT_' + chara_id) or get_label('CHARA_NAME_' + chara_id)
+
 def get_epithet(emblem_id, lang='en'):
     return get_label(EMBLEM_N + emblem_id, lang=lang)
 
@@ -1289,6 +1292,154 @@ def process_CombatEventLocation(reader, outfile, reward_filename):
 
         outfile.write(ENTRY_LINE_BREAK)
 
+def process_BattleRoyale(out_file):
+    out_file.write('===Adventurer skins that cannot be unlocked===\n')
+    unavail_skins = db_query_all(
+        "SELECT cd._Id FROM CharaData cd "
+        "LEFT JOIN BattleRoyalCharaSkin brcs ON cd._Id=brcs._BaseCharaId "
+        "WHERE cd._Id!='0' AND cd._IsPlayable AND brcs._Id IS NULL "
+        "ORDER BY cd._Id")
+    out_file.write(', '.join([get_chara_name(x['_Id']) for x in unavail_skins]))
+
+    out_file.write('\n\n==Adventurers==\n')
+    units = db_query_all(
+        "SELECT bru.*,cd._BaseId,cd._VariationId,cd._WeaponType "
+        "FROM BattleRoyalUnit bru JOIN CharaData cd ON cd._Id=bru._BaseCharaDataId "
+        "WHERE bru._Id!='0' "
+        "ORDER BY bru._Id")
+    for unit in units:
+        weapon_name = WEAPON_TYPE[int(unit['_WeaponType'])]
+        data = {
+            'Id': unit['_BaseCharaDataId'],
+            'Portrait': '{}_{}_r05_portrait.png'.format(unit['_BaseId'], unit['_VariationId'].zfill(2)),
+            'Name': weapon_name + ' Character',
+            'WeaponType': weapon_name,
+            'Skill': unit['_SkillId'],
+            'Hp': unit['_Hp'],
+            'Atk': unit['_Atk'],
+        }
+        max_level = 10
+        for i in range(2,max_level):
+            data['NeedsNumWeaponLv' + str(i)] = unit['_NeedsNumWeaponLv' + str(i)]
+        for i in range(2,max_level):
+            data['AtkRatioWeaponLv' + str(i)] = unit['_AtkRatioWeaponLv' + str(i)]
+        for i in range(2,max_level):
+            data['HpLv' + str(i)] = unit['_HpLv' + str(i)]
+        data['Combo'] = '\n{{ABRComboRow|Combo 1|x%|y|z}}'
+        data['ForceStrike'] = ''
+        out_file.write(build_wikitext_row('ABRCharacter', data, delim='\n|'))
+        out_file.write('\n')
+
+    out_file.write('\n\n===Special Skins===\n')
+    special_skins = db_query_all(
+        "SELECT * FROM BattleRoyalCharaSkin "
+        "WHERE _SpecialSkillId!='0' "
+        "ORDER BY _Id")
+    for skin in special_skins:
+        out_file.write(build_wikitext_row('ABRCharacter', {
+            'Id': skin['_Id'],
+            'Portrait': skin['_BaseCharaId'] + ' ## r0# portrait.png',
+            'Name': get_chara_name(skin['_BaseCharaId']) + ' (Skin)',
+            'WeaponType': '',
+            'Skill': skin['_SpecialSkillId'],
+        }, delim='\n|'))
+        out_file.write('\n')
+
+    out_file.write('\n\n==Dragons==\n')
+    dragons = db_query_all(
+        "SELECT brds.*,dd._Skill1,dd._Name,dd._SecondName,dd._BaseId "
+        "FROM BattleRoyalDragonSchedule brds "
+        "JOIN DragonData dd ON dd._Id=brds._DragonId "
+        "WHERE brds._Id!='0' "
+        "ORDER BY _StartDate")
+    for dragon in dragons:
+        out_file.write(build_wikitext_row('ABRDragon', {
+            'Id': dragon['_DragonId'],
+            'Portrait': dragon['_BaseId'] + '_01_portrait.png',
+            'Name': get_label(dragon['_SecondName']) or get_label(dragon['_Name']),
+            'Skill': dragon['_Skill1'],
+            'StartDate': dragon['_StartDate'],
+            'EndDate': dragon['_EndDate'],
+            'Combo': '',
+        }, delim='\n|'))
+        out_file.write('\n')
+
+    out_file.write('\n\n## Misc additional data\n')
+    skins = db_query_all(
+        "SELECT * FROM BattleRoyalCharaSkin "
+        "WHERE _Id!='0' "
+        "ORDER BY _Id")
+    for skin in skins:
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(get_chara_name(skin['_BaseCharaId']))
+        out_file.write(ENTRY_LINE_BREAK)
+
+        skin['_UnlockMaterialId'] = get_label('MATERIAL_NAME_' + skin['_UnlockMaterialId'])
+        for key in skin.keys():
+            if key in ('_EntriesKey', '_Id', '_BaseCharaId', '_AnimController'):
+                continue
+            out_file.write(key + ': ' + skin[key] + '\n')
+
+def process_BattleRoyalCharaSkinPickup(row, existing_data):
+    new_row = OrderedDict()
+    chara_name = get_chara_name(row['_BattleRoyalCharaId'])
+    new_row['CharaSkin'] = '{{Icon|Adventurer|' + chara_name + '|size=32px|text=1}}'
+
+    start_date = datetime.strptime(row['_PickupStartDate'], '%Y/%m/%d %H:%M:%S').strftime('%B %d, %Y')
+    end_date = datetime.strptime(row['_PickupEndDate'], '%Y/%m/%d %H:%M:%S').strftime('%B %d, %Y')
+    new_row['Period'] = start_date + ' - ' + end_date
+
+    existing_data.append((None, new_row))
+
+def process_BattleRoyalEnemy(out_file):
+    out_file.write('{| class="wikitable"\n')
+    out_file.write('! Enemy || Can Enter Bush || HP || Atk || Def')
+
+    enemies = db_query_all(
+        "SELECT bre.*,el._Name,ep._HP,ep._Atk,ep._Def "
+        "FROM BattleRoyalEnemy bre "
+            "JOIN EnemyParam ep ON bre._BaseEnemyParamId=ep._Id "
+            "JOIN EnemyData ed ON ed._Id=ep._DataId "
+            "JOIN EnemyList el ON ed._BookId=el._id "
+        "WHERE bre._Id!='0' "
+        "ORDER BY bre._Id")
+    for e in enemies:
+        out_file.write('\n|-\n| ' + ' || '.join([
+            get_label(e['_Name']),
+            '{{Yes}}' if e['_CanEnterBush'] == '1' else '{{No}}',
+            e['_HP'],
+            e['_Atk'],
+            e['_Def'],
+        ]))
+    out_file.write('\n|}')
+
+def process_BattleRoyalEventCyclePointReward(out_file):
+    cycles = db_query_all(
+        "SELECT * FROM BattleRoyalEventCycle "
+        "WHERE _Id!='0' ORDER BY _EndDate DESC")
+
+    for cycle in cycles:
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(cycle['_StartDate'])
+        out_file.write(' - ')
+        out_file.write(cycle['_EndDate'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write('{{Wikitable|class="wikitable darkpurple sortable rCol2 rCol3" style="width:100%"\n')
+        out_file.write('! Item !! Qty !! Battle Point Req.')
+
+        cycle_id = cycle['_Id']
+        rewards = db_query_all(
+            "SELECT * FROM EventCyclePointReward "
+            f"WHERE _EventCycleId='{cycle_id}' "
+            "ORDER BY _Id")
+        for r in rewards:
+            out_file.write('\n|-\n| ' + ' || '.join([
+                get_entity_item(r['_RewardEntityType'], r['_RewardEntityId'], format=0),
+                '{:,}'.format(int(r['_RewardEntityQuantity'])),
+                '{:,}'.format(int(r['_EventItemQuantity'])),
+            ]))
+        out_file.write('\n}}')
+
 def process_LoginBonusData(out_file):
     bonuses = db_query_all(
         "SELECT _Id,_LoginBonusName,_StartTime,_EndTime,_EachDayEntityType,_EachDayEntityQuantity "
@@ -1530,6 +1681,7 @@ DATA_PARSER_PROCESSING = {
     'AbilityCrestBuildupGroup': ('WyrmprintBuildupGroup', row_as_wikitext, process_GenericTemplate),
     'AbilityCrestBuildupLevel': ('WyrmprintBuildupLevel', row_as_wikitext, process_GenericTemplate),
     'AbilityCrestRarity': ('WyrmprintRarity', row_as_wikitext, process_GenericTemplate),
+    'BattleRoyalCharaSkinPickup': ('BRSkinDiscount', row_as_wikitable, process_BattleRoyalCharaSkinPickup),
     'BattleRoyalEventItem': ('Material', row_as_wikitext, process_Material),
     'BuildEventItem': ('Material', row_as_wikitext, process_Material),
     'ChainCoAbility': ('ChainCoAbility', row_as_wikitext, [('AbilityData', process_ChainCoAbility)]),
@@ -1549,7 +1701,6 @@ DATA_PARSER_PROCESSING = {
     'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionMainStoryData': ('EndeavorRow', row_as_wikirow, process_MissionData),
-    'MissionMemoryEventData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionNormalData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'QuestData': ('QuestDisplay', row_as_wikitext,
         [('QuestData', process_QuestData),
@@ -1580,10 +1731,13 @@ NON_TEMPLATE_PROCESSING = {
 # Data that cannot be structured into a simple row->template relationship, and
 # will be parsed into a custom output format determined by each specific function.
 DATABASE_BASED_PROCESSING = {
-    'Weapons': (process_Weapons,),
-    'LoginBonus': (process_LoginBonusData,),
+    'BattleRoyale': (process_BattleRoyale,),
+    'BattleRoyalEnemy': (process_BattleRoyalEnemy,),
+    'BattleRoyaleMonthlyRewards': (process_BattleRoyalEventCyclePointReward,),
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
+    'LoginBonus': (process_LoginBonusData,),
+    'Weapons': (process_Weapons,),
 }
 
 KV_PROCESSING = {
