@@ -12,7 +12,7 @@ import string
 import traceback
 
 from collections import OrderedDict, defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from shutil import copyfile, rmtree
 
 import pdb
@@ -75,6 +75,7 @@ QUEST_TYPE_DICT = {
     'Battle Royale': re.compile(r'BR_'),
     'Simple': re.compile(r'SIMPLE_'),
 }
+CHAPTER_PARTS_PATTERN = re.compile(r'^Ch\. (\d+) / .*-(\d+)$')
 
 GROUP_TYPE_DICT = {
     '1' : 'Campaign',
@@ -332,6 +333,17 @@ def get_entity_item(item_type, item_id, format=1):
             return ENTITY_TYPE_DICT[item_type][format](item_id)
     except KeyError:
         return 'Entity type {}: {}'.format(item_type, item_id)
+
+def get_quest_title(quest_type, quest_id):
+  if quest_type == '2':  # Story
+    return get_label('STORY_QUEST_NAME_' + quest_id)
+  elif quest_type == '1':  # Battle
+    return get_label('QUEST_NAME_' + quest_id)
+  elif quest_type == '3':  # Treasure chest, don't handle this
+    return ''
+  else:
+    print('Unknown next quest type: ' + quest_type)
+    return ''
 
 # All process_* functions take in 1 parameter (OrderedDict row) and return 3 values (OrderedDict new_row, str template_name, str display_name)
 # Make sure the keys are added to the OrderedDict in the desired output order
@@ -895,6 +907,7 @@ def process_MissionData(row, existing_data):
 
 def process_QuestData(row, existing_data):
     new_row = {}
+    new_row['nocargo'] = '{{{nocargo|}}}'
     for quest_type, quest_type_pattern in QUEST_TYPE_DICT.items():
         if quest_type_pattern.match(row['_AreaName01']):
             new_row['QuestType'] = quest_type
@@ -1047,6 +1060,53 @@ def process_QuestBonusData(row, existing_data):
         curr_row['WeeklyDropReward'] = ''
 
     existing_data[index] = (existing_row[0], curr_row)
+
+def process_QuestMainMenu(row, existing_data):
+    new_row = OrderedDict()
+    new_row['Id'] = row[ROW_INDEX]
+    quest_id = row['_EntryQuestId1']
+
+    if row['_EntryQuestType1'] == '1':
+        new_row['Type'] = 'Battle'
+        chapter_part_match = CHAPTER_PARTS_PATTERN.match(get_label('QUEST_TITLE_' + quest_id))
+        chapter_num = chapter_part_match.group(1)
+        part = chapter_part_match.group(2)
+    elif row['_EntryQuestType1'] == '2':
+        new_row['Type'] = 'Story  <!-- Check Stories.html for full dialogue -->'
+        chapter_part_match = CHAPTER_PARTS_PATTERN.match(get_label('STORY_QUEST_TITLE_' + quest_id))
+        if chapter_part_match:
+            chapter_num = chapter_part_match.group(1)
+            part = chapter_part_match.group(2)
+        else:
+            chapter_num = row['_GroupId'][-2:].lstrip('0')
+            part = ''
+    elif row['_EntryQuestType1'] == '3':
+        # these are treasure chests, which we don't particularly care to process here
+        return
+    else:
+        print('unknown main quest type')
+
+    new_row['Chapter'] = chapter_num
+    new_row['ChapterName'] = get_label('QUEST_GROUP_NAME_' + row['_GroupId'])
+    new_row['Location'], new_row['LocationName'] = get_label(
+        'QUEST_LANDMARK_NAME_' + row['_LocationId']).split('. ')
+    new_row['Part'] = part
+
+    prev_quest_id = row['_ReleaseQuestId1']
+    if prev_quest_id != '0':
+      new_row['PrevQuest'] = get_quest_title(row['_ReleaseQuestType1'], prev_quest_id) or prev_quest_id
+
+    next_quests = db_query_all(
+        "SELECT _EntryQuestId1,_EntryQuestType1 FROM QuestMainMenu "
+        f"WHERE '{quest_id}' IN (_ReleaseQuestId1, _ReleaseQuestId2, _ReleaseQuestId3) "
+        "AND _EntryQuestType1 != '3'")
+    for i in range(len(next_quests)):
+        next_quest_id = next_quests[i]['_EntryQuestId1']
+        key = 'NextQuest' + (str(i + 1) if i > 0 else '')
+        new_row[key] = get_quest_title(next_quests[i]['_EntryQuestType1'], next_quest_id) or next_quest_id
+
+    title = get_quest_title(row['_EntryQuestType1'], quest_id) or quest_id
+    existing_data.append((title, new_row))
 
 def process_UnionAbility(row, existing_data):
     new_row = OrderedDict()
@@ -1593,6 +1653,61 @@ def endeavor_string(e, prefix=''):
         quantity + extras + '}}',
       ])
 
+def process_RankingGroupData(out_file):
+    groups = db_query_all(
+        "SELECT * FROM RankingGroupData "
+        "WHERE _Id!='0' ORDER BY _RankingEndDate DESC")
+    ranking_tier_rewards = db_query_all(
+        "SELECT * FROM RankingTierReward "
+        "WHERE _Id!='0' ORDER BY _Id")
+    reward_lists = defaultdict(lambda: defaultdict(list))
+    for reward in ranking_tier_rewards:
+        reward_lists[reward['_GroupId']][reward['_QuestId']].append(reward)
+
+    for group in groups:
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(group['_RankingStartDate'])
+        out_file.write(' - ')
+        out_file.write(group['_RankingEndDate'])
+        out_file.write(ENTRY_LINE_BREAK)
+        data = {
+            'Name': 'Time Attack Challenges',
+            'Date': datetime.strptime(group['_RankingStartDate'], '%Y/%m/%d %H:%M:%S').strftime('%b %Y'),
+            'Type': 'Special',
+            'Description': '',
+            'EnemyElement1': '',
+            'StartDate': group['_RankingStartDate'],
+            'EndDate': group['_RankingEndDate'],
+            'ViewEndDate': group['_RankingViewEndDate'],
+        }
+        battles = (
+            '\n<div style="font-size:1em;width:100%">'
+            '\n{{Wikitable|class="wikitable darkred" style="width:100%"'
+            '\n! Difficulty !! Class !! Requirements !! Reward')
+        battle_num = 1
+
+        rewards = reward_lists.get(group['_RankingTierGroupId'], {})
+        for quest_id in rewards:
+            tiers = len(rewards[quest_id])
+            quest_name = get_label('QUEST_NAME_' + quest_id)
+            quest_link = quest_name.split(':')[0] + ' (Time Attack Challenge)'
+            data['BattleQuestName' + str(battle_num)] = quest_link
+            battle_num += 1
+
+            battles += '\n|-\n| rowspan{{{{=}}}}"{}" | [[{}|{}]] ||'.format(
+                tiers, quest_link, quest_name
+            )
+            battles += '\n|-\n|'.join([' {} || Clear in {} - {} || {} x{:,}'.format(
+                get_label(tier['_RankingDifficultyText']).split()[0],
+                str(timedelta(seconds=int(tier['_ClearTimeLower'])))[3:],
+                str(timedelta(seconds=int(tier['_ClearTimeUpper'])))[3:],
+                get_entity_item(tier['_RankingRewardEntityType'], tier['_RankingRewardEntityId'], format=0),
+                int(tier['_RankingRewardEntityQuantity'])
+            ) for tier in rewards[quest_id]])
+                 
+        data['Battles'] = battles
+        out_file.write(build_wikitext_row('Event', data, delim='\n|'))
+
 def process_GenericTemplateWithEntriesKey(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
     if 'EntriesKey1' in new_row:
@@ -1707,6 +1822,7 @@ DATA_PARSER_PROCESSING = {
             ('QuestRewardData', process_QuestRewardData),
             ('QuestEvent', process_QuestBonusData),
         ]),
+    'QuestMainMenu': ('CampaignQuestHeader', row_as_wikitext, process_QuestMainMenu),
     'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
     'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
@@ -1737,6 +1853,7 @@ DATABASE_BASED_PROCESSING = {
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
     'LoginBonus': (process_LoginBonusData,),
+    'TimeAttackChallenges': (process_RankingGroupData,),
     'Weapons': (process_Weapons,),
 }
 
