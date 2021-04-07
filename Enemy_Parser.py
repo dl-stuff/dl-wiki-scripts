@@ -37,17 +37,25 @@ QUEST_NAME_REGEX = {
             (lambda x, y: get_label('QUEST_NAME_219{}010{}'.format(x, y)) + ' (Co-op)'),
     re.compile(r'AGITO_(\d+)_1(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_219{}010{}'.format(x, y)) + ' (Solo)'),
-    re.compile(r'AGITO_ABS_(\d+)_0(\d+)_E'):
-            (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Co-op)' ),
-    re.compile(r'AGITO_ABS_(\d+)_1(\d+)_E'):
-            (lambda x, y: f'{get_label("QUEST_NAME_225{}01{:02}".format(x, int(y) - 3))} (Solo)' ),
+    re.compile(r'AGITO_ABS_(\d+)_04_E'):
+            (lambda x: get_label('QUEST_NAME_225{}0101'.format(x)) + ' (Co-op)'),
+    re.compile(r'AGITO_ABS_(\d+)_14_E'):
+            (lambda x: get_label('QUEST_NAME_225{}0101'.format(x)) + ' (Solo)'),
     re.compile(r'VOIDBATTLE_(\d+)_0(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_300{}010{}'.format(
                     QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y)) + ' (Co-op)'),
     re.compile(r'VOIDBATTLE_(\d+)_1(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_300{}010{}'.format(
                     QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y)) + ' (Solo)'),
-
+    re.compile(r'DIABOLOS_(\d+)_0(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_228{}010{}'.format(x, y)) + ' (Co-op)'),
+    re.compile(r'DIABOLOS_(\d+)_1(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_228{}010{}'.format(x, y)) + ' (Solo)'),
+    # Trials of the Mighty
+    re.compile(r'SUBDUE_(\d+)_0(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_32{}010{}'.format(x, y)) + ' (Co-op)'),
+    re.compile(r'SUBDUE_(\d+)_1(\d)_E'):
+            (lambda x, y: get_label('QUEST_NAME_32{}010{}'.format(x, y)) + ' (Solo)'),
 
     # Phraeganoth
     re.compile(r'RAID_01_0([56])_E_(\d)\d'): (lambda x, y: get_label(f'QUEST_NAME_204200{x}0{int(y)+1}')),
@@ -151,31 +159,31 @@ class Enemy:
         data['DataId'] = ep['_DataId']
         data['Name'] = get_label(el['_Name'])
         data['ModelId'] = get_model_name(ed)
-        data['RareStayTime'] = ep['_RareStayTime']
-        data['HP'] = ep['_HP']
-        data['Atk'] = ep['_Atk']
-        data['Def'] = ep['_Def']
-        data['Overwhelm'] = ep['_Overwhelm']
-        data['BaseOD'] = ep['_BaseOD']
-        data['BaseBreak'] = ep['_BaseBreak']
-        data['CounterRate'] = ep['_CounterRate']
-        data['BarrierRate'] = ep['_BarrierRate']
-        data['GetupActionRate'] = ep['_GetupActionRate']
+        data['RareStayTime'] = int(ep['_RareStayTime'])
+        data['HP'] = int(ep['_HP'])
+        data['Atk'] = int(ep['_Atk'])
+        data['Def'] = int(ep['_Def'])
+        data['Overwhelm'] = int(ep['_Overwhelm'])
+        data['BaseOD'] = int(ep['_BaseOD'])
+        data['BaseBreak'] = int(ep['_BaseBreak'])
+        data['CounterRate'] = int(ep['_CounterRate'])
+        data['BarrierRate'] = int(ep['_BarrierRate'])
+        data['GetupActionRate'] = int(ep['_GetupActionRate'])
         # For the index order, match up against ActionCondition fields starting from 'RatePoison'.
-        data['Poison'] = ep['_RegistAbnormalRate01']
-        data['Burn'] = ep['_RegistAbnormalRate02']
-        data['Freeze'] = ep['_RegistAbnormalRate03']
-        data['Paralysis'] = ep['_RegistAbnormalRate04']
-        data['Blind'] = ep['_RegistAbnormalRate05']
-        data['Stun'] = ep['_RegistAbnormalRate06']
-        data['Bog'] = ep['_RegistAbnormalRate07']
-        data['Sleep'] = ep['_RegistAbnormalRate08']
-        data['Curse'] = ep['_RegistAbnormalRate09']
-        data['Frostbite'] = ep['_RegistAbnormalRate10']
-        data['Flashburn'] = ep['_RegistAbnormalRate11']
-        data['Stormlash'] = ep['_RegistAbnormalRate12']
-        data['Shadowblight'] = ep['_RegistAbnormalRate13']
-        data['Scorchrend'] = ep['_RegistAbnormalRate14']
+        data['Poison'] = int(ep['_RegistAbnormalRate01'])
+        data['Burn'] = int(ep['_RegistAbnormalRate02'])
+        data['Freeze'] = int(ep['_RegistAbnormalRate03'])
+        data['Paralysis'] = int(ep['_RegistAbnormalRate04'])
+        data['Blind'] = int(ep['_RegistAbnormalRate05'])
+        data['Stun'] = int(ep['_RegistAbnormalRate06'])
+        data['Bog'] = int(ep['_RegistAbnormalRate07'])
+        data['Sleep'] = int(ep['_RegistAbnormalRate08'])
+        data['Curse'] = int(ep['_RegistAbnormalRate09'])
+        data['Frostbite'] = int(ep['_RegistAbnormalRate10'])
+        data['Flashburn'] = int(ep['_RegistAbnormalRate11'])
+        data['Stormlash'] = int(ep['_RegistAbnormalRate12'])
+        data['Shadowblight'] = int(ep['_RegistAbnormalRate13'])
+        data['Scorchrend'] = int(ep['_RegistAbnormalRate14'])
         data['PartsA'] = ep['_PartsA']
         data['PartsB'] = ep['_PartsB']
         data['PartsC'] = ep['_PartsC']
@@ -184,21 +192,18 @@ class Enemy:
         # data['CrashedHPRate'] = ep['_CrashedHPRate'] # Currently unused
         data['ParamGroupName'] = ep['_ParamGroupName']
         data['MissionType'] = get_enemy_quest_name(ep['_ParamGroupName'])
-        if data['ParamGroupName'].startswith('AGITO_ABS'):
-            print(data['ParamGroupName'])
-            print(data['MissionType'])
         data['MissionDifficulty'] = ''    # Currently unused
         data['Tribe'] = TRIBES.get(el['_TribeType'], el['_TribeType'])
         data['Weapon'] = get_label(weapon_data.get(ed['_WeaponId'], ''))
         data['ElementalType'] = ELEMENTAL_TYPES.get(ed['_ElementalType'])
-        data['BreakDuration'] = ed['_BreakDuration']
-        data['MoveSpeed'] = ed['_MoveSpeed']
-        data['TurnSpeed'] = ed['_TurnSpeed']
-        data['SuperArmor'] = ed['_SuperArmor']
-        data['BreakAtkRate'] = ed['_BreakAtkRate']
-        data['BreakDefRate'] = ed['_BreakDefRate']
-        data['ODAtkRate'] = ed['_ObAtkRate']
-        data['ODDefRate'] = ed['_ObDefRate']
+        data['BreakDuration'] = float(ed['_BreakDuration'])
+        data['MoveSpeed'] = float(ed['_MoveSpeed'])
+        data['TurnSpeed'] = float(ed['_TurnSpeed'])
+        data['SuperArmor'] = float(ed['_SuperArmor'])
+        data['BreakAtkRate'] = float(ed['_BreakAtkRate'])
+        data['BreakDefRate'] = float(ed['_BreakDefRate'])
+        data['ODAtkRate'] = float(ed['_ObAtkRate'])
+        data['ODDefRate'] = float(ed['_ObDefRate'])
         data['Ability01'] = ep['_Ability01']
         data['Ability02'] = ep['_Ability02']
         data['Ability03'] = ep['_Ability03']
@@ -225,7 +230,7 @@ class Enemy:
 
         return ''.join([
                 '{{EnemyData|',
-                '|'.join('='.join(item) for item in self.data.items()),
+                '|'.join('='.join((k, str(v))) for k, v in self.data.items()),
                 '}}',
             ])
 
@@ -292,7 +297,7 @@ def csv_to_dict(path, index=None, value_key=None, tabs=False):
             # load >2 column files as a dict[string] = OrderedDict
             return {row[index]: row for row in reader if row[index] != '0'}
 
-def parse(input_dir, output_dir='EnemyData', text_label_dict=None):
+def parse(input_dir, output_dir='', text_label_dict=None):
     global TEXT_LABEL
     enemy_param = csv_to_dict(os.path.join(input_dir, 'EnemyParam.txt'), index='_Id')
     enemy_data = csv_to_dict(os.path.join(input_dir, 'EnemyData.txt'), index='_Id')
@@ -304,7 +309,7 @@ def parse(input_dir, output_dir='EnemyData', text_label_dict=None):
         TEXT_LABEL = csv_to_dict(os.path.join(input_dir, 'TextLabel.txt'), index='_Id', value_key='_Text', tabs=True)
 
     enemies_set = set()
-    tribes = defaultdict(list)
+    enemies_output = []
     enemies_count = 0
     for enemy_param in enemy_param.values():
         enemy = Enemy(enemy_param, enemy_data, enemy_list, weapon_data)
@@ -318,21 +323,25 @@ def parse(input_dir, output_dir='EnemyData', text_label_dict=None):
         except Exception as e:
             print(e)
             print(enemy.data['Name'])
-        tribes[enemy.data['Tribe']].append(enemy)
+        
+        enemies_output.append(enemy)
         enemies_count += 1
 
     os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(os.path.join(output_dir, 'EnemyData'), exist_ok=True)
 
-    for tribe, enemies in tribes.items():
-        output_path = os.path.join(output_dir, tribe + '.txt')
-        print(output_path)
-        # Sort the enemies alphabetically by name
-        enemies.sort(key=lambda x: x.data.get('Name', ''))
+    # Sort the enemies by Id
+    enemies_output.sort(key=lambda x: x.data.get('Id', ''))
+
+    # Break into subpages
+    for i in range(0, enemies_count, 300):
+        output_path = os.path.join(output_dir, 'EnemyData', f'{(i // 300) + 1}.txt')
+        subset = enemies_output[i:i+300]
         with open(output_path, 'w', encoding='utf-8') as outfile:
-            outfile.write('\n'.join((str(e) for e in enemies)))
+            outfile.write('\n'.join((str(e) for e in subset)))
 
     # Lastly, print the summary
-    with open(os.path.join(output_dir, '_Summary.txt'), 'w', encoding='utf-8') as outfile:
+    with open(os.path.join(output_dir, 'EnemiesSummary.txt'), 'w', encoding='utf-8') as outfile:
         outfile.write('Total Enemy Entries: ' + str(enemies_count))
         outfile.write('\nUnique Enemy Names: ' + str(len(enemies_set)))
         outfile.write('\nEnemy Names\n')
