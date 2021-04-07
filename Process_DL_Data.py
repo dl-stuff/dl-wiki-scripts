@@ -54,7 +54,7 @@ ORDERING_DATA = {}
 
 ROMAN_NUMERALS = [None, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 ELEMENT_TYPE = {
-    '0': None,
+    '0': '',
     '1': 'Flame',
     '2': 'Water',
     '3': 'Wind',
@@ -76,6 +76,7 @@ QUEST_TYPE_DICT = {
     'Simple': re.compile(r'SIMPLE_'),
 }
 CHAPTER_PARTS_PATTERN = re.compile(r'^Ch\. (\d+) / .*-(\d+)$')
+SKILL_DETAIL_PATTERN = re.compile(r'<size=0>\[(\d+)\].*<\/size>\n')
 
 GROUP_TYPE_DICT = {
     '1' : 'Campaign',
@@ -210,7 +211,7 @@ EVENT_TYPES = {
     '7': 'Collab', # EX_RUSH / Mega Man
     '8': 'Collab', # EX_HUNTER / MonHun
     '9': 'Simple',
-    '10': 'Onslaught',
+    '10': 'Onslaught|Defensive',
     '11': 'Alberian Battle Royale',
 }
 
@@ -466,6 +467,8 @@ def process_AbilityCrest(row, existing_data):
     new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
     new_row['DuplicateEntityQuantity'] = row['_DuplicateEntityQuantity']
     new_row['AbilityCrestBuildupGroupId'] = row['_AbilityCrestBuildupGroupId']
+    new_row['UniqueBuildupMaterialId'] = row['_UniqueBuildupMaterialId']
+    new_row['AbilityCrestLevelRarityGroupId'] = row['_AbilityCrestLevelRarityGroupId']
 
     # Trade/obtain info
     trade = db_query_one('SELECT * FROM AbilityCrestTrade '
@@ -565,7 +568,7 @@ def process_CharaData(row, existing_data, chara_mode_data):
     new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
     new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
     new_row['Obtain'] = '' # EDIT_THIS
-    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['ReleaseDate'] = row['_ReleaseStartDate']
     new_row['Availability'] = '' # EDIT_THIS
     new_row['WeaponType'] = WEAPON_TYPE[int(row['_WeaponType'])]
     new_row['Rarity'] = row['_Rarity']
@@ -635,8 +638,9 @@ def process_CharaData(row, existing_data, chara_mode_data):
     new_row['Description'] = get_label(row['_ProfileText'])
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
-
     new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
+    new_row['UniqueGrowMaterialId1'] = row['_UniqueGrowMaterialId1']
+    new_row['UniqueGrowMaterialId2'] = row['_UniqueGrowMaterialId2']
 
     gunmodes = set()
     for m in range(1, 5):
@@ -670,8 +674,10 @@ def process_Dragon(row, existing_data):
     new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
     new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
     new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
+    if row['_CharaBaseId'] != '0':
+        new_row['CharaBaseId'] = row['_CharaBaseId']
     new_row['Obtain'] = '' # EDIT_THIS
-    new_row['ReleaseDate'] = '' # EDIT_THIS
+    new_row['ReleaseDate'] = row['_ReleaseStartDate']
     new_row['Availability'] = '' # EDIT_THIS
     new_row['Rarity'] = row['_Rarity']
     new_row['Gender'] = '' # EDIT_THIS
@@ -890,6 +896,7 @@ def process_SkillData(row, existing_data):
     new_row['ZoominTime']= '{:.1f}'.format(float(row['_ZoominTime']))
     new_row['Zoom2Time']= '{:.1f}'.format(float(row['_Zoom2Time']))
     new_row['ZoomWaitTime']= '{:.1f}'.format(float(row['_ZoomWaitTime']))
+    new_row['SpRecoveryRule']= row['_SpRecoveryRule']
 
     existing_data.append((new_row['Name'], new_row))
 
@@ -927,6 +934,14 @@ def process_QuestData(row, existing_data):
     new_row['SectionName'] = get_label(row['_SectionName'])
     new_row['QuestViewName'] = get_label(row['_QuestViewName'])
     new_row['Elemental'] = ELEMENT_TYPE[row['_Elemental']]
+    new_row['Elemental2'] = ELEMENT_TYPE[row['_Elemental2']]
+    new_row['LimitedElementalType'] = ELEMENT_TYPE[row['_LimitedElementalType']]
+    new_row['LimitedElementalType2'] = ELEMENT_TYPE[row['_LimitedElementalType2']]
+    new_row['LimitedWeaponTypePatternId'] = row['_LimitedWeaponTypePatternId']
+    if row['_QuestOverwriteId'] != '0':
+        new_row['FixedStats'] = '1'
+    if row['_QuestOrderPartyGroupId'] != '0':
+        new_row['FixedPartyGroupId'] = row['_QuestOrderPartyGroupId']
     # new_row['ElementalId'] = int(row['_Elemental'])
     # process_QuestMight
     if row['_DifficultyLimit'] == '0':
@@ -975,12 +990,12 @@ def process_QuestData(row, existing_data):
         elif row['_VariationType'] == '3':
             page_name += '/Very Hard'
     elif new_row.get('GroupType', '') == 'Event':
-        if new_row.get('QuestType', '') == 'Onslaught':
+        if new_row.get('QuestType', '') in ('Onslaught', 'Defensive'):
             quest_mode_suffix = f" ({new_row['EventName']})"
         else:
             quest_mode_suffix = QUEST_MODE_PLAY_TYPE_DICT.get(row['_QuestPlayModeType'], '')
+            new_row['QuestViewName'] += quest_mode_suffix
         page_name += quest_mode_suffix
-        new_row['QuestViewName'] += quest_mode_suffix
 
     existing_data.append((page_name, new_row))
 
@@ -1094,7 +1109,7 @@ def process_QuestMainMenu(row, existing_data):
 
     prev_quest_id = row['_ReleaseQuestId1']
     if prev_quest_id != '0':
-      new_row['PrevQuest'] = get_quest_title(row['_ReleaseQuestType1'], prev_quest_id) or prev_quest_id
+      new_row['PreviousQuest'] = get_quest_title(row['_ReleaseQuestType1'], prev_quest_id) or prev_quest_id
 
     next_quests = db_query_all(
         "SELECT _EntryQuestId1,_EntryQuestType1 FROM QuestMainMenu "
@@ -1107,6 +1122,16 @@ def process_QuestMainMenu(row, existing_data):
 
     title = get_quest_title(row['_EntryQuestType1'], quest_id) or quest_id
     existing_data.append((title, new_row))
+
+def process_QuestWeaponTypePattern(row, existing_data):
+    new_row = OrderedDict()
+    copy_without_entriesKey(new_row, row)
+    allowed_types = []
+    for i in range(1, len(WEAPON_TYPE)):
+        if row['_IsPatternWeaponType{}'.format(i)] == '1':
+            allowed_types.append(WEAPON_TYPE[i])
+    new_row['WeaponTypes'] = ', '.join(allowed_types)
+    existing_data.append((None, new_row))
 
 def process_UnionAbility(row, existing_data):
     new_row = OrderedDict()
@@ -1148,6 +1173,8 @@ def process_WeaponBody(row):
     new_row['CrestSlotType1MaxCount'] = row['_CrestSlotType1MaxCount']
     new_row['CrestSlotType2BaseCount'] = row['_CrestSlotType2BaseCount']
     new_row['CrestSlotType2MaxCount'] = row['_CrestSlotType2MaxCount']
+    new_row['CrestSlotType3BaseCount'] = row['_CrestSlotType3BaseCount']
+    new_row['CrestSlotType3MaxCount'] = row['_CrestSlotType3MaxCount']
     new_row['ChangeSkillId1'] = row['_ChangeSkillId1']
     new_row['ChangeSkillId2'] = row['_ChangeSkillId2']
     new_row['ChangeSkillId3'] = row['_ChangeSkillId3']
@@ -1392,15 +1419,16 @@ def process_BattleRoyale(out_file):
 
     out_file.write('\n\n===Special Skins===\n')
     special_skins = db_query_all(
-        "SELECT * FROM BattleRoyalCharaSkin "
+        "SELECT brcs.*,cd._BaseId,cd._VariationId,cd._WeaponType FROM BattleRoyalCharaSkin brcs "
+        "JOIN CharaData cd ON brcs._BaseCharaId=cd._Id "
         "WHERE _SpecialSkillId!='0' "
         "ORDER BY _Id")
     for skin in special_skins:
         out_file.write(build_wikitext_row('ABRCharacter', {
             'Id': skin['_Id'],
-            'Portrait': skin['_BaseCharaId'] + ' ## r0# portrait.png',
+            'Portrait': '{} {} r05 portrait.png'.format(skin['_BaseId'], skin['_VariationId'].zfill(2)),
             'Name': get_chara_name(skin['_BaseCharaId']) + ' (Skin)',
-            'WeaponType': '',
+            'WeaponType': WEAPON_TYPE[int(skin['_WeaponType'])],
             'Skill': skin['_SpecialSkillId'],
         }, delim='\n|'))
         out_file.write('\n')
@@ -1519,6 +1547,7 @@ def process_LoginBonusData(out_file):
 
         out_file.write('===' + name + '===\n')
         out_file.write('[[File:Banner ' + name + '.png|300px|right]]\n')
+        out_file.write('[[File:Background ' + name + '.png|300px|right]]\n')
         out_file.write('This login bonus was active from ' + start_date +  ' to ' + end_date + '.\n')
         out_file.write('{| class="wikitable"\n')
         out_file.write('! Day || Bonus\n')
@@ -1531,6 +1560,56 @@ def login_bonus_reward_string(reward):
         ' || ', get_entity_item(reward['_EntityType'], reward['_EntityId'], format=0),
          ' x', reward['_EntityQuantity'],
       ])
+
+def process_StampData(out_file):
+    event_group_title = '<hr>\n<h6 class="center">[[{}]] Event Rewards</h6>\n'
+    event_title_pattern = re.compile(r'A reward from the "?([^"]+)"? event.')
+    sticker_labels = {
+        'en': 'Sticker: ',
+        'jp': 'スタンプ（',
+    }
+    quotations = {
+        'en': '""',
+        'jp': '『』',
+    }
+    stickers = db_query_all(
+        "SELECT _Id,_Title,_InfoMsg,_VoiceId FROM StampData "
+        "WHERE _Id != '0' "
+        "ORDER BY CAST(_SortId AS int)")
+    groups = defaultdict(list)
+
+    for sticker in stickers:
+        detail = get_label(sticker['_InfoMsg'])
+        if ' event' in detail:
+            groups[detail].append(sticker)
+        else:
+            groups['standard'].append(sticker)
+
+    for group in groups:
+        if 'event' in group:
+            match = event_title_pattern.search(group)
+            group_name = event_group_title.format(match.group(1))
+        else:
+            group_name = '== Standard ==\n'
+
+        out_file.write(group_name)
+
+        for lang in ('en', 'jp'):
+            sticker_label = sticker_labels[lang]
+            label_repl = '[[?]] ' + quotations[lang][0]
+            quote_end = quotations[lang][1] + '\n'
+            out_file.write('<gallery mode="nolines">\n')
+
+            for sticker in groups[group]:
+                out_file.write(
+                    'File:{0} {lang}.png|{{{{SimpleAudioPlayButton|{1} {lang}.wav}}}} '.format(
+                        sticker['_Id'], sticker['_VoiceId'], lang=lang))
+                sticker_quote = get_label(sticker['_Title'], lang=lang)
+                if lang != 'en':
+                    sticker_quote = sticker_quote[:-1]  # Chop off last parentheses
+                out_file.write(sticker_quote.replace(sticker_label, label_repl) + quote_end)
+
+            out_file.write('</gallery>\n')
 
 def process_EndeavorSets(out_file):
     campaigns = db_query_all(
@@ -1813,6 +1892,7 @@ DATA_PARSER_PROCESSING = {
     'MaterialData': ('Material', row_as_wikitext, process_Material),
     'RaidEventItem': ('Material', row_as_wikitext, process_Material),
     'SimpleEventItem': ('Material', row_as_wikitext, process_Material),
+    'MissionAlbumData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionDailyData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionPeriodData': ('EndeavorRow', row_as_wikirow, process_MissionData),
     'MissionMainStoryData': ('EndeavorRow', row_as_wikirow, process_MissionData),
@@ -1828,6 +1908,7 @@ DATA_PARSER_PROCESSING = {
     'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
     'MC': ('MC', row_as_wikitext, process_GenericTemplateWithEntriesKey),
     'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
+    'QuestWeaponTypePattern': ('QuestWeaponTypePattern', row_as_wikitext, process_QuestWeaponTypePattern),
     'UnionAbility': ('AffinityBonus', row_as_wikitext, process_UnionAbility),
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
     'WeaponBodyBuildupGroup': ('WeaponBodyBuildupGroup', row_as_wikitext, process_GenericTemplate),
@@ -1853,6 +1934,7 @@ DATABASE_BASED_PROCESSING = {
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
     'LoginBonus': (process_LoginBonusData,),
+    'Stickers': (process_StampData,),
     'TimeAttackChallenges': (process_RankingGroupData,),
     'Weapons': (process_Weapons,),
 }
