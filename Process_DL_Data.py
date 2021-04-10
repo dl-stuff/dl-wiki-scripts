@@ -1561,6 +1561,95 @@ def login_bonus_reward_string(reward):
          ' x', reward['_EntityQuantity'],
       ])
 
+def process_ManaCircle(out_file):
+    allowed_pairs = db_query_all(
+        "SELECT _ManaCircleName,_PieceMaterialElementId "
+        "FROM CharaData "
+        "WHERE _ManaCircleName != '' "
+        "GROUP BY _ManaCircleName,_PieceMaterialElementId")
+    nodes = db_query_all("SELECT * FROM MC WHERE _Id != '0' ORDER BY _Hierarchy,CAST(_No AS int)")
+    pieces = db_query_all("SELECT * FROM ManaPieceMaterial WHERE _Id != '0'")
+
+    nodes_by_mc = defaultdict(list)
+    for n in nodes:
+        nodes_by_mc['MC_0' + n['_EntriesKey']].append(n)
+
+    pieces_dict = defaultdict(lambda: defaultdict(dict))
+    for p in pieces:
+        pieces_dict[p['_ElementId']][p['_ManaPieceType']][p['_Step']] = p
+
+    material_fields = {
+        'Mana': '_NecessaryManaPoint',
+        'UniqueGrowMaterial1': '_UniqueGrowMaterialCount1',
+        'UniqueGrowMaterial2': '_UniqueGrowMaterialCount2',
+    }
+    cost_rows = []
+    display_rows = []
+
+    for mc_id in nodes_by_mc:
+        stepCounters = defaultdict(int)
+        for n in nodes_by_mc[mc_id]:
+            nodeType = n['_ManaPieceType']
+            stepCounters[nodeType] += 1
+            display_rows.append(build_wikitext_row('MCNodeDisplay', {
+                'MC': mc_id,
+                'Hierarchy': n['_Hierarchy'],
+                'No': n['_No'],
+                'ManaPieceType': nodeType,
+                'IsReleaseStory': n['_IsReleaseStory'],
+                'Step': stepCounters[nodeType],
+            }))
+
+    for combo in allowed_pairs:
+        mc_id = combo['_ManaCircleName']
+        piece_element_id = combo['_PieceMaterialElementId']
+        pieces = pieces_dict.get(piece_element_id, {})
+        stepCounters = defaultdict(int)
+
+        for n in nodes_by_mc[mc_id]:
+            nodeType = n['_ManaPieceType']
+            stepCounters[nodeType] += 1
+            step = stepCounters[nodeType]
+            piece = pieces.get(nodeType, {}).get(str(step), None)
+
+            for mat_type in material_fields:
+                quantity = n[material_fields[mat_type]]
+                if quantity > '0':
+                    cost_rows.append(build_wikitext_row('MCNodeCost', {
+                        'MC': mc_id,
+                        'PieceMaterialElementId': piece_element_id,
+                        'Hierarchy': n['_Hierarchy'],
+                        'No': n['_No'],
+                        'Material': mat_type,
+                        'MaterialQuantity': n[material_fields[mat_type]],
+                    }))
+            if piece:
+                if piece['_DewPoint'] > '0':
+                    cost_rows.append(build_wikitext_row('MCNodeCost', {
+                        'MC': mc_id,
+                        'PieceMaterialElementId': piece_element_id,
+                        'Hierarchy': n['_Hierarchy'],
+                        'No': n['_No'],
+                        'Material': 'Eldwater',
+                        'MaterialQuantity': piece['_DewPoint'],
+                    }))
+                for i in range(1,4):
+                    matQuant = piece['_MaterialQuantity' + str(i)]
+                    if matQuant > '0':
+                        cost_rows.append(build_wikitext_row('MCNodeCost', {
+                            'MC': mc_id,
+                            'PieceMaterialElementId': piece_element_id,
+                            'Hierarchy': n['_Hierarchy'],
+                            'No': n['_No'],
+                            'Material': piece['_MaterialId' + str(i)],
+                            'MaterialQuantity': matQuant,
+                        }))
+
+    out_file.write('=== Display Info ===\n')
+    out_file.write('\n'.join(display_rows))
+    out_file.write('\n\n=== Costs ===\n')
+    out_file.write('\n'.join(cost_rows))
+
 def process_StampData(out_file):
     event_group_title = '<hr>\n<h6 class="center">[[{}]] Event Rewards</h6>\n'
     event_title_pattern = re.compile(r'A reward from the "?([^"]+)"? event.')
@@ -1934,6 +2023,7 @@ DATABASE_BASED_PROCESSING = {
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
     'LoginBonus': (process_LoginBonusData,),
+    'ManaCircle': (process_ManaCircle,),
     'Stickers': (process_StampData,),
     'TimeAttackChallenges': (process_RankingGroupData,),
     'Weapons': (process_Weapons,),
