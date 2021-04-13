@@ -102,6 +102,50 @@ FACILITY_EFFECT_TYPE_DICT = {
     '4': 'Dragon', # dracolith
     '6': 'Dragon' # fafnir
 }
+MANA_PIECE_DESC = {
+    '10101': 'HP',
+    '10102': 'Strength',
+    '10103': 'HP/Str',
+    '10201': 'Force Strike',
+    '10301': 'Ability 1',
+    '10302': 'Ability 2',
+    '10303': 'Ability 3',
+    '10401': 'Skill 1',
+    '10402': 'Skill 2',
+    '10501': 'Co-ability',
+    '10601': 'Damascus Crystal',
+    '10602': 'Damascus Crystal?',
+    '10701': 'Standard Attack Level Increase',
+    '10801': 'Max Level Increase'
+}
+
+UNBIND_ORB_FIELDS = {
+    '_OrbData1Num1': '_OrbData1Id1',
+    '_OrbData2Num1': '_OrbData2Id1',
+    '_OrbData3Num1': '_OrbData3Id1',
+    '_OrbData4Num1': '_OrbData4Id1',
+    '_OrbData5Num1': '_OrbData5Id1',
+    '_OrbData1Num2': '_OrbData1Id2',
+    '_OrbData2Num2': '_OrbData2Id2',
+    '_OrbData3Num2': '_OrbData3Id2',
+    '_OrbData4Num2': '_OrbData4Id2',
+    '_OrbData5Num2': '_OrbData5Id2',
+    '_OrbData1Num3': '_OrbData1Id3',
+    '_OrbData2Num3': '_OrbData2Id3',
+    '_OrbData3Num3': '_OrbData3Id3',
+    '_OrbData4Num3': '_OrbData4Id3',
+    '_OrbData5Num3': '_OrbData5Id3',
+    '_OrbData1Num4': '_OrbData1Id4',
+    '_OrbData2Num4': '_OrbData2Id4',
+    '_OrbData3Num4': '_OrbData3Id4',
+    '_OrbData4Num4': '_OrbData4Id4',
+    '_OrbData5Num4': '_OrbData5Id4',
+    '_OrbData1Num5': '_OrbData1Id5',
+    '_OrbData2Num5': '_OrbData2Id5',
+    '_OrbData3Num5': '_OrbData3Id5',
+    '_OrbData4Num5': '_OrbData4Id5',
+    '_OrbData5Num5': '_OrbData5Id5'
+}
 
 # (icon+text, text only, category)
 ENTITY_TYPE_DICT = {
@@ -1569,6 +1613,7 @@ def process_ManaCircle(out_file):
         "GROUP BY _ManaCircleName,_PieceMaterialElementId")
     nodes = db_query_all("SELECT * FROM MC WHERE _Id != '0' ORDER BY _Hierarchy,CAST(_No AS int)")
     pieces = db_query_all("SELECT * FROM ManaPieceMaterial WHERE _Id != '0'")
+    unbinds = db_query_all("SELECT * FROM CharaLimitBreak WHERE _Id != '0'")
 
     nodes_by_mc = defaultdict(list)
     for n in nodes:
@@ -1578,6 +1623,10 @@ def process_ManaCircle(out_file):
     for p in pieces:
         pieces_dict[p['_ElementId']][p['_ManaPieceType']][p['_Step']] = p
 
+    unbinds_dict = defaultdict(list)
+    for u in unbinds:
+        unbinds_dict[u['_EntriesKey']].append(u)
+
     material_fields = {
         'Mana': '_NecessaryManaPoint',
         'UniqueGrowMaterial1': '_UniqueGrowMaterialCount1',
@@ -1585,19 +1634,33 @@ def process_ManaCircle(out_file):
     }
     cost_rows = []
     display_rows = []
+    unbind_rows = []
+
+    for n in unbinds_dict:
+        for num_field in UNBIND_ORB_FIELDS:
+            q = unbinds_dict[n][0][num_field]
+            if q > '0':
+                unbind_rows.append(build_wikitext_row('MCNodeCost', {
+                    'MCElementId': unbinds_dict[n][0]['_EntriesKey'],
+                    'Floor': str(int(num_field[-1])+1),
+                    'No': '0',
+                    'Material': unbinds_dict[n][0][UNBIND_ORB_FIELDS[num_field]],
+                    'MaterialQuantity': q,
+                }))
 
     for mc_id in nodes_by_mc:
         stepCounters = defaultdict(int)
         for n in nodes_by_mc[mc_id]:
             nodeType = n['_ManaPieceType']
             stepCounters[nodeType] += 1
-            display_rows.append(build_wikitext_row('MCNodeDisplay', {
+            display_rows.append(build_wikitext_row('MCNodeInfo', {
                 'MC': mc_id,
-                'Hierarchy': n['_Hierarchy'],
+                'Floor': n['_Hierarchy'],
                 'No': n['_No'],
                 'ManaPieceType': nodeType,
+                'ManaPieceDesc': MANA_PIECE_DESC[nodeType],
                 'IsReleaseStory': n['_IsReleaseStory'],
-                'Step': stepCounters[nodeType],
+                'Step': stepCounters[nodeType]
             }))
 
     for combo in allowed_pairs:
@@ -1617,8 +1680,8 @@ def process_ManaCircle(out_file):
                 if quantity > '0':
                     cost_rows.append(build_wikitext_row('MCNodeCost', {
                         'MC': mc_id,
-                        'PieceMaterialElementId': piece_element_id,
-                        'Hierarchy': n['_Hierarchy'],
+                        'MCElementId': piece_element_id,
+                        'Floor': n['_Hierarchy'],
                         'No': n['_No'],
                         'Material': mat_type,
                         'MaterialQuantity': n[material_fields[mat_type]],
@@ -1627,8 +1690,8 @@ def process_ManaCircle(out_file):
                 if piece['_DewPoint'] > '0':
                     cost_rows.append(build_wikitext_row('MCNodeCost', {
                         'MC': mc_id,
-                        'PieceMaterialElementId': piece_element_id,
-                        'Hierarchy': n['_Hierarchy'],
+                        'MCElementId': piece_element_id,
+                        'Floor': n['_Hierarchy'],
                         'No': n['_No'],
                         'Material': 'Eldwater',
                         'MaterialQuantity': piece['_DewPoint'],
@@ -1638,8 +1701,8 @@ def process_ManaCircle(out_file):
                     if matQuant > '0':
                         cost_rows.append(build_wikitext_row('MCNodeCost', {
                             'MC': mc_id,
-                            'PieceMaterialElementId': piece_element_id,
-                            'Hierarchy': n['_Hierarchy'],
+                            'MCElementId': piece_element_id,
+                            'Floor': n['_Hierarchy'],
                             'No': n['_No'],
                             'Material': piece['_MaterialId' + str(i)],
                             'MaterialQuantity': matQuant,
@@ -1647,8 +1710,10 @@ def process_ManaCircle(out_file):
 
     out_file.write('=== Display Info ===\n')
     out_file.write('\n'.join(display_rows))
-    out_file.write('\n\n=== Costs ===\n')
+    out_file.write('\n\n=== Node Unlock Costs ===\n')
     out_file.write('\n'.join(cost_rows))
+    out_file.write('\n\n=== Floor Unbind Costs ===\n')
+    out_file.write('\n'.join(unbind_rows))
 
 def process_StampData(out_file):
     event_group_title = '<hr>\n<h6 class="center">[[{}]] Event Rewards</h6>\n'
