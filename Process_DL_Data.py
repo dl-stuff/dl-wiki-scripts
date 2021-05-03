@@ -119,34 +119,6 @@ MANA_PIECE_DESC = {
     '10801': 'Max Level Increase'
 }
 
-UNBIND_ORB_FIELDS = {
-    '_OrbData1Num1': '_OrbData1Id1',
-    '_OrbData2Num1': '_OrbData2Id1',
-    '_OrbData3Num1': '_OrbData3Id1',
-    '_OrbData4Num1': '_OrbData4Id1',
-    '_OrbData5Num1': '_OrbData5Id1',
-    '_OrbData1Num2': '_OrbData1Id2',
-    '_OrbData2Num2': '_OrbData2Id2',
-    '_OrbData3Num2': '_OrbData3Id2',
-    '_OrbData4Num2': '_OrbData4Id2',
-    '_OrbData5Num2': '_OrbData5Id2',
-    '_OrbData1Num3': '_OrbData1Id3',
-    '_OrbData2Num3': '_OrbData2Id3',
-    '_OrbData3Num3': '_OrbData3Id3',
-    '_OrbData4Num3': '_OrbData4Id3',
-    '_OrbData5Num3': '_OrbData5Id3',
-    '_OrbData1Num4': '_OrbData1Id4',
-    '_OrbData2Num4': '_OrbData2Id4',
-    '_OrbData3Num4': '_OrbData3Id4',
-    '_OrbData4Num4': '_OrbData4Id4',
-    '_OrbData5Num4': '_OrbData5Id4',
-    '_OrbData1Num5': '_OrbData1Id5',
-    '_OrbData2Num5': '_OrbData2Id5',
-    '_OrbData3Num5': '_OrbData3Id5',
-    '_OrbData4Num5': '_OrbData4Id5',
-    '_OrbData5Num5': '_OrbData5Id5'
-}
-
 # (icon+text, text only, category)
 ENTITY_TYPE_DICT = {
     '2': (lambda id: '{{' + get_label('USE_ITEM_NAME_' + id) + '-}}',
@@ -544,7 +516,7 @@ def process_AbilityCrest(row, existing_data):
 def process_Consumable(row, existing_data):
     new_row = OrderedDict()
 
-    new_row['Id'] = row[ROW_INDEX]
+    new_row['Id'] = 'Consumable_' + row[ROW_INDEX]
     new_row['Name'] = get_label(row['_Name'])
     new_row['Description'] = get_label(row['_Description'])
     new_row['SortId'] = row[ROW_INDEX]
@@ -682,9 +654,20 @@ def process_CharaData(row, existing_data, chara_mode_data):
     new_row['Description'] = get_label(row['_ProfileText'])
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MaxFriendshipPoint'] = row['_MaxFriendshipPoint']
+    # MC Stuff
     new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
+    new_row['CharaLimitBreakId'] = row['_CharaLimitBreak']
+    new_row['PieceMaterialElementId'] = row['_PieceMaterialElementId']
+    if row['_GrowMaterialId'] != '0':
+        new_row['LimitBreakMaterialId'] = row['_GrowMaterialId']
     new_row['UniqueGrowMaterialId1'] = row['_UniqueGrowMaterialId1']
     new_row['UniqueGrowMaterialId2'] = row['_UniqueGrowMaterialId2']
+    for key in ('_DefaultAbility1Level',
+                '_DefaultAbility2Level',
+                '_DefaultAbility3Level',
+                '_DefaultBurstAttackLevel'):
+        if row[key] != '0':
+            new_row[key[1:]] = row[key]
 
     gunmodes = set()
     for m in range(1, 5):
@@ -694,7 +677,7 @@ def process_CharaData(row, existing_data, chara_mode_data):
     if gunmodes:
         new_row['GunModes'] = ','.join(sorted(gunmodes))
 
-    existing_data.append((new_row['Name'] + ' - ' + new_row['FullName'], new_row))
+    existing_data.append((new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
     for idx, (name, chara) in enumerate(existing_data):
@@ -759,6 +742,20 @@ def process_Dragon(row, existing_data):
     new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
     existing_data.append((new_row['Name'], new_row))
 
+def process_DragonGiftData(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row[ROW_INDEX]
+    new_row['IconName'] = 'Gift_{}.png'.format(new_row['Id'])
+    new_row['Name'] = get_label(row['_Name'])
+    new_row['Description'] = get_label(row['_Descripsion'])
+    new_row['SortId'] = row['_SortId']
+    new_row['Availability'] = '<!-- EDIT_THIS -->'
+    new_row['Reliability'] = row['_Reliability']
+    new_row['FavoriteReliability'] = row['_FavoriteReliability']
+    new_row['FavoriteType'] = row['_FavoriteType']
+    existing_data.append((new_row['Name'], new_row))
+
 def process_ExAbilityData(row, existing_data):
     new_row = OrderedDict()
 
@@ -782,8 +779,8 @@ def process_EmblemData(row, existing_data):
 
     new_row['Title'] = get_label(row['_Title'])
     new_row['TitleJP'] = get_jp_epithet(row['_Id'])
-    new_row['TitleSC'] = get_label(row['_Title'], lang='sc')
-    new_row['TitleTC'] = get_label(row['_Title'], lang='tc')
+    # new_row['TitleSC'] = get_label(row['_Title'], lang='sc')
+    # new_row['TitleTC'] = get_label(row['_Title'], lang='tc')
     new_row['Icon'] = 'data-sort-value ="{0}" | [[File:Icon_Profile_0{0}_Frame.png|28px|center]]'.format(row['_Rarity'])
     new_row['Text'] = get_label(row['_Gettext'])
     res = event_emblem_pattern.match(new_row['Text'])
@@ -999,10 +996,12 @@ def process_QuestData(row, existing_data):
     elif row['_SkipTicketCount'] == '-1':
         new_row['SkipTicket'] = ''
 
-    new_row['NormalStaminaCost'] = row['_PayStaminaSingle']
-    new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
-    new_row['GetherwingCost'] = row['_PayStaminaMulti']
-    new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
+    if row['_PayStaminaSingle'] != '0':
+        new_row['NormalStaminaCost'] = row['_PayStaminaSingle']
+        new_row['CampaignStaminaCost'] = row['_CampaignStaminaSingle']
+    if row['_PayStaminaMulti'] != '0':
+        new_row['GetherwingCost'] = row['_PayStaminaMulti']
+        new_row['CampaignGetherwingCost'] = row['_CampaignStaminaMulti']
 
     if row['_PayEntityType'] != '0':
         new_row['OtherCostType'] = get_entity_item(row['_PayEntityType'], row['_PayEntityId'])
@@ -1019,9 +1018,6 @@ def process_QuestData(row, existing_data):
     new_row['ContinueLimit'] = row['_ContinueLimit']
     new_row['RebornLimit'] = row['_RebornLimit']
     new_row['ThumbnailImage'] = row['_ThumbnailImage']
-    new_row['DropRewards'] = ''
-    new_row['WeaponRewards'] = ''
-    new_row['WyrmprintRewards'] = ''
     new_row['ShowEnemies'] = 1
     new_row['AutoPlayType'] = row['_AutoPlayType']
 
@@ -1040,6 +1036,10 @@ def process_QuestData(row, existing_data):
             quest_mode_suffix = QUEST_MODE_PLAY_TYPE_DICT.get(row['_QuestPlayModeType'], '')
             new_row['QuestViewName'] += quest_mode_suffix
         page_name += quest_mode_suffix
+
+    new_row['DropRewards'] = ''
+    new_row['WeaponRewards'] = ''
+    new_row['WyrmprintRewards'] = ''
 
     existing_data.append((page_name, new_row))
 
@@ -1607,13 +1607,12 @@ def login_bonus_reward_string(reward):
 
 def process_ManaCircle(out_file):
     allowed_pairs = db_query_all(
-        "SELECT _ManaCircleName,_PieceMaterialElementId "
+        "SELECT _Rarity,_ManaCircleName,_PieceMaterialElementId "
         "FROM CharaData "
         "WHERE _ManaCircleName != '' "
         "GROUP BY _ManaCircleName,_PieceMaterialElementId")
     nodes = db_query_all("SELECT * FROM MC WHERE _Id != '0' ORDER BY _Hierarchy,CAST(_No AS int)")
     pieces = db_query_all("SELECT * FROM ManaPieceMaterial WHERE _Id != '0'")
-    unbinds = db_query_all("SELECT * FROM CharaLimitBreak WHERE _Id != '0'")
 
     nodes_by_mc = defaultdict(list)
     for n in nodes:
@@ -1623,30 +1622,13 @@ def process_ManaCircle(out_file):
     for p in pieces:
         pieces_dict[p['_ElementId']][p['_ManaPieceType']][p['_Step']] = p
 
-    unbinds_dict = defaultdict(list)
-    for u in unbinds:
-        unbinds_dict[u['_EntriesKey']].append(u)
-
     material_fields = {
         'Mana': '_NecessaryManaPoint',
         'UniqueGrowMaterial1': '_UniqueGrowMaterialCount1',
         'UniqueGrowMaterial2': '_UniqueGrowMaterialCount2',
     }
-    cost_rows = []
+    cost_rows = defaultdict(list)
     display_rows = []
-    unbind_rows = []
-
-    for n in unbinds_dict:
-        for num_field in UNBIND_ORB_FIELDS:
-            q = unbinds_dict[n][0][num_field]
-            if q > '0':
-                unbind_rows.append(build_wikitext_row('MCNodeCost', {
-                    'MCElementId': unbinds_dict[n][0]['_EntriesKey'],
-                    'Floor': str(int(num_field[-1])+1),
-                    'No': '0',
-                    'Material': unbinds_dict[n][0][UNBIND_ORB_FIELDS[num_field]],
-                    'MaterialQuantity': q,
-                }))
 
     for mc_id in nodes_by_mc:
         stepCounters = defaultdict(int)
@@ -1668,6 +1650,7 @@ def process_ManaCircle(out_file):
         piece_element_id = combo['_PieceMaterialElementId']
         pieces = pieces_dict.get(piece_element_id, {})
         stepCounters = defaultdict(int)
+        rarity_cost_rows = cost_rows[combo['_Rarity']]
 
         for n in nodes_by_mc[mc_id]:
             nodeType = n['_ManaPieceType']
@@ -1678,7 +1661,7 @@ def process_ManaCircle(out_file):
             for mat_type in material_fields:
                 quantity = n[material_fields[mat_type]]
                 if quantity > '0':
-                    cost_rows.append(build_wikitext_row('MCNodeCost', {
+                    rarity_cost_rows.append(build_wikitext_row('MCNodeCost', {
                         'MC': mc_id,
                         'MCElementId': piece_element_id,
                         'Floor': n['_Hierarchy'],
@@ -1688,7 +1671,7 @@ def process_ManaCircle(out_file):
                     }))
             if piece:
                 if piece['_DewPoint'] > '0':
-                    cost_rows.append(build_wikitext_row('MCNodeCost', {
+                    rarity_cost_rows.append(build_wikitext_row('MCNodeCost', {
                         'MC': mc_id,
                         'MCElementId': piece_element_id,
                         'Floor': n['_Hierarchy'],
@@ -1699,7 +1682,7 @@ def process_ManaCircle(out_file):
                 for i in range(1,4):
                     matQuant = piece['_MaterialQuantity' + str(i)]
                     if matQuant > '0':
-                        cost_rows.append(build_wikitext_row('MCNodeCost', {
+                        rarity_cost_rows.append(build_wikitext_row('MCNodeCost', {
                             'MC': mc_id,
                             'MCElementId': piece_element_id,
                             'Floor': n['_Hierarchy'],
@@ -1708,11 +1691,45 @@ def process_ManaCircle(out_file):
                             'MaterialQuantity': matQuant,
                         }))
 
-    out_file.write('=== Display Info ===\n')
+    out_file.write('Template:MCNodeInfo/Data')
+    out_file.write(ENTRY_LINE_BREAK)
     out_file.write('\n'.join(display_rows))
-    out_file.write('\n\n=== Node Unlock Costs ===\n')
-    out_file.write('\n'.join(cost_rows))
-    out_file.write('\n\n=== Floor Unbind Costs ===\n')
+    for i in range(3,6):
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write('Template:MCNodeCost/Data/{}'.format(i))
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write('\n'.join(cost_rows[str(i)]))
+
+def process_MCNodeCostUnbinds(out_file):
+    chara_unique_grow_mats = db_query_all(
+        "SELECT _UniqueGrowMaterialId1,_UniqueGrowMaterialId2 "
+        "FROM CharaData "
+        "WHERE _UniqueGrowMaterialId1 != '0' "
+        "GROUP BY _UniqueGrowMaterialId1,_UniqueGrowMaterialId2")
+    unique_grow_mats = {}
+    for chara_mats in chara_unique_grow_mats:
+        unique_grow_mats[chara_mats['_UniqueGrowMaterialId1']] = 'UniqueGrowMaterial1'
+        if chara_mats['_UniqueGrowMaterialId2'] != '0':
+            unique_grow_mats[chara_mats['_UniqueGrowMaterialId2']] = 'UniqueGrowMaterial2'
+
+    unbinds = db_query_all("SELECT * FROM CharaLimitBreak WHERE _Id != '0'")
+    unbind_rows = []
+
+    for u in unbinds:
+        for floor in range(1, 6):
+            for orbNum in range(1, 6):
+                quantity = u[f'_OrbData{orbNum}Num{floor}']
+                if quantity > '0':
+                    materialId = u[f'_OrbData{orbNum}Id{floor}']
+                    if materialId in unique_grow_mats:
+                        materialId = unique_grow_mats[materialId]
+                    unbind_rows.append(build_wikitext_row('MCNodeCost', {
+                        'MCElementId': u['_Id'],
+                        'Floor': floor + 1,
+                        'No': '0',
+                        'Material': materialId,
+                        'MaterialQuantity': quantity,
+                    }))
     out_file.write('\n'.join(unbind_rows))
 
 def process_StampData(out_file):
@@ -1932,14 +1949,15 @@ def process_RankingGroupData(out_file):
             )
             battles += '\n|-\n|'.join([' {} || Clear in {} - {} || {} x{:,}'.format(
                 get_label(tier['_RankingDifficultyText']).split()[0],
-                str(timedelta(seconds=int(tier['_ClearTimeLower'])))[3:],
-                str(timedelta(seconds=int(tier['_ClearTimeUpper'])))[3:],
+                str(timedelta(seconds=int(round(float(tier['_ClearTimeLower'])))))[3:],
+                str(timedelta(seconds=int(round(float(tier['_ClearTimeUpper'])))))[3:],
                 get_entity_item(tier['_RankingRewardEntityType'], tier['_RankingRewardEntityId'], format=0),
-                int(tier['_RankingRewardEntityQuantity'])
+                int(round(float(tier['_RankingRewardEntityQuantity'])))
             ) for tier in rewards[quest_id]])
                  
         data['Battles'] = battles
         out_file.write(build_wikitext_row('Event', data, delim='\n|'))
+        out_file.write('\n')
 
 def process_GenericTemplateWithEntriesKey(row, existing_data):
     new_row = OrderedDict({k[1:]: v for k, v in row.items()})
@@ -2038,6 +2056,7 @@ DATA_PARSER_PROCESSING = {
     'CombatEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
+    'DragonGiftData': ('Gift', row_as_wikitext, process_DragonGiftData),
     'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
     'EmblemData': ('Epithet', row_as_wikitable, process_EmblemData),
     'FortPlantData': ('Facility', row_as_wikitext,
@@ -2058,10 +2077,6 @@ DATA_PARSER_PROCESSING = {
         ]),
     'QuestMainMenu': ('CampaignQuestHeader', row_as_wikitext, process_QuestMainMenu),
     'QuestWallMonthlyReward': ('Mercurial', row_as_wikitable, prcoess_QuestWallMonthlyReward),
-    'ManaMaterial': ('MCMaterial', row_as_wikitext, process_GenericTemplate),
-    'CharaLimitBreak': ('CharaLimitBreak', row_as_wikitext, process_GenericTemplate),
-    'MC': ('MC', row_as_wikitext, process_GenericTemplateWithEntriesKey),
-    'ManaPieceElement': ('ManaPieceElement', row_as_wikitext, process_GenericTemplate),
     'QuestWeaponTypePattern': ('QuestWeaponTypePattern', row_as_wikitext, process_QuestWeaponTypePattern),
     'UnionAbility': ('AffinityBonus', row_as_wikitext, process_UnionAbility),
     'UseItem': ('Consumable', row_as_wikitext, process_Consumable),
@@ -2089,6 +2104,7 @@ DATABASE_BASED_PROCESSING = {
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
     'LoginBonus': (process_LoginBonusData,),
     'ManaCircle': (process_ManaCircle,),
+    'MCNodeCost|Data|Unbind': (process_MCNodeCostUnbinds,),
     'Stickers': (process_StampData,),
     'TimeAttackChallenges': (process_RankingGroupData,),
     'Weapons': (process_Weapons,),
