@@ -27,26 +27,27 @@ CATEGORY_REGEX = {
     re.compile(r'images/icon/guildemblem/m/(\d+)'): 'Alliance_Crest_Icons',
     re.compile(r'images/icon/union/m/'): 'Affinity_Bonus_Icons',
     re.compile(r'images/icon/brcharaskin/l/'): 'Alberian_Battle_Skin_Icons',
-    re.compile(r'images/icon/brcharaskin/m/'): 'Small_Alberian_Battle_Skin_Icons',
+    re.compile(r'images/icon/brcharaskin/m/.*/(.+)$'): 'Small_Alberian_Battle_Skin_Icons',
     re.compile(r'images/icon/skill/ingamel'): 'Borderless_Skill_Icons',
     re.compile(r'images/story/bookpage/'): 'Book_Background_Art',
     re.compile(r'images/icon/queststorycellbg/1'): 'Campaign_Story_Banners',
     re.compile(r'images/icon/castlestorycellbg'): 'Castle_Story_Banners',
     re.compile(r'images/icon/chara/l'): 'Character_Icon_Images',
-    re.compile(r'images/icon/chara/m'): 'Small_Character_Icon_Images',
+    re.compile(r'images/icon/chara/m/.+/(.+)$'): 'Small_Character_Icon_Images',
     re.compile(r'images/outgame/unitdetail/chara'): 'Character_Portrait_Images',
-    re.compile(r'images/icon/item/useitem/l'): 'Consumables_Images',
+    re.compile(r'images/icon/item/useitem/l/(\d+)'): 'Consumables_Images',
     re.compile(r'images/icon/crafttopcellbg'): 'Crafting_Banner_Images',
     re.compile(r'images/outgame/eventlocalized/(\d+)/questdetail_defensemap_(\d+)'): 'Defensive_Battle_Map_Images',
-    re.compile(r'images/icon/item/dragongift/l'): 'Dragon_Gift_Icons',
+    re.compile(r'images/icon/item/dragongift/l/(\d+)'): 'Dragon_Gift_Icons',
     re.compile(r'images/icon/dragon/l'): 'Dragon_Icons',
-    re.compile(r'images/icon/dragon/m'): 'Small_Dragon_Icons',
+    re.compile(r'images/icon/dragon/m/.+/(.+)$'): 'Small_Dragon_Icons',
     re.compile(r'images/outgame/unitdetail/dragon'): 'Dragon_Images',
     re.compile(r'images/outgame/shop/top/dreamselect'): '_Dream_Summon_Banner_Images',
     re.compile(r'images/icon/element/m/'): 'Element_Icons',
     re.compile(r'images/icon/enemyability'): 'Enemy_Ability_Icons',
     re.compile(r'images/outgame/eventlocalized/21601'): 'Mercurial_Gauntlet_Images',
-    re.compile(r'images/outgame/eventlocalized/(\d+)/eventquestmenu(list|top)', re.IGNORECASE): 'Event_Banners',
+    re.compile(r'images/outgame/eventlocalized/(\d+)/eventquestmenulist', re.IGNORECASE): 'Event_Banners',
+    re.compile(r'images/outgame/eventlocalized/(\d+)/eventquestmenutop', re.IGNORECASE): 'Event_Top_Banners',
     re.compile(r'images/outgame/eventlocalized/(\d+)/event_prologue_(\d+)', re.IGNORECASE): 'Event_Guide_Images',
     re.compile(r'images/outgame/eventlocalized/(\d+)/event_(jikai|defense)_preview_(\d+)', re.IGNORECASE): 'Event_Preview_Images',
     re.compile(r'images/outgame/eventlocalized/(\d+)/event_banner_cell_(\d+)', re.IGNORECASE): 'Event_Quest_Banners',
@@ -60,12 +61,14 @@ CATEGORY_REGEX = {
     re.compile(r'images/loading/tips/'): 'Loading_Tips_Images',
     re.compile(r'images/outgame/loginbonus'): 'Login_Bonus_Banners',
     re.compile(r'images/icon/item/(?:event|materialdata|gather)/l'): 'Material_Icons',
-    re.compile(r'images/icon/item/(?:event|materialdata|gather)/m'): 'Small_Material_Icons',
+    re.compile(r'images/icon/item/(?:event|materialdata|gather)/m/.*/(.+)$'): 'Small_Material_Icons',
     re.compile(r'images/icon/manacircle/'): 'MC_Icons',
     re.compile(r'images/story/tutorial'): 'Misc_Guide_Images',
     re.compile(r'images/icon/modechange'): 'Mode_Icons',
     re.compile(r'emotion/story/chara/120'): 'NPC_Portrait_Images',
+    re.compile(r'images/icon/enemy/(.*)$'): 'Enemy_Score_Icons',
     re.compile(r'images/icon/item/other/l'): 'Other_Icons',
+    re.compile(r'images/icon/medal/l/nomal'): 'Medal_Icons',
     re.compile(r'images/icon/profile/l/'): 'Profile_Icons',
     re.compile(r'images/icon/questthumbnail'): 'Quest_List_Thumbnails',
     re.compile(r'images/icon/rarity/'): 'Rarity_Icons',
@@ -73,8 +76,8 @@ CATEGORY_REGEX = {
     re.compile(r'images/icon/shoppack/specialshop/wide'): 'Shop_Pack_Icons',
     re.compile(r'images/icon/skill/l'): 'Skill_Icons',
     re.compile(r'images/icon/form/m/'): 'Slot_Icons',
-    re.compile(r'images/icon/form/s/'): 'Small_Slot_Icons',
-    re.compile(r'images/icon/skill/m'): 'Small_Skill_Icons',
+    re.compile(r'images/icon/form/s/.*/(.+)$'): 'Small_Slot_Icons',
+    re.compile(r'images/icon/skill/m/.*/(.+)$'): 'Small_Skill_Icons',
     re.compile(r'images/icon/campaign/'): 'Special_Campaign_Icons',
     re.compile(r'images/icon/stamp/l/framed'): 'Sticker_Images',
     re.compile(r'emotion/story'): 'Story_Art',
@@ -82,12 +85,14 @@ CATEGORY_REGEX = {
     re.compile(r'images/icon/caption/'): 'UI_Icons',
     re.compile(r'images/icon/unitenhanceicon/l/'): 'Upgrade_Icons',
     re.compile(r'images/icon/weapon/l'): 'Weapon_Icons',
-    re.compile(r'images/icon/weapon/m'): 'Small_Weapon_Icons',
+    re.compile(r'images/icon/weapon/m/.+/(.+)$'): 'Small_Weapon_Icons',
     re.compile(r'images/icon/amulet/l'): 'Wyrmprint Icons',
-    re.compile(r'images/icon/amulet/m'): 'Small_Wyrmprint Icons',
+    re.compile(r'images/icon/amulet/m/.+/(.+)$'): 'Small_Wyrmprint_Icons',
     re.compile(r'images/icon/mapicon/'): 'Main_Campaign_Map_Icons',
     re.compile(r'images/outgame/unitdetail/amulet'): 'Wyrmprint_Images',
     re.compile(r'images/icon/amulet/artistname/'): '_Wyrmprint_Artists',
+    re.compile(r'images/outgame/quest/areamap/map_area'): '_Map Images',
+    re.compile(r'images/outgame/quest/areamap/'): '_Map Icons',
 
     re.compile(r'Btn_'): '__Unused/Button',
     re.compile(r'images/ingame/(?:chara|dragon)/(?:bustup|face)'): '__Unused/Closeups',
@@ -101,12 +106,17 @@ CATEGORY_REGEX = {
 }
 CATEGORY_NAME_FORMATS = {
     'Alliance_Crest_Icons': (lambda number: 'Icon Alliance {}'.format(number)),
+    'Consumables_Images': (lambda x: 'Consumable_{}'.format(x)),
     'Defensive_Battle_Map_Images':
         (lambda event_id, number:
             'DefenseMap EVENT_NAME_{} {}'.format(event_id, number)),
+    'Dragon_Gift_Icons': (lambda x: 'Gift_{}'.format(x)),
+    'Enemy_Score_Icons': (lambda x: 'EnemyIcon {}'.format(x)),
+
     'Event_Banners':
-        (lambda number, type:
-            'Banner{} {}'.format('_Top' if type == 'top' else '', number)),
+        (lambda number: 'Banner EVENT_NAME_{}'.format(number)),
+    'Event_Top_Banners':
+        (lambda number: 'Banner Top EVENT_NAME_{}'.format(number)),
     'Event_Guide_Images':
         (lambda event_id, number:
             'EVENT_NAME_{} Prologue {}'.format(event_id, number)),
@@ -127,6 +137,16 @@ CATEGORY_NAME_FORMATS = {
                 '{} Summon_Top_Banner'.format(number)),
     'Campaign_Story_Banners':
         (lambda number: 'Banner Top Campaign Chapter ' + number),
+
+    # Small suffix
+    'Small_Alberian_Battle_Skin_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Character_Icon_Images': (lambda x: '{} (Small)'.format(x)),
+    'Small_Dragon_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Material_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Slot_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Skill_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Weapon_Icons': (lambda x: '{} (Small)'.format(x)),
+    'Small_Wyrmprint_Icons': (lambda x: '{} (Small)'.format(x)),
 }
 
 
@@ -283,7 +303,7 @@ def save_merged_images(merged_images, current_dir, out_dir):
 
             while os.path.exists(save_path):
                 save_path += '#'
-            img.save(save_path + EXT, optimize=True)
+            img.save(save_path + EXT)
 
 
 def copy_not_merged_images(not_merged, current_dir, input_dir, out_dir):
