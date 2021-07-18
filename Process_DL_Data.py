@@ -41,6 +41,7 @@ ITEM_NAMES = {
     'CollectEventItem': {},
     'CombatEventItem': {},
     'Clb01EventItem': {},
+    'EarnEventItem': {},
     'ExHunterEventItem': {},
     'ExRushEventItem': {},
     'GatherItem': {},
@@ -74,6 +75,7 @@ QUEST_TYPE_DICT = {
     'Collab': re.compile(r'CLB_\d|EX_'),
     'Battle Royale': re.compile(r'BR_'),
     'Simple': re.compile(r'SIMPLE_'),
+    'Invasion': re.compile(r'EARN_'),
 }
 CHAPTER_PARTS_PATTERN = re.compile(r'^Ch\. (\d+) / .*-(\d+)$')
 SKILL_DETAIL_PATTERN = re.compile(r'<size=0>\[(\d+)\].*<\/size>\n')
@@ -86,6 +88,7 @@ QUEST_MODE_PLAY_TYPE_DICT = {
     '1' : '',
     '2' : ' (Solo)',
     '3' : ' (Co-op)',
+    '4' : ' (Quick Play Co-op)',
 }
 WEAPON_SERIES = {
     '1' : 'Core',
@@ -211,6 +214,9 @@ ENTITY_TYPE_DICT = {
     '39': (lambda id: '{{Icon|Wyrmprint|' + get_label('AMULET_NAME_' + id) + '|size=24px|text=1}}',
            lambda id: get_label('AMULET_NAME_' + id),
            'Wyrmprint'),
+    '40': (lambda id: '{{' + get_item_label('EarnEventItem', id) + '-}}',
+           lambda id: get_item_label('EarnEventItem', id),
+           'Material'),
 }
 MISSION_ENTITY_OVERRIDES_DICT = {
     '3' : lambda x: ["Override={}".format(get_entity_item('3', x, format=0))],
@@ -229,6 +235,7 @@ EVENT_TYPES = {
     '9': 'Simple',
     '10': 'Onslaught|Defensive',
     '11': 'Alberian Battle Royale',
+    '12': 'Invasion',
 }
 
 MATERIAL_NAME_LABEL = 'MATERIAL_NAME_'
@@ -331,7 +338,8 @@ def get_epithet(emblem_id, lang='en'):
 
 def get_jp_epithet(emblem_id):
     if 'jp' in TEXT_LABEL_DICT:
-        return '{{' + 'Ruby|{}|{}'.format(
+        transliteration = get_label(EMBLEM_P + emblem_id, lang='sc')
+        return f'({transliteration})<br>' + '{{' + 'Ruby|{}|{}'.format(
             get_label(EMBLEM_N + emblem_id, lang='jp'),
             get_label(EMBLEM_P + emblem_id, lang='jp')) + '}}'
     return ''
@@ -416,6 +424,7 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
         element_owner   =   element)
     new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
 
+    new_row['Effects'] = '' # TODO
     new_row['AbilityIconName'] = row['_AbilityIconName']
     new_row['AbilityGroup'] = row['_ViewAbilityGroupId1']
     new_row['AbilityLimitedGroupId1'] = row['_AbilityLimitedGroupId1']
@@ -447,6 +456,7 @@ def process_ChainCoAbility(row, existing_data):
         ability_val0    =   ability_value,
         element_owner   =   element).replace('  ', ' ')
     new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
+    new_row['Effects'] = '' # TODO
     new_row['AbilityIconName'] = row['_AbilityIconName']
 
     existing_data.append((new_row['Name'], new_row))
@@ -677,6 +687,9 @@ def process_CharaData(row, existing_data, chara_mode_data):
     if gunmodes:
         new_row['GunModes'] = ','.join(sorted(gunmodes))
 
+    if row['_UniqueWeaponSkinId'] != '0':
+        new_row['CannotUseWeaponSkin'] = 1
+
     existing_data.append((new_row['FullName'], new_row))
 
 def process_SkillDataNames(row, existing_data):
@@ -767,6 +780,7 @@ def process_ExAbilityData(row, existing_data):
         value1=row['_AbilityType1UpValue0']
     )
     new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
+    new_row['Effects'] = '' # TODO
     new_row['AbilityIconName'] = row['_AbilityIconName']
     new_row['Category'] = row['_Category']
     new_row['PartyPowerWeight'] = row['_PartyPowerWeight']
@@ -1095,6 +1109,9 @@ def process_QuestRewardData(row, existing_data):
         curr_row['DropLimitBreakMaterialQuantity'] = row['_DropLimitBreakMaterialQuantity']
         curr_row['LimitBreakMaterialDailyDrop'] = row['_LimitBreakMaterialDailyDrop']
 
+    if (quest_scoring_enemy_group_id := row['_QuestScoringEnemyGroupId']) != '0':
+        curr_row['QuestScoringEnemyGroupId'] = quest_scoring_enemy_group_id
+
     existing_data[index] = (existing_row[0], curr_row)
 
 def process_QuestBonusData(row, existing_data):
@@ -1173,7 +1190,8 @@ def process_QuestWeaponTypePattern(row, existing_data):
     allowed_types = []
     for i in range(1, len(WEAPON_TYPE)):
         if row['_IsPatternWeaponType{}'.format(i)] == '1':
-            allowed_types.append(WEAPON_TYPE[i])
+            allowed_types.append(
+                '[[File:Icon Weapon {0}.png|24px|link=]] {0}'.format(WEAPON_TYPE[i]))
     new_row['WeaponTypes'] = ', '.join(allowed_types)
     existing_data.append((None, new_row))
 
@@ -1717,6 +1735,17 @@ def process_MCNodeCostUnbinds(out_file):
 
     for u in unbinds:
         for floor in range(1, 6):
+            for growMatNum in range(1,3):
+                quantity = u[f'_UniqueGrowMaterial{growMatNum}Num{floor}']
+                if quantity > '0':
+                    unbind_rows.append(build_wikitext_row('MCNodeCost', {
+                        'MCElementId': u['_Id'],
+                        'Floor': floor + 1,
+                        'No': '0',
+                        'Material': f'UniqueGrowMaterial{growMatNum}',
+                        'MaterialQuantity': quantity,
+                    }))
+
             for orbNum in range(1, 6):
                 quantity = u[f'_OrbData{orbNum}Num{floor}']
                 if quantity > '0':
@@ -1731,6 +1760,20 @@ def process_MCNodeCostUnbinds(out_file):
                         'MaterialQuantity': quantity,
                     }))
     out_file.write('\n'.join(unbind_rows))
+
+def process_QuestScoringEnemy(out_file):
+    rows = db_query_all(
+        "SELECT qse.*, el._Name "
+        "FROM QuestScoringEnemy qse "
+        "JOIN EnemyList el ON(qse._EnemyListId=el._Id) "
+        "WHERE qse._Id != '0' "
+        "ORDER BY _ScoringEnemyGroupId, qse._Id")
+    for row in rows:
+        new_row = {k[1:]: v for k,v in row.items() if k not in ('_EntriesKey', '_EnemyListId')}
+        new_row['Name'] = get_label(new_row['Name'])
+
+        out_file.write(build_wikitext_row('QuestScoringEnemy', new_row))
+        out_file.write('\n')
 
 def process_StampData(out_file):
     event_group_title = '<hr>\n<h6 class="center">[[{}]] Event Rewards</h6>\n'
@@ -1903,6 +1946,53 @@ def endeavor_string(e, prefix=''):
         quantity + extras + '}}',
       ])
 
+def process_HonorData(out_file):
+    medals = db_query_all(
+        "SELECT * FROM HonorData "
+        "WHERE _Id!='0' AND _EndDate='' ORDER BY CAST(_SortId AS int)")
+    for medal in medals:
+        name = get_label(medal['_HonorName'])
+        if '(' in name:
+            name, m_class = name.split(' (')
+            m_class = m_class.replace(' Class)', '')
+        else:
+            m_class = ''
+
+        out_file.write(
+            '|-\n| data-sort-value="{sortId}" | [[File:Icon Medal {id}.png|60px]] '
+            '|| {name} || {m_class} || {desc} || {start}\n'.format(
+                sortId=medal['_SortId'],
+                id=medal['_Id'],
+                name=name.replace(' Medal', ''),
+                m_class=m_class,
+                desc=get_label(medal['_Description']),
+                start=medal['_StartDate'].split()[0]
+        ))
+
+    limited_medals = db_query_all(
+        "SELECT * FROM HonorData "
+        "WHERE _Id!='0' AND _EndDate!='' ORDER BY CAST(_SortId AS int)")
+    if len(limited_medals):
+        out_file.write('\n\n==Limited Time Medals==\n')
+    for medal in limited_medals:
+        name = get_label(medal['_HonorName'])
+        if '(' in name:
+            name, m_class = name.split(' (')
+            m_class = m_class.replace(' Class)', '')
+        else:
+            m_class = ''
+        out_file.write(
+            '|-\n| data-sort-value="{sortId}" | [[File:Icon Medal {id}.png|60px]] '
+            '|| {name} || {m_class} || {desc} || {start} - {end}\n'.format(
+                sortId=medal['_SortId'],
+                id=medal['_Id'],
+                name=name.replace(' Medal', ''),
+                m_class=m_class,
+                desc=get_label(medal['_Description']),
+                start=medal['_StartDate'].split()[0],
+                end=medal['_EndDate'].split()[0]
+        ))
+
 def process_RankingGroupData(out_file):
     groups = db_query_all(
         "SELECT * FROM RankingGroupData "
@@ -2054,6 +2144,7 @@ DATA_PARSER_PROCESSING = {
     'Clb01EventItem': ('Material', row_as_wikitext, process_Material),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
     'CombatEventItem': ('Material', row_as_wikitext, process_Material),
+    'EarnEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
     'DragonGiftData': ('Gift', row_as_wikitext, process_DragonGiftData),
@@ -2102,9 +2193,11 @@ DATABASE_BASED_PROCESSING = {
     'BattleRoyaleMonthlyRewards': (process_BattleRoyalEventCyclePointReward,),
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
+    'Medals': (process_HonorData,),
     'LoginBonus': (process_LoginBonusData,),
     'ManaCircle': (process_ManaCircle,),
     'MCNodeCost|Data|Unbind': (process_MCNodeCostUnbinds,),
+    'QuestScoringEnemy': (process_QuestScoringEnemy,),
     'Stickers': (process_StampData,),
     'TimeAttackChallenges': (process_RankingGroupData,),
     'Weapons': (process_Weapons,),
