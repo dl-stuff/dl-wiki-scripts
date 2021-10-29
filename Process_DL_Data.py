@@ -405,7 +405,8 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     ability_value = EDIT_THIS if row['_AbilityType1UpValue'] == '0' else row['_AbilityType1UpValue']
     name = get_label(row['_Name']).format(
         ability_shift0  =   ROMAN_NUMERALS[shift_value], # heck
-        ability_val0    =   ability_value)
+        ability_val0    =   ability_value,
+        element_owner   =   ELEMENT_TYPE.get(row['_ElementalType'], '') or '{element_owner}')
     # guess the generic name by chopping off the last word, which is usually +n% or V
     new_row['GenericName'] = name[:name.rfind(' ')].replace('%', '')
     new_row['Name'] = name
@@ -522,6 +523,19 @@ def process_AbilityCrest(row, existing_data):
     new_row['Notes'] = ''
 
     existing_data.append((new_row['Name'], new_row))
+
+def process_ActionConditionIcons(out_file):
+    conditions_with_unique_icons = db_query_all(
+        "SELECT ac.*,bid._IconName FROM ActionCondition ac "
+        "JOIN BuffIconData bid ON (ac._BuffIconId = bid._Id)"
+        "WHERE _BuffIconId!='0' "
+        "ORDER BY _Id")
+
+    for cond in conditions_with_unique_icons:
+        out_file.write('Id: {}'.format(cond['_Id']))
+        out_file.write('\n\tName: {}'.format(get_label(cond['_Text'])))
+        out_file.write('\n\tIcon: {}'.format(cond['_IconName']))
+        out_file.write('\n\n')
 
 def process_Consumable(row, existing_data):
     new_row = OrderedDict()
@@ -726,8 +740,10 @@ def process_Dragon(row, existing_data):
     new_row['IsPlayable'] = row['_IsPlayable']
     new_row['MinHp'] = row['_MinHp']
     new_row['MaxHp'] = row['_MaxHp']
+    new_row['AddMaxHp1'] = row['_AddMaxHp1']
     new_row['MinAtk'] = row['_MinAtk']
     new_row['MaxAtk'] = row['_MaxAtk']
+    new_row['AddMaxAtk1'] = row['_AddMaxAtk1']
     try:
         new_row['SkillID'] = row['_Skill1']
         new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
@@ -736,10 +752,12 @@ def process_Dragon(row, existing_data):
     except KeyError:
         pass
     for i in (1, 2):
-        for j in range(1, 6):
+        for j in range(1, 7):
             ab_k = 'Abilities{}{}'.format(i, j)
             new_row[ab_k] = row['_' + ab_k]
     new_row['ProfileText'] = get_label(row['_Profile'])
+    new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
+    new_row['LimitBreakId'] = row['_LimitBreakId']
     new_row['LimitBreakMaterialId'] = row['_LimitBreakMaterialId']
     new_row['FavoriteType'] = row['_FavoriteType']
     new_row['JapaneseCV'] = get_label(row['_CvInfo'])
@@ -753,7 +771,7 @@ def process_Dragon(row, existing_data):
     new_row['MoveType'] = row['_MoveType']
     new_row['IsLongRange'] = row['_IsLongLange']
     new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
-    existing_data.append((new_row['Name'], new_row))
+    existing_data.append((new_row['FullName'], new_row))
 
 def process_DragonGiftData(row, existing_data):
     new_row = OrderedDict()
@@ -952,6 +970,10 @@ def process_SkillData(row, existing_data):
     new_row['Zoom2Time']= '{:.1f}'.format(float(row['_Zoom2Time']))
     new_row['ZoomWaitTime']= '{:.1f}'.format(float(row['_ZoomWaitTime']))
     new_row['SpRecoveryRule']= row['_SpRecoveryRule']
+    if row['_OverChargeSkillId'] != '0':
+        new_row['OverChargeSkillId']= row['_OverChargeSkillId']
+    new_row['Effects'] = '' # TODO
+    new_row['SSEffects'] = '' # TODO
 
     existing_data.append((new_row['Name'], new_row))
 
@@ -1197,13 +1219,8 @@ def process_QuestWeaponTypePattern(row, existing_data):
 
 def process_UnionAbility(row, existing_data):
     new_row = OrderedDict()
-    new_row['Id'] = row['_Id']
+    copy_without_entriesKey(new_row, row)
     new_row['Name'] = get_label(row['_Name'])
-    new_row['IconEffect'] = row['_IconEffect']
-    for i in range(1, 6):
-        new_row[f'CrestGroup1Count{i}'] = row[f'_CrestGroup1Count{i}']
-        new_row[f'AbilityId{i}'] = row[f'_AbilityId{i}']
-
     existing_data.append((None, new_row))
 
 def process_WeaponBody(row):
@@ -2148,6 +2165,7 @@ DATA_PARSER_PROCESSING = {
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
     'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
     'DragonGiftData': ('Gift', row_as_wikitext, process_DragonGiftData),
+    'DragonLimitBreak': ('DragonLimitBreak', row_as_wikitext, process_GenericTemplate),
     'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
     'EmblemData': ('Epithet', row_as_wikitable, process_EmblemData),
     'FortPlantData': ('Facility', row_as_wikitext,
@@ -2200,6 +2218,7 @@ DATABASE_BASED_PROCESSING = {
     'QuestScoringEnemy': (process_QuestScoringEnemy,),
     'Stickers': (process_StampData,),
     'TimeAttackChallenges': (process_RankingGroupData,),
+    'UniqueBuffIcons': (process_ActionConditionIcons,),
     'Weapons': (process_Weapons,),
 }
 
