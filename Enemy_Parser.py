@@ -47,10 +47,16 @@ QUEST_NAME_REGEX = {
     re.compile(r'VOIDBATTLE_(\d+)_1(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_300{}010{}'.format(
                     QUEST_NAME_OVERRIDES['VOIDBATTLE'].get(x, x), y)) + ' (Solo)'),
+    # SinDom
     re.compile(r'DIABOLOS_(\d+)_0(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_228{}010{}'.format(x, y)) + ' (Co-op)'),
     re.compile(r'DIABOLOS_(\d+)_1(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_228{}010{}'.format(x, y)) + ' (Solo)'),
+    # SinDom Legend
+    re.compile(r'DIABOLOS_ABS_(\d+)_04_E'):
+            (lambda x: get_label('QUEST_NAME_232{}0101'.format(x)) + ' (Co-op)'),
+    re.compile(r'DIABOLOS_ABS_(\d+)_14_E'):
+            (lambda x: get_label('QUEST_NAME_232{}0101'.format(x)) + ' (Solo)'),
     # Trials of the Mighty
     re.compile(r'SUBDUE_(\d+)_0(\d)_E'):
             (lambda x, y: get_label('QUEST_NAME_32{}010{}'.format(x, y)) + ' (Co-op)'),
