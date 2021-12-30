@@ -97,6 +97,7 @@ WEAPON_SERIES = {
     '4' : 'Agito',
     '5' : 'Chimeratech',
     '6' : 'Other',
+    '7' : 'Primal Dragon',
 }
 
 FACILITY_EFFECT_TYPE_DICT = {
@@ -121,102 +122,141 @@ MANA_PIECE_DESC = {
     '10701': 'Standard Attack Level Increase',
     '10801': 'Max Level Increase'
 }
+DMODE_SERVITOR_TYPE = { # DmodeServitorType.cs
+    '0': 'None',
+    '1': 'Attack',
+    '2': 'Defense',
+    '3': 'Support',
+}
+DMODE_SERVITOR_PASSIVE_TYPE = {
+    '0': 'None',
+    '1': 'HP',
+    '2': 'Strength',
+    '3': 'Dawn Amber',
+    '4': 'Dusk Amber',
+    '5': 'EXP',
+    '6': 'Skill Damage',
+    '7': 'Critical Rate',
+    '8': 'Critical Damage',
+    '9': 'Force Strike',
+    '10': 'Recovery Boost',
+    '11': 'Thaumian Res',
+    '12': 'Physian Res',
+    '13': 'Demihuman Res',
+    '14': 'Therion Res',
+    '15': 'Undead Res',
+    '16': 'Demon Res',
+    '17': 'Dragon Res',
+}
 
 # (icon+text, text only, category)
+# GiftType.cs
 ENTITY_TYPE_DICT = {
+    '1': (lambda id: '{{Icon|Adventurer|' + get_chara_name(id) + '|size=24px|text=1}}',
+          lambda id: get_chara_name(id),
+          lambda id: 'Adventurer'),
     '2': (lambda id: '{{' + get_label('USE_ITEM_NAME_' + id) + '-}}',
           lambda id: get_label('USE_ITEM_NAME_' + id),
-          'Consumable'),
+          lambda id: 'Consumable'),
     '3': (lambda id: '{{Icon|Weapon|' + get_label('WEAPON_NAME_' + id) + '|size=24px|text=1}}',
           lambda id: get_label('WEAPON_NAME_' + id),
-          'Weapon'),
+          lambda id: 'Weapon'),
     '4': (lambda _: '{{Rupies-}}',
           lambda _: 'Rupies',
-          'Resource'),
+          lambda id: 'Resource'),
     '7': (lambda id: '{{Icon|Dragon|' + get_label('DRAGON_NAME_' + id) + '|size=24px|text=1}}',
           lambda id: get_label('DRAGON_NAME_' + id),
-          'Dragon'),
+          lambda id: 'Dragon'),
     '8': (lambda id: '{{' + get_label('MATERIAL_NAME_' + id) + '-}}',
           lambda id: get_label('MATERIAL_NAME_' + id),
-          'Material'),
+          lambda id: 'Material'),
     '9': (lambda id: '{{Icon|Facility|' + get_label('FORT_PLANT_NAME_' + id) + '|size=24px|text=1}}',
           lambda id: get_label('FORT_PLANT_NAME_' + id),
-          'Facility'),
+          lambda id: 'Facility'),
     '10': (lambda id: '[[File:Icon Profile 0' + EPITHET_RANKS.get(id, '') + ' Frame.png|19px|Epithet|link=Epithets]] ' + get_label('EMBLEM_NAME_' + id),
            lambda id: get_label('EMBLEM_NAME_' + id),
-           'Epithet'),
+           lambda id: 'Epithet'),
     '11': (lambda id: '[[File:' + id + ' en.png|24px|Sticker|link=Stickers]] ' + get_label('STAMP_NAME_' + id),
            lambda id: get_label('STAMP_NAME_' + id),
-           'Sticker'),
+           lambda id: 'Sticker'),
     '12': (lambda id: '{{Icon|Wyrmprint|' + get_label('AMULET_NAME_' + id) + '|size=24px|text=1}}',
            lambda id: get_label('AMULET_NAME_' + id),
-           'Wyrmprint'),
+           lambda id: 'Wyrmprint'),
     '14': (lambda _: '{{Eldwater-}}',
            lambda _: 'Eldwater',
-           'Resource'),
+           lambda id: 'Resource'),
     '15': (lambda id: '{{' + get_label('DRAGON_GIFT_NAME_' + id) + '-}}',
            lambda id: get_label('DRAGON_GIFT_NAME_' + id),
-           'Gift'),
+           lambda id: 'Gift'),
     '16': (lambda _: '{{Skip Ticket-}}',
            lambda _: 'Skip Ticket',
-           'Consumable'),
+           lambda id: 'Consumable'),
     '17': (lambda id: '{{' + get_label('SUMMON_TICKET_NAME_' + id) + '-}}',
            lambda id: get_label('SUMMON_TICKET_NAME_' + id),
-           'Consumable'),
+           lambda id: 'Consumable'),
     '18': (lambda _: '{{Mana-}}',
            lambda _: 'Mana',
-           'Resource'),
+           lambda id: 'Resource'),
     '20': (lambda id: '{{' + get_item_label('RaidEventItem', id) + '-}}',
            lambda id: get_item_label('RaidEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '22': (lambda id: '{{' + get_item_label('BuildEventItem', id) + '-}}',
            lambda id: get_item_label('BuildEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '23': (lambda _: '{{Wyrmite-}}',
            lambda _: 'Wyrmite',
-           'Currency'),
+           lambda id: 'Currency'),
     '24': (lambda id: '{{' + get_item_label('CollectEventItem', id) + '-}}',
            lambda id: get_item_label('CollectEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '25': (lambda id: '{{' + get_item_label('Clb01EventItem', id) + '-}}',
            lambda id: get_item_label('Clb01EventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '26': (lambda id: '{{' + get_item_label('AstralItem', id) + '-}}',
            lambda id: get_item_label('AstralItem', id),
-           'Consumable'),
+           lambda id: 'Consumable'),
     '28': (lambda _: '{{Hustle Hammer-}}',
            lambda _: 'Hustle Hammer',
-           'Consumable'),
+           lambda id: 'Consumable'),
     '29': (lambda id: '{{' + get_item_label('ExRushEventItem', id) + '-}}',
            lambda id: get_item_label('ExRushEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '30': (lambda id: '{{' + get_item_label('SimpleEventItem', id) + '-}}',
            lambda id: get_item_label('SimpleEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '31': (lambda id: '{{' + get_label('LOTTERY_TICKET_NAME_' + id) + '-}}',
            lambda id: get_label('LOTTERY_TICKET_NAME_' + id),
-           'Consumable'),
+           lambda id: 'Consumable'),
     '32': (lambda id: '{{' + get_item_label('ExHunterEventItem', id) + '-}}',
            lambda id: get_item_label('ExHunterEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '33': (lambda id: '{{' + get_item_label('GatherItem', id) + '-}}',
            lambda id: get_item_label('GatherItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '34': (lambda id: '{{' + get_item_label('CombatEventItem', id) + '-}}',
            lambda id: get_item_label('CombatEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
     '37': (lambda id: '{{Icon|WeaponSkin|' + str(id) + '|size=24px|text=1}}',
            lambda id: get_label('WEAPON_SKIN_NAME_' + id),
-           'WeaponSkin'),
+           lambda id: 'WeaponSkin'),
     '38': (lambda id: '{{Icon|Weapon|' + get_label('WEAPON_NAME_' + id) + '|size=24px|text=1}}',
            lambda id: get_label('WEAPON_NAME_' + id),
-           'Weapon'),
+           lambda id: 'Weapon'),
     '39': (lambda id: '{{Icon|Wyrmprint|' + get_label('AMULET_NAME_' + id) + '|size=24px|text=1}}',
            lambda id: get_label('AMULET_NAME_' + id),
-           'Wyrmprint'),
+           lambda id: 'Wyrmprint'),
     '40': (lambda id: '{{' + get_item_label('EarnEventItem', id) + '-}}',
            lambda id: get_item_label('EarnEventItem', id),
-           'Material'),
+           lambda id: 'Material'),
+    '41': (lambda id: '{{Icon|PortraitWyrmprint|' + str(id) + '|size=24px|text=1}}',
+           lambda id: get_label_by_field(id, 'TalismanData'),
+           lambda id: 'PortraitWyrmprint'),
+    '42': (lambda id: '{{' + get_label_by_field(id, 'DmodePoint') + '-}}',
+           lambda id: get_label_by_field(id, 'DmodePoint'),
+           lambda id: 'KaleidoscapeItem'),
+    '43': (lambda id: '{{Icon|' + '|'.join(get_dmode_item(id).items()) + '|size=24px|text=1}}',
+           lambda id: get_dmode_item(id)['label'],
+           lambda id: get_dmode_item(id)['type']),
 }
 MISSION_ENTITY_OVERRIDES_DICT = {
     '3' : lambda x: ["Override={}".format(get_entity_item('3', x, format=0))],
@@ -330,8 +370,55 @@ def get_item_label(type, key):
     except KeyError:
         return key
 
+def get_label_by_field(key, table, field='_Name'):
+    try:
+        return get_label(
+            db_query_one(
+                f"SELECT {field} FROM {table} WHERE _Id='{key}'")['_Name']
+            )
+    except:
+        return key
+
+def get_dmode_item(key):
+    result = db_query_one(
+        f"SELECT * FROM DmodeDungeonItemData WHERE _Id='{key}'")
+    itemtype = result['_DmodeDungeonItemType']
+    target_id = result['_DungeonItemTargetId']
+
+    # DmodeDungeonItemType.cs
+    if itemtype == '1':
+        dragon = db_query_one(f"SELECT _Name FROM DragonData WHERE _Id='{target_id}'")
+        return {'type': 'Dragon', 'label': get_label(dragon['_Name'])}
+    elif itemtype == '2':
+        weapon = db_query_one(
+            "SELECT ws._Name FROM DmodeWeapon dw "
+            "JOIN WeaponSkin ws ON dw._WeaponSkinId = ws._Id "
+            f"WHERE dw._Id='{target_id}'"
+        )
+        return {
+            'type': 'Weapon',
+            'label': get_label(weapon['_Name']).replace(' (Skin)', ''),
+        }
+    elif itemtype == '3':
+        wp = db_query_one(
+            "SELECT ac._Name FROM DmodeAbilityCrest dac "
+            "JOIN AbilityCrest ac ON dac._AbilityCrestId = ac._Id "
+            f"WHERE dac._Id='{target_id}'"
+        )
+        return {
+            'type': 'Wyrmprint',
+            'label': get_label(wp['_Name']),
+        }
+    else:
+        print('UNKNOWN DmodeDungeonItemType')
+
+    return {'type': 'KaleidoscapeItem', 'label': key}
+
 def get_chara_name(chara_id):
     return get_label('CHARA_NAME_COMMENT_' + chara_id) or get_label('CHARA_NAME_' + chara_id)
+
+def get_dragon_name(dragon_id):
+    return get_label('DRAGON_NAME_COMMENT_' + dragon_id) or get_label('DRAGON_NAME_' + dragon_id)
 
 def get_epithet(emblem_id, lang='en'):
     return get_label(EMBLEM_N + emblem_id, lang=lang)
@@ -352,10 +439,7 @@ def get_entity_item(item_type, item_id, format=1):
     try:
         if item_type == '0':
             return ''
-        if format == 2:
-            return ENTITY_TYPE_DICT[item_type][format]
-        else:
-            return ENTITY_TYPE_DICT[item_type][format](item_id)
+        return ENTITY_TYPE_DICT[item_type][format](item_id)
     except KeyError:
         return 'Entity type {}: {}'.format(item_type, item_id)
 
@@ -403,10 +487,17 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
 
     # TODO: figure out what actually goes to {ability_val0}
     ability_value = EDIT_THIS if row['_AbilityType1UpValue'] == '0' else row['_AbilityType1UpValue']
+    weapon_owner = '{weapon_owner}'
+    weapon_type = int(row['_WeaponType'])
+    if weapon_type < len(WEAPON_TYPE):
+        weapon_owner = WEAPON_TYPE[weapon_type] or weapon_owner
+
     name = get_label(row['_Name']).format(
         ability_shift0  =   ROMAN_NUMERALS[shift_value], # heck
         ability_val0    =   ability_value,
-        element_owner   =   ELEMENT_TYPE.get(row['_ElementalType'], '') or '{element_owner}')
+        element_owner   =   ELEMENT_TYPE.get(row['_ElementalType'], '') or '{element_owner}',
+        weapon_owner    =   weapon_owner
+    )
     # guess the generic name by chopping off the last word, which is usually +n% or V
     new_row['GenericName'] = name[:name.rfind(' ')].replace('%', '')
     new_row['Name'] = name
@@ -422,7 +513,9 @@ def process_AbilityData(row, existing_data, ability_shift_groups):
     new_row['Details'] = detail_label.format(
         ability_cond0   =   row['_ConditionValue'],
         ability_val0    =   ability_value,
-        element_owner   =   element)
+        element_owner   =   element,
+        weapon_owner    =   weapon_owner
+    )
     new_row['Details'] = PERCENTAGE_REGEX.sub(r" '''\1%'''", new_row['Details'])
 
     new_row['Effects'] = '' # TODO
@@ -462,80 +555,168 @@ def process_ChainCoAbility(row, existing_data):
 
     existing_data.append((new_row['Name'], new_row))
 
-def process_AbilityCrest(row, existing_data):
-    new_row = OrderedDict()
+def process_AbilityCrest(out_file):
+    results = db_query_all(
+        "SELECT * FROM AbilityCrest "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
 
-    new_row['Id'] = row['_Id']
-    new_row['BaseId'] = row['_BaseId']
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
-    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
-    new_row['IsHideChangeImage'] = row['_IsHideChangeImage']
-    new_row['Rarity'] = row['_Rarity']
-    new_row['AmuletType'] = row['_AbilityCrestType']
-    new_row['CrestSlotType'] = row['_CrestSlotType']
-    new_row['UnitType'] = row['_UnitType']
-    new_row['MinHp'] = row['_BaseHp']
-    new_row['MaxHp'] = row['_MaxHp']
-    new_row['MinAtk'] = row['_BaseAtk']
-    new_row['MaxAtk'] = row['_MaxAtk']
-    new_row['VariationId'] = row['_VariationId']
-    new_row['Abilities11'] = row['_Abilities11']
-    new_row['Abilities12'] = row['_Abilities12']
-    new_row['Abilities13'] = row['_Abilities13']
-    new_row['Abilities21'] = row['_Abilities21']
-    new_row['Abilities22'] = row['_Abilities22']
-    new_row['Abilities23'] = row['_Abilities23']
-    new_row['UnionAbilityGroupId'] = row['_UnionAbilityGroupId']
-    for i in range(1, 6):
-        new_row[f'FlavorText{i}'] = get_label(row[f'_Text{i}'])
-    new_row['IsPlayable'] = row['_IsPlayable']
-    new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
-    new_row['DuplicateEntityQuantity'] = row['_DuplicateEntityQuantity']
-    new_row['AbilityCrestBuildupGroupId'] = row['_AbilityCrestBuildupGroupId']
-    new_row['UniqueBuildupMaterialId'] = row['_UniqueBuildupMaterialId']
-    new_row['AbilityCrestLevelRarityGroupId'] = row['_AbilityCrestLevelRarityGroupId']
+    for row in results:
+        new_row = OrderedDict()
 
-    # Trade/obtain info
-    trade = db_query_one('SELECT * FROM AbilityCrestTrade '
-                        f'WHERE _AbilityCrestId="{row["_Id"]}"')
+        new_row['Id'] = row['_Id']
+        new_row['BaseId'] = row['_BaseId']
+        new_row['Name'] = get_label(row['_Name'])
+        new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+        new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+        new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+        new_row['IsHideChangeImage'] = row['_IsHideChangeImage']
+        new_row['Rarity'] = row['_Rarity']
+        new_row['AmuletType'] = row['_AbilityCrestType']
+        new_row['CrestSlotType'] = row['_CrestSlotType']
+        new_row['UnitType'] = row['_UnitType']
+        new_row['MinHp'] = row['_BaseHp']
+        new_row['MaxHp'] = row['_MaxHp']
+        new_row['MinAtk'] = row['_BaseAtk']
+        new_row['MaxAtk'] = row['_MaxAtk']
+        new_row['VariationId'] = row['_VariationId']
+        new_row['Abilities11'] = row['_Abilities11']
+        new_row['Abilities12'] = row['_Abilities12']
+        new_row['Abilities13'] = row['_Abilities13']
+        new_row['Abilities21'] = row['_Abilities21']
+        new_row['Abilities22'] = row['_Abilities22']
+        new_row['Abilities23'] = row['_Abilities23']
+        new_row['UnionAbilityGroupId'] = row['_UnionAbilityGroupId']
+        for i in range(1, 6):
+            new_row[f'FlavorText{i}'] = get_label(row[f'_Text{i}'])
+        new_row['IsPlayable'] = row['_IsPlayable']
+        new_row['DuplicateEntity'] = get_entity_item(row['_DuplicateEntityType'], row['_DuplicateEntityId'])
+        new_row['DuplicateEntityQuantity'] = row['_DuplicateEntityQuantity']
+        new_row['AbilityCrestBuildupGroupId'] = row['_AbilityCrestBuildupGroupId']
+        new_row['UniqueBuildupMaterialId'] = row['_UniqueBuildupMaterialId']
+        new_row['AbilityCrestLevelRarityGroupId'] = row['_AbilityCrestLevelRarityGroupId']
 
-    if trade:
-        new_row['NeedDewPoint'] = trade['_NeedDewPoint']
-        new_row['Obtain'] = '[[Shop/Wyrmprints|Wyrmprints Shop]]'
-        new_row['ReleaseDate'] = trade['_CommenceDate']
-        if trade['_MemoryPickupEventId'] != '0':
-            new_row['Availability'] = 'Compendium'
-        elif trade['_CompleteDate']:
-            new_row['Availability'] = 'Limited'
+        # Trade/obtain info
+        trade = db_query_one('SELECT * FROM AbilityCrestTrade '
+                            f'WHERE _AbilityCrestId="{row["_Id"]}"')
+
+        if trade:
+            new_row['NeedDewPoint'] = trade['_NeedDewPoint']
+            new_row['Obtain'] = '[[Shop/Wyrmprints|Wyrmprints Shop]]'
+            new_row['ReleaseDate'] = trade['_CommenceDate']
+            if trade['_MemoryPickupEventId'] != '0':
+                new_row['Availability'] = 'Compendium'
+            elif trade['_CompleteDate']:
+                new_row['Availability'] = 'Limited'
+            else:
+                new_row['Availability'] = 'Permanent'
+
         else:
-            new_row['Availability'] = 'Permanent'
+            new_row['NeedDewPoint'] = 0
+            new_row['Obtain'] = ''
+            new_row['ReleaseDate'] = ''
+            new_row['Availability'] = ''
 
-    else:
-        new_row['NeedDewPoint'] = 0
-        new_row['Obtain'] = ''
-        new_row['ReleaseDate'] = ''
-        new_row['Availability'] = ''
+        new_row['ArtistCV'] = row['_CvInfo']
+        new_row['FeaturedCharacters'] = ''
+        new_row['Notes'] = ''
 
-    new_row['ArtistCV'] = row['_CvInfo']
-    new_row['FeaturedCharacters'] = ''
-    new_row['Notes'] = ''
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(new_row['Name'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(build_wikitext_row('Wyrmprint', new_row, delim='\n|'))
+        out_file.write('\n')
 
-    existing_data.append((new_row['Name'], new_row))
-
-def process_ActionConditionIcons(out_file):
+def process_ActionCondition(out_file):
     conditions_with_unique_icons = db_query_all(
         "SELECT ac.*,bid._IconName FROM ActionCondition ac "
-        "JOIN BuffIconData bid ON (ac._BuffIconId = bid._Id)"
-        "WHERE _BuffIconId!='0' "
-        "ORDER BY _Id")
+        "JOIN BuffIconData bid ON (ac._BuffIconId = bid._Id) "
+        "WHERE ac._Id!='0' AND (_Overwrite!='0' OR _OverwriteIdenticalOwner!='0' OR _OverwriteGroupId!='0') "
+        "ORDER BY CAST(ac._Id as INT)")
 
     for cond in conditions_with_unique_icons:
-        out_file.write('Id: {}'.format(cond['_Id']))
-        out_file.write('\n\tName: {}'.format(get_label(cond['_Text'])))
-        out_file.write('\n\tIcon: {}'.format(cond['_IconName']))
-        out_file.write('\n\n')
+        row = OrderedDict()
+        row['Id'] = cond['_Id']
+        name = get_label(cond['_Text']).replace('{0:P0}', 'X%')
+        nameEx = get_label(cond['_TextEx'])
+        if name:
+            row['Name'] = name
+        if nameEx:
+            row['NameEx'] = nameEx
+        if cond['_IconName']:
+            row['IconName'] = cond['_IconName']
+
+        for field in ('_Overwrite', '_OverwriteIdenticalOwner', '_OverwriteGroupId',
+                      '_MaxDuplicatedCount'):
+            if cond[field] != '0':
+                row[field[1:]] = cond[field]
+
+        out_file.write(build_wikitext_row('ActionCondition', row))
+        out_file.write('\n')
+
+def process_AlbumStory(out_file):
+    groups = db_query_all(
+        "SELECT asg.* FROM AlbumStoryGroup asg "
+        "WHERE asg._Id!='0' "
+        "ORDER BY CAST(asg._SortId as INT)")
+
+    for group in groups:
+        row = OrderedDict()
+
+        if group['_AlbumStoryId'] == '101': # Campaign
+            albumId = group['_Id']
+            chapter_num = db_query_one(
+                "SELECT _ChapterNum FROM QuestMainGroup "
+                f"WHERE _Id='{albumId}'")['_ChapterNum']
+            row['Name'] = 'Chapter ' + chapter_num
+        else:
+            row['Name'] = get_label('EVENT_NAME_' + group['_Id'])
+
+        row['Id'] = group['_Id']
+        row['AlbumStoryId'] = group['_AlbumStoryId']
+        row['SortId'] = group['_SortId']
+        row['ReleaseQuestStoryId'] = group['_ReleaseQuestStoryId']
+        row['StartDate'] = group['_ViewStartDate']
+        row['EndDate'] = group['_ViewEndDate']
+
+        character_ids = []
+        dragon_ids = []
+        npc_ids = []
+        for i in range(1,9):
+            entity_type = group[f'_ViewEntityType{i}']
+            if entity_type == '1':
+                cid = group[f'_ViewEntityId{i}']
+                character = db_query_one(
+                    "SELECT _IsPlayable FROM CharaData "
+                    f"WHERE _Id='{cid}'"
+                )
+                if not character or character['_IsPlayable'] == '1':
+                    character_ids.append(cid)
+                else:
+                    npc_ids.append(cid)
+            elif entity_type == '7':
+                dragon_ids.append(group[f'_ViewEntityId{i}'])
+            elif entity_type == '0':
+                continue
+            else:
+                print('UNKNOWN ViewEntityType: ' + entity_type)
+
+        memory_ids = []
+        for i in range(1,13):
+            image_id = group[f'_ArtworkImageId{i}']
+            if image_id != '0':
+                memory_ids.append(group[f'_ArtworkImageId{i}'])
+
+        row['CharacterIds'] = ', '.join(character_ids)
+        row['DragonIds'] = ', '.join(dragon_ids)
+        row['NpcIds'] = ', '.join(npc_ids)
+        row['MemoryArtworkIds'] = ', '.join(memory_ids)
+
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(row['Name'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(build_wikitext_row('StoryGroup', row, delim='\n|'))
+        out_file.write('\n')
 
 def process_Consumable(row, existing_data):
     new_row = OrderedDict()
@@ -547,6 +728,264 @@ def process_Consumable(row, existing_data):
     new_row['Obtain'] = '\n*'
 
     existing_data.append((new_row['Name'], new_row))
+
+def process_DmodeAbilityCrest(out_file):
+    results = db_query_all(
+        "SELECT * FROM DmodeAbilityCrest "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
+    ability_crests = db_query_all(
+        "SELECT * FROM AbilityCrest "
+        "WHERE _Id!='0'")
+    ability_crest_map = {x['_Id']: x for x in ability_crests}
+    items = db_query_all(
+        "SELECT * FROM DmodeDungeonItemData "
+        "WHERE _DmodeDungeonItemType='3'")
+    item_map = {x['_DungeonItemTargetId']: x for x in items}
+
+    for row in results:
+        new_row = OrderedDict()
+        copy_without_entriesKey(new_row, row)
+
+        ability_crest_row = ability_crest_map[new_row['AbilityCrestId']]
+        new_row['BaseId'] = ability_crest_row['_BaseId']
+        new_row['Name'] = get_label(ability_crest_row['_Name'])
+        new_row['NameJP'] = get_label(ability_crest_row['_Name'], lang='jp')
+        new_row['NameSC'] = get_label(ability_crest_row['_Name'], lang='sc')
+        new_row['NameTC'] = get_label(ability_crest_row['_Name'], lang='tc')
+
+        item_row = item_map[new_row['Id']]
+        new_row['ItemId'] = item_row['_Id']
+        new_row['ItemRarity'] = item_row['_Rarity']
+        new_row['ItemUseCount'] = item_row['_UseCount']
+        new_row['SellKaleidoscapePoint1'] = item_row['_SellDmodePoint1']
+        new_row['SellKaleidoscapePoint2'] = item_row['_SellDmodePoint2']
+
+        out_file.write(build_wikitext_row('KaleidoscapeWyrmprint', new_row, delim='\n|'))
+        out_file.write('\n')
+
+def process_DmodeStory(out_file):
+    results = db_query_all(
+        "SELECT * FROM DmodeStory "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_SortId as INT)")
+
+    for row in results:
+        new_row = OrderedDict()
+        copy_without_entriesKey(new_row, row)
+        new_row['Title'] = get_label(new_row['Title'])
+        new_row['BodyText'] = get_label(new_row['BodyText'])
+
+        out_file.write(build_wikitext_row('KaleidoscapeStory', new_row, delim='\n|'))
+        out_file.write('\n')
+
+def process_DmodeServitorPassive(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['TypeId'] = row['_ServitorPassiveType']
+    new_row['Type'] = DMODE_SERVITOR_PASSIVE_TYPE.get(row['_ServitorPassiveType'], '')
+    new_row['Name'] = get_label(row['_PassiveName'])
+    new_row['Num'] = row['_PassiveNum']
+    new_row['SortId'] = row['_SortId']
+    new_row['IconImage'] = row['_IconImage']
+
+    existing_data.append((new_row['Name'], new_row))
+
+def process_DmodeServitorPassiveLevel(row, existing_data):
+    new_row = OrderedDict()
+
+    new_row['Id'] = row['_Id']
+    new_row['Num'] = row['_PassiveNum']
+    new_row['Detail'] = get_label(row['_PassiveDetail']).format(ability_val0 = row['_UpValue'])
+    new_row['Level'] = row['_Level']
+    new_row['UpValue'] = row['_UpValue']
+
+    for i in range(1,4):
+        new_row[f'ReleaseEntityType{i}'] = get_entity_item(row[f'_ReleaseEntityType{i}'], row[f'_ReleaseEntityId{i}'])
+        new_row[f'ReleaseEntityQuantity{i}'] = row[f'_ReleaseEntityQuantity{i}']
+
+    existing_data.append((None, new_row))
+
+def process_DmodeWeapon(out_file):
+    results = db_query_all("SELECT * FROM DmodeWeapon WHERE _Id!='0'")
+    weapon_skins = db_query_all("SELECT * FROM WeaponSkin WHERE _Id!='0'")
+    weapon_skin_map = {x['_Id']: x for x in weapon_skins}
+    items = db_query_all(
+        "SELECT * FROM DmodeDungeonItemData "
+        "WHERE _DmodeDungeonItemType='2'")
+    item_map = {x['_DungeonItemTargetId']: x for x in items}
+
+    for row in results:
+        skin_row = weapon_skin_map[row['_WeaponSkinId']]
+
+        new_row = OrderedDict()
+        new_row['Id'] = row['_Id']
+        new_row['BaseId'] = skin_row['_BaseId']
+        new_row['VariationId'] = skin_row['_VariationId']
+        new_row['FormId'] = skin_row['_FormId']
+        new_row['Name'] = get_label(skin_row['_Name']).replace(' (Skin)', '')
+        new_row['WeaponType'] = skin_row['_WeaponType']
+        # new_row['NameJP'] = get_label(skin_row['_Name'], lang='jp').replace('［スキン］', '')
+        # new_row['NameSC'] = get_label(skin_row['_Name'], lang='sc').replace('［皮肤］', '')
+        # new_row['NameTC'] = get_label(skin_row['_Name'], lang='jp').replace('［造型］', '')
+        new_row['StrengthParamGroupId'] = row['_StrengthParamGroupId']
+        new_row['StrengthAbilityGroupId'] = row['_StrengthAbilityGroupId']
+        new_row['StrengthSkillGroupId'] = row['_StrengthSkillGroupId']
+        new_row['IsDefaultWeapon'] = row['_IsDefaultWeapon']
+        new_row['WeaponSkinId'] = row['_WeaponSkinId']
+
+        if new_row['Id'] in item_map:
+            item_row = item_map[new_row['Id']]
+            new_row['ItemId'] = item_row['_Id']
+            new_row['ItemRarity'] = item_row['_Rarity']
+            new_row['ItemUseCount'] = item_row['_UseCount']
+            new_row['SellKaleidoscapePoint1'] = item_row['_SellDmodePoint1']
+            new_row['SellKaleidoscapePoint2'] = item_row['_SellDmodePoint2']
+
+        out_file.write(build_wikitext_row('KaleidoscapeWeapon', new_row, delim='\n|'))
+        out_file.write('\n')
+
+def process_DmodeEnemies(out_file):
+    enemies = db_query_all(
+        "SELECT ep.*, el._Name, el._TribeType "
+        "FROM EnemyParam ep "
+            "JOIN EnemyData ed ON ed._Id=ep._DataId "
+            "JOIN EnemyList el ON ed._BookId=el._id "
+        "WHERE ep._DmodeEnemyParamGroupId!='0' "
+        "ORDER BY ep._Id")
+    for e in enemies:
+        new_row = OrderedDict()
+        new_row['Id'] = e['_Id']
+        new_row['DataId'] = e['_DataId']
+        new_row['Name'] = get_label(e['_Name'])
+        new_row['TribeId'] = e['_TribeType']
+        new_row['DmodeEnemyParamGroupId'] = e['_DmodeEnemyParamGroupId']
+        new_row['ParamGroupName'] = e['_ParamGroupName']
+
+        out_file.write(build_wikitext_row('KaleidoscapeEnemy', new_row, delim='|'))
+        out_file.write('\n')
+
+def process_DmodeEnemyParams(out_file):
+    results = db_query_all(
+        "SELECT * FROM DmodeEnemyParam "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
+    for row in results:
+        new_row = OrderedDict()
+        new_row['Id'] = row['_Id']
+        new_row['GroupId'] = row['_DmodeEnemyParamGroupId']
+        new_row['Level'] = row['_Level']
+        new_row['DropExp'] = row['_DropExp']
+        new_row['DropDmodePoint1'] = row['_DropDmodePoint1']
+        new_row['DropDmodePoint2'] = row['_DropDmodePoint2']
+        new_row['Score'] = row['_DmodeScore']
+        new_row['HP'] = row['_Hp']
+        new_row['Atk'] = row['_Atk']
+        new_row['Def'] = row['_Def']
+        new_row['Overwhelm'] = row['_Overwhelm']
+        new_row['BaseOD'] = row['_BaseOD']
+        new_row['BaseBreak'] = row['_BaseBreak']
+        # For the index order, match up against ActionCondition fields starting from 'RatePoison'.
+        new_row['Poison'] = row['_RegistAbnormalRate01']
+        new_row['Burn'] = row['_RegistAbnormalRate02']
+        new_row['Freeze'] = row['_RegistAbnormalRate03']
+        new_row['Paralysis'] = row['_RegistAbnormalRate04']
+        new_row['Blind'] = row['_RegistAbnormalRate05']
+        new_row['Stun'] = row['_RegistAbnormalRate06']
+        new_row['Bog'] = row['_RegistAbnormalRate07']
+        new_row['Sleep'] = row['_RegistAbnormalRate08']
+        new_row['Curse'] = row['_RegistAbnormalRate09']
+        new_row['Frostbite'] = row['_RegistAbnormalRate10']
+        new_row['Flashburn'] = row['_RegistAbnormalRate11']
+        new_row['Stormlash'] = row['_RegistAbnormalRate12']
+        new_row['Shadowblight'] = row['_RegistAbnormalRate13']
+        new_row['Scorchrend'] = row['_RegistAbnormalRate14']
+
+        out_file.write(build_wikitext_row('KaleidoscapeEnemyParam', new_row, delim='|'))
+        out_file.write('\n')
+
+def process_DmodeExpeditionFloor(out_file):
+    out_file.write('{| class="wikitable"\n')
+    out_file.write('! Target Floor || Duration || Reward')
+
+    items = db_query_all(
+        "SELECT * FROM DmodeExpeditionFloor "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_FloorNum as INT)")
+    totalTime = 0
+
+    for i in items:
+        totalTime += int(i['_NeedTime']) // 60
+        hours = totalTime // 60
+        minutes = totalTime % 60
+
+        if minutes > 0:
+            duration = '{}h {}m'.format(hours, minutes)
+        else:
+            duration = '{}h'.format(hours, minutes)
+
+        rewards = []
+        if i['_RewardDmodePoint1'] != '0':
+            rewards.append('{{Dawn Amber-}} x' + i['_RewardDmodePoint1'])
+        if i['_RewardDmodePoint2'] != '0':
+            rewards.append('{{Dusk Amber-}} x' + i['_RewardDmodePoint2'])
+
+        out_file.write('\n|-\n| ' + ' || '.join([
+            i['_FloorNum'],
+            duration,
+            ', '.join(rewards),
+        ]))
+    out_file.write('\n|}')
+
+def process_DmodeTreasureTrade(out_file):
+    out_file.write('{| class="wikitable"\n')
+    out_file.write('! Item || Limit || Cost')
+
+    items = db_query_all(
+        "SELECT * FROM TreasureTrade "
+        "WHERE _TradeGroupId='1012' "
+        "ORDER BY CAST(_Priority as INT)")
+    for i in items:
+        out_file.write('\n|-\n| ' + ' || '.join([
+            '{} x{}'.format(
+                get_entity_item(
+                    i['_DestinationEntityType'],
+                    i['_DestinationEntityId'],
+                    format=0),
+                i['_DestinationEntityQuantity']
+            ),
+            i['_Limit'],
+            ', '.join([
+                '{} x{}'.format(
+                    get_entity_item(i[f'_NeedEntityType{j}'],
+                                    i[f'_NeedEntityId{j}'],
+                                    format=0),
+                    i[f'_NeedEntityQuantity{j}']
+                )
+                for j in range(1,6)
+                if i[f'_NeedEntityId{j}'] != '0'
+            ]),
+        ]))
+    out_file.write('\n|}')
+
+def process_DmodePoint(out_file):
+    results = db_query_all(
+        "SELECT * FROM DmodePoint "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
+
+    for row in results:
+        new_row = OrderedDict()
+        new_row['Id'] = row['_Id']
+        new_row['Name'] = get_label(row['_Name'])
+        new_row['Description'] = get_label(row['_Description'])
+
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(new_row['Name'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(build_wikitext_row('KaleidoscapeItem', new_row, delim='\n|'))
+        out_file.write('\n')
 
 def process_Material(row, existing_data):
     new_row = OrderedDict()
@@ -594,6 +1033,10 @@ def process_CharaModeData(row, existing_data, chara_mode_data):
     chara_mode_data[row[ROW_INDEX]] = row
 
 def process_CharaData(row, existing_data, chara_mode_data):
+    # Process NPCs separately.
+    if row['_IsPlayable'] != '1':
+        return
+
     new_row = OrderedDict()
 
     new_row['IdLong'] = row[ROW_INDEX]
@@ -706,6 +1149,69 @@ def process_CharaData(row, existing_data, chara_mode_data):
 
     existing_data.append((new_row['FullName'], new_row))
 
+def process_NPC(out_file):
+    results = db_query_all(
+        "SELECT * FROM CharaData "
+        "WHERE _IsPlayable='0' AND _Id!='0' AND _Id<'99' "
+        "ORDER BY CAST(_Id as INT)")
+    results.extend(
+        db_query_all(
+            "SELECT * FROM DragonData "
+            "WHERE _IsPlayable='0' AND _Id!='0' AND _Id<'299' "
+            "ORDER BY CAST(_Id as INT)")
+    )
+
+    for row in results:
+        new_row = OrderedDict()
+        new_row['Id'] = row['_BaseId']
+        new_row['IdLong'] = row[ROW_INDEX]
+        new_row['VariationId'] = row['_VariationId']
+        new_row['VariationsList'] = row['_VariationId']
+        new_row['Name'] = get_label(row['_SecondName']) or get_label(row['_Name'])
+        new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+        new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+        new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+        new_row['Title'] = ''
+        new_row['JapaneseCV'] = ''
+        new_row['EnglishCV'] = ''
+        new_row['ReleaseDate'] = row['_ReleaseStartDate']
+        new_row['Description'] = ''
+        new_row['Information'] = ''
+        new_row['HideDisplay'] = ''
+
+        misc_row = OrderedDict()
+        misc_row['otherArt'] = (
+            '<gallery mode="packed">\n'
+            'File:{id} {variation} r05.png|Story Character Icon\n'
+            '</gallery>'
+            ).format(id=new_row['Id'], variation=new_row['VariationId'].zfill(2))
+
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(new_row['Name'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(build_wikitext_row('NPC', new_row, delim='\n|'))
+        out_file.write('\n')
+        out_file.write(build_wikitext_row('NPCMisc', misc_row, delim='\n|'))
+        out_file.write('\n')
+
+def process_TalismanData(out_file):
+    results = db_query_all(
+        "SELECT * FROM TalismanData "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
+
+    for row in results:
+        new_row = OrderedDict()
+        new_row['Id'] = row['_Id']
+        new_row['Name'] = get_label(row['_Name'])
+        new_row['BaseHp'] = row['_BaseHp']
+        new_row['BaseAtk'] = row['_BaseAtk']
+        new_row['CharaId'] = row['_TalismanCharaId']
+        new_row['SellCoin'] = row['_SellCoin']
+
+        out_file.write(build_wikitext_row('PortraitWyrmprint', new_row, delim='\n|'))
+        out_file.write('\n')
+
 def process_SkillDataNames(row, existing_data):
     for idx, (name, chara) in enumerate(existing_data):
         for i in (1, 2):
@@ -714,64 +1220,80 @@ def process_SkillDataNames(row, existing_data):
                 chara[sn_k] = get_label(row['_Name'])
                 existing_data[idx] = (name, chara)
 
-def process_Dragon(row, existing_data):
-    new_row = OrderedDict()
+def process_Dragon(out_file):
+    results = db_query_all(
+        "SELECT * FROM DragonData "
+        "WHERE _Id!='0' "
+        "ORDER BY CAST(_Id as INT)")
 
-    new_row['Id'] = row[ROW_INDEX]
-    new_row['BaseId'] = row['_BaseId']
-    new_row['Name'] = get_label(row['_Name'])
-    new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
-    new_row['NameJP'] = get_label(row['_Name'], lang='jp')
-    new_row['NameSC'] = get_label(row['_Name'], lang='sc')
-    new_row['NameTC'] = get_label(row['_Name'], lang='tc')
-    new_row['Title'] = get_epithet(row['_EmblemId'])
-    new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
-    new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
-    new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
-    if row['_CharaBaseId'] != '0':
-        new_row['CharaBaseId'] = row['_CharaBaseId']
-    new_row['Obtain'] = '' # EDIT_THIS
-    new_row['ReleaseDate'] = row['_ReleaseStartDate']
-    new_row['Availability'] = '' # EDIT_THIS
-    new_row['Rarity'] = row['_Rarity']
-    new_row['Gender'] = '' # EDIT_THIS
-    new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
-    new_row['VariationId'] = row['_VariationId']
-    new_row['IsPlayable'] = row['_IsPlayable']
-    new_row['MinHp'] = row['_MinHp']
-    new_row['MaxHp'] = row['_MaxHp']
-    new_row['AddMaxHp1'] = row['_AddMaxHp1']
-    new_row['MinAtk'] = row['_MinAtk']
-    new_row['MaxAtk'] = row['_MaxAtk']
-    new_row['AddMaxAtk1'] = row['_AddMaxAtk1']
-    try:
-        new_row['SkillID'] = row['_Skill1']
-        new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
-        new_row['Skill2ID'] = row['_Skill2']
-        new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
-    except KeyError:
-        pass
-    for i in (1, 2):
-        for j in range(1, 7):
-            ab_k = 'Abilities{}{}'.format(i, j)
-            new_row[ab_k] = row['_' + ab_k]
-    new_row['ProfileText'] = get_label(row['_Profile'])
-    new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
-    new_row['LimitBreakId'] = row['_LimitBreakId']
-    new_row['LimitBreakMaterialId'] = row['_LimitBreakMaterialId']
-    new_row['FavoriteType'] = row['_FavoriteType']
-    new_row['JapaneseCV'] = get_label(row['_CvInfo'])
-    new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
-    new_row['SellCoin'] = row['_SellCoin']
-    new_row['SellDewPoint'] = row['_SellDewPoint']
-    new_row['MoveSpeed'] = row['_MoveSpeed']
-    new_row['DashSpeedRatio'] = row['_DashSpeedRatio']
-    new_row['TurnSpeed'] = row['_TurnSpeed']
-    new_row['IsTurnToDamageDir'] = row['_IsTurnToDamageDir']
-    new_row['MoveType'] = row['_MoveType']
-    new_row['IsLongRange'] = row['_IsLongLange']
-    new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
-    existing_data.append((new_row['FullName'], new_row))
+    for row in results:
+        new_row = OrderedDict()
+
+        new_row['Id'] = row[ROW_INDEX]
+        new_row['BaseId'] = row['_BaseId']
+        new_row['Name'] = get_label(row['_Name'])
+        new_row['FullName'] = get_label(row['_SecondName']) or new_row['Name']
+        new_row['NameJP'] = get_label(row['_Name'], lang='jp')
+        new_row['NameSC'] = get_label(row['_Name'], lang='sc')
+        new_row['NameTC'] = get_label(row['_Name'], lang='tc')
+        new_row['Title'] = get_epithet(row['_EmblemId'])
+        new_row['TitleJP'] = get_jp_epithet(row['_EmblemId'])
+        new_row['TitleSC'] = get_epithet(row['_EmblemId'], lang='sc')
+        new_row['TitleTC'] = get_epithet(row['_EmblemId'], lang='tc')
+        if row['_CharaBaseId'] != '0':
+            new_row['CharaBaseId'] = row['_CharaBaseId']
+        new_row['Obtain'] = '' # EDIT_THIS
+        new_row['ReleaseDate'] = row['_ReleaseStartDate']
+        new_row['Availability'] = '' # EDIT_THIS
+        new_row['Rarity'] = row['_Rarity']
+        new_row['Gender'] = '' # EDIT_THIS
+        new_row['ElementalType'] = ELEMENT_TYPE[row['_ElementalType']]
+        new_row['VariationId'] = row['_VariationId']
+        new_row['IsPlayable'] = row['_IsPlayable']
+        new_row['MinHp'] = row['_MinHp']
+        new_row['MaxHp'] = row['_MaxHp']
+        new_row['AddMaxHp1'] = row['_AddMaxHp1']
+        new_row['MinAtk'] = row['_MinAtk']
+        new_row['MaxAtk'] = row['_MaxAtk']
+        new_row['AddMaxAtk1'] = row['_AddMaxAtk1']
+        try:
+            new_row['SkillID'] = row['_Skill1']
+            new_row['SkillName'] = get_label(SKILL_DATA_NAMES[row['_Skill1']])
+            new_row['Skill2ID'] = row['_Skill2']
+            new_row['Skill2Name'] = get_label(SKILL_DATA_NAMES[row['_Skill2']])
+        except KeyError:
+            pass
+        for i in (1, 2):
+            for j in range(1, 7):
+                ab_k = 'Abilities{}{}'.format(i, j)
+                new_row[ab_k] = row['_' + ab_k]
+
+        # Kaleido
+        if row['_DmodePassiveAbilityId'] != '0':
+            new_row['DmodePassiveAbilityId'] = row['_DmodePassiveAbilityId']
+
+        new_row['ProfileText'] = get_label(row['_Profile'])
+        new_row['MaxLimitBreakCount'] = row['_MaxLimitBreakCount']
+        new_row['LimitBreakId'] = row['_LimitBreakId']
+        new_row['LimitBreakMaterialId'] = row['_LimitBreakMaterialId']
+        new_row['FavoriteType'] = row['_FavoriteType']
+        new_row['JapaneseCV'] = get_label(row['_CvInfo'])
+        new_row['EnglishCV'] = get_label(row['_CvInfoEn'])
+        new_row['SellCoin'] = row['_SellCoin']
+        new_row['SellDewPoint'] = row['_SellDewPoint']
+        new_row['MoveSpeed'] = row['_MoveSpeed']
+        new_row['DashSpeedRatio'] = row['_DashSpeedRatio']
+        new_row['TurnSpeed'] = row['_TurnSpeed']
+        new_row['IsTurnToDamageDir'] = row['_IsTurnToDamageDir']
+        new_row['MoveType'] = row['_MoveType']
+        new_row['IsLongRange'] = row['_IsLongLange']
+        new_row['AttackModifiers'] = '\n{{DragonAttackModifierRow|Combo 1|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 2|<EDIT_THIS>%|<EDIT_THIS>}}\n{{DragonAttackModifierRow|Combo 3|<EDIT_THIS>%|<EDIT_THIS>}}'
+
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(new_row['FullName'])
+        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write(build_wikitext_row('Dragon', new_row, delim='\n|'))
+        out_file.write('\n')
 
 def process_DragonGiftData(row, existing_data):
     new_row = OrderedDict()
@@ -970,6 +1492,10 @@ def process_SkillData(row, existing_data):
     new_row['Zoom2Time']= '{:.1f}'.format(float(row['_Zoom2Time']))
     new_row['ZoomWaitTime']= '{:.1f}'.format(float(row['_ZoomWaitTime']))
     new_row['SpRecoveryRule']= row['_SpRecoveryRule']
+    if row['_AutoRecoverySpForDmode'] != '0':
+        new_row['AutoRecoverySpForDmode']= row['_AutoRecoverySpForDmode']
+    if row['_AutoRecoverySpForDmodeWeaponSkill'] != '0':
+        new_row['AutoRecoverySpForDmodeWeaponSkill'] = row['_AutoRecoverySpForDmodeWeaponSkill']
     if row['_OverChargeSkillId'] != '0':
         new_row['OverChargeSkillId']= row['_OverChargeSkillId']
     new_row['Effects'] = '' # TODO
@@ -2022,11 +2548,11 @@ def process_RankingGroupData(out_file):
         reward_lists[reward['_GroupId']][reward['_QuestId']].append(reward)
 
     for group in groups:
-        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write('===')
         out_file.write(group['_RankingStartDate'])
         out_file.write(' - ')
         out_file.write(group['_RankingEndDate'])
-        out_file.write(ENTRY_LINE_BREAK)
+        out_file.write('===\n')
         data = {
             'Name': 'Time Attack Challenges',
             'Date': datetime.strptime(group['_RankingStartDate'], '%Y/%m/%d %H:%M:%S').strftime('%b %Y'),
@@ -2150,7 +2676,6 @@ DATA_PARSER_PROCESSING = {
     'AbilityData': ('Ability', row_as_wikitext,
         [('AbilityShiftGroup', process_AbilityShiftGroup),
          ('AbilityData', process_AbilityData)]),
-    'AbilityCrest': ('Wyrmprint', row_as_wikitext, process_AbilityCrest),
     'AbilityCrestBuildupGroup': ('WyrmprintBuildupGroup', row_as_wikitext, process_GenericTemplate),
     'AbilityCrestBuildupLevel': ('WyrmprintBuildupLevel', row_as_wikitext, process_GenericTemplate),
     'AbilityCrestRarity': ('WyrmprintRarity', row_as_wikitext, process_GenericTemplate),
@@ -2161,9 +2686,15 @@ DATA_PARSER_PROCESSING = {
     'Clb01EventItem': ('Material', row_as_wikitext, process_Material),
     'CollectEventItem': ('Material', row_as_wikitext, process_Material),
     'CombatEventItem': ('Material', row_as_wikitext, process_Material),
+    'DmodeCharaLevel': ('KaleidoscapeCharaLevel', row_as_wikitext, process_GenericTemplate),
+    'DmodeServitorPassive': ('KaleidoscapePassive', row_as_wikitext, process_DmodeServitorPassive),
+    'DmodeServitorDungeonLevel': ('KaleidoscapeServitorLevel', row_as_wikitext, process_GenericTemplate),
+    'DmodeServitorPassiveLevel': ('KaleidoscapeServitorPassiveLevel', row_as_wikitext, process_DmodeServitorPassiveLevel),
+    'DmodeStrengthAbility': ('KaleidoscapeStrengthAbility', row_as_wikitext, process_GenericTemplate),
+    'DmodeStrengthParam': ('KaleidoscapeStrengthParam', row_as_wikitext, process_GenericTemplate),
+    'DmodeStrengthSkill': ('KaleidoscapeStrengthSkill', row_as_wikitext, process_GenericTemplate),
     'EarnEventItem': ('Material', row_as_wikitext, process_Material),
     'SkillData': ('Skill', row_as_wikitext, process_SkillData),
-    'DragonData': ('Dragon', row_as_wikitext, process_Dragon),
     'DragonGiftData': ('Gift', row_as_wikitext, process_DragonGiftData),
     'DragonLimitBreak': ('DragonLimitBreak', row_as_wikitext, process_GenericTemplate),
     'ExAbilityData': ('CoAbility', row_as_wikitext, process_ExAbilityData),
@@ -2206,25 +2737,37 @@ NON_TEMPLATE_PROCESSING = {
 # Data that cannot be structured into a simple row->template relationship, and
 # will be parsed into a custom output format determined by each specific function.
 DATABASE_BASED_PROCESSING = {
+    'AbilityCrest': (process_AbilityCrest,),
+    'ActionCondition': (process_ActionCondition,),
     'BattleRoyale': (process_BattleRoyale,),
     'BattleRoyalEnemy': (process_BattleRoyalEnemy,),
     'BattleRoyaleMonthlyRewards': (process_BattleRoyalEventCyclePointReward,),
+    'DmodeAbilityCrest': (process_DmodeAbilityCrest,),
+    'DmodeEnemies': (process_DmodeEnemies,),
+    'DmodeEnemyParams': (process_DmodeEnemyParams,),
+    'DmodeExpeditionFloor': (process_DmodeExpeditionFloor,),
+    'DmodePoint': (process_DmodePoint,),
+    'DmodeStory': (process_DmodeStory,),
+    'DmodeTreasureTrade': (process_DmodeTreasureTrade,),
+    'DmodeWeapon': (process_DmodeWeapon,),
+    'DragonData': (process_Dragon,),
     'Endeavor_Sets': (process_EndeavorSets,),
     'Endeavor_Sets-Events': (process_EndeavorSetsEvents,),
-    'Medals': (process_HonorData,),
     'LoginBonus': (process_LoginBonusData,),
     'ManaCircle': (process_ManaCircle,),
     'MCNodeCost|Data|Unbind': (process_MCNodeCostUnbinds,),
+    'Medals': (process_HonorData,),
+    'NPC': (process_NPC,),
+    'PortraitWyrmprints': (process_TalismanData,),
     'QuestScoringEnemy': (process_QuestScoringEnemy,),
     'Stickers': (process_StampData,),
+    'StoryGroup': (process_AlbumStory,),
     'TimeAttackChallenges': (process_RankingGroupData,),
-    'UniqueBuffIcons': (process_ActionConditionIcons,),
     'Weapons': (process_Weapons,),
 }
 
 KV_PROCESSING = {
     'AbilityData': ('AbilityData', row_as_kv_pairs, process_KeyValues),
-    'ActionCondition': ('ActionCondition', row_as_kv_pairs, process_KeyValues),
     'CampaignData': ('CampaignData', row_as_kv_pairs, process_KeyValues),
     'CharaModeData': ('CharaModeData', row_as_kv_pairs, process_KeyValues),
     'CharaUniqueCombo': ('CharaUniqueCombo', row_as_kv_pairs, process_KeyValues),
